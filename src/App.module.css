@@ -1,0 +1,17 @@
+.background {
+    background-image: url('/public/background.jpg'); /* */
+    height: 100vh;
+    width: 100vw;
+    max-width: 800px;
+    background-size: cover; /* Scales the image to cover the entire container while preserving aspect ratio */
+    background-position: center bottom; /* Centers the image within the container */
+    background-repeat: no-repeat; /* Prevents the image from repeating */
+    background-color: white;
+}
+
+.header {
+    margin: 0;
+    padding: 25px;
+    text-align: center;
+    color: #6E6B60;
+}
