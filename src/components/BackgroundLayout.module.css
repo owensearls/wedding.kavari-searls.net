@@ -1,0 +1,20 @@
+.container {
+  background-image: url('/public/background.jpg');
+  height: 100%;
+  width: 100%;
+  min-width: 400px;
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-color: white;
+  position: relative;
+}
+
+.footerImage {
+  width: 100%;
+  max-width: 100%;
+  position: absolute;
+  bottom: 0;
+  max-height: 100vh;
+  object-fit: cover;
+}

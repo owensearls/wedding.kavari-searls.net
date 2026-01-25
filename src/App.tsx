@@ -1,16 +1,17 @@
-import './App.module.css'
 import styles from './App.module.css'
+import BackgroundLayout from './components/BackgroundLayout'
 
 function App() {
   return (
-    <div className={styles.background}>
-        <div style={{ textAlign: "center", color: "#6E6B60", display: "flex", flexDirection: "column" }}>
-            <h2>Sanam Louise Kavari</h2>
-            <span>and</span>
-            <h2>Owen Francis Searls</h2>
-            <span>will be married</span>
+    <div className={styles.container}>
+      <BackgroundLayout>
+        <div style={{ textAlign: "center", color: "#6E6B60", display: "flex", flexDirection: "column", paddingTop: 25 }}>
+          <h1>Sanam Louise Kavari & Owen Francis Searls</h1>
+          <span style={{fontStyle: "italic", fontSize: "20px"}}>will be married</span>
+          <h2>September 19, 2026, Hartland, Vermont</h2>
+          <h2></h2>
         </div>
-        <img src="/mountains.png" style={{width: "100%", maxWidth: "100%", position: "fixed", bottom: 0, maxHeight: "100vh", objectFit: "cover"}}></img>
+      </BackgroundLayout>
     </div>
   )
 }
