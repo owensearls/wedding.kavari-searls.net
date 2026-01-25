@@ -46,6 +46,12 @@ h2 {
   margin: 0.25em 0;
 }
 
+p {
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0.5em 0 1.5em 0;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;

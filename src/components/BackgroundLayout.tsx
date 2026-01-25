@@ -13,6 +13,17 @@ function BackgroundLayout({ children }: BackgroundLayoutProps) {
 
   useEffect(() => {
     const container = containerRef.current
+    if (!container) return
+
+    // Set initial scroll position to hide FAQ above viewport
+    const faqElement = document.getElementById('faq')
+    if (faqElement) {
+      container.scrollTop = faqElement.offsetHeight
+    }
+  }, [])
+
+  useEffect(() => {
+    const container = containerRef.current
     const image = imageRef.current
     if (!container || !image) return
 
@@ -20,21 +31,26 @@ function BackgroundLayout({ children }: BackgroundLayoutProps) {
       const scrollTop = container.scrollTop
       const scrollHeight = container.scrollHeight
       const clientHeight = container.clientHeight
-      const maxScroll = scrollHeight - clientHeight
 
-      // Calculate mountain height: grows from 50vh to 75vh based on scroll
-      const scrollProgress = maxScroll > 0 ? scrollTop / maxScroll : 0
-      const newHeight = 50 + (scrollProgress * 25) // 50vh to 75vh
+      const faqElement = document.getElementById('faq')
+      const faqHeight = faqElement ? faqElement.offsetHeight : 0
 
-      setMountainHeight(Math.min(newHeight, 75))
+      // Calculate scroll position relative to FAQ
+      // When at FAQ top (scrollTop = 0), mountains should be hidden (0vh)
+      // When at main content (scrollTop = faqHeight), mountains should be 50vh
+      // When scrolled down further, mountains grow to 75vh
 
-      // Stop scrolling when mountains reach 75vh
-      if (newHeight >= 75) {
-        // Prevent scrolling beyond this point by limiting scroll position
-        const maxScrollForFullMountains = maxScroll * (25 / 25) // At 100% progress
-        if (scrollTop > maxScrollForFullMountains) {
-          container.scrollTop = maxScrollForFullMountains
-        }
+      if (scrollTop < faqHeight) {
+        // In FAQ area - mountains scale from 0vh to 50vh
+        const faqProgress = faqHeight > 0 ? scrollTop / faqHeight : 0
+        setMountainHeight(faqProgress * 50)
+      } else {
+        // Below FAQ - mountains scale from 50vh to 75vh
+        const scrollBelowFaq = scrollTop - faqHeight
+        const maxScrollBelowFaq = (scrollHeight - clientHeight) - faqHeight
+        const scrollProgress = maxScrollBelowFaq > 0 ? scrollBelowFaq / maxScrollBelowFaq : 0
+        const newHeight = 50 + (scrollProgress * 25)
+        setMountainHeight(Math.min(newHeight, 75))
       }
     }
 
@@ -44,13 +60,22 @@ function BackgroundLayout({ children }: BackgroundLayoutProps) {
       const clientHeight = container.clientHeight
       const maxScroll = scrollHeight - clientHeight
 
-      const scrollProgress = maxScroll > 0 ? scrollTop / maxScroll : 0
+      const faqElement = document.getElementById('faq')
+      const faqHeight = faqElement ? faqElement.offsetHeight : 0
+
+      const scrollBelowFaq = scrollTop - faqHeight
+      const maxScrollBelowFaq = maxScroll - faqHeight
 
       // Prevent scrolling DOWN beyond the point where mountains are at 75vh
-      if (scrollProgress >= 1 && e.deltaY > 0) {
+      // This is when we've scrolled all the way through the parallax effect below FAQ
+      if (scrollBelowFaq >= maxScrollBelowFaq && e.deltaY > 0) {
         e.preventDefault()
       }
-      // Allow scrolling UP at any time (e.deltaY < 0 means scrolling up)
+
+      // Prevent scrolling UP beyond the top of FAQ
+      if (scrollTop <= 0 && e.deltaY < 0) {
+        e.preventDefault()
+      }
     }
 
     container.addEventListener('scroll', handleScroll)
