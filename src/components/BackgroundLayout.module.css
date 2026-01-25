@@ -15,6 +15,7 @@
   max-width: 100%;
   position: absolute;
   bottom: 0;
-  max-height: 100vh;
+  max-height: 50vh;
   object-fit: cover;
+  object-position: top;
 }
