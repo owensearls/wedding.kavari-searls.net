@@ -5,13 +5,15 @@
   background-color: white;
   position: relative;
   overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .content {
   min-height: 300vh;
   position: relative;
   z-index: 1;
-  background-image: url('/public/background.jpg');
+  background-image: url('/background.jpg');
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
