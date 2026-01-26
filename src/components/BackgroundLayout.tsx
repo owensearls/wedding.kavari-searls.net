@@ -273,7 +273,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         <div className={styles.footerFixed}>
           <img
             ref={imageRef}
-            src="/mountains.png"
+            src="mountains.png"
             className={styles.footerImage}
             style={{ maxHeight: `${mountainHeight}vh` }}
             alt="Mountains"
