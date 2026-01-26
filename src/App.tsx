@@ -17,10 +17,9 @@ function App() {
                 textDecoration: "none",
                 fontSize: "18px",
                 cursor: "pointer",
-                fontStyle: "italic",
               }}
             >
-              <FontAwesomeIcon icon={faCaretUp} /> FAQ
+              <FontAwesomeIcon icon={faCaretUp} style={{ verticalAlign: 'middle' }} /> FAQ
             </a>
             <span style={{ color: "#6E6B60" }}>|</span>
             <a
@@ -30,7 +29,6 @@ function App() {
                 textDecoration: "none",
                 fontSize: "18px",
                 cursor: "pointer",
-                fontStyle: "italic"
               }}
             >
               Contact

@@ -15,11 +15,28 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const navRef = useRef<HTMLDivElement>(null)
   const [mountainHeight, setMountainHeight] = useState(50)
   const [mountainNaturalHeightVh, setMountainNaturalHeightVh] = useState(100)
   const [isInitialized, setIsInitialized] = useState(false)
   const [currentAnchor, setCurrentAnchor] = useState('')
   const initialScrollSetRef = useRef(false)
+  const [navHeight, setNavHeight] = useState(48)
+
+  // Track nav height for the fixed background
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setNavHeight(entry.contentRect.height)
+      }
+    })
+
+    observer.observe(nav)
+    return () => observer.disconnect()
+  }, [])
 
   // Calculate mountain natural height in vh units
   useEffect(() => {
@@ -218,12 +235,14 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
         style={{ visibility: isInitialized ? 'visible' : 'hidden' }}
       >
         {nav && (
-          <div className={styles.nav}>
-            <div className={styles.navBackground} />
-            <div className={styles.navContent}>
-              {nav}
+          <>
+            <div className={styles.navBackground} style={{ height: navHeight }} />
+            <div ref={navRef} className={styles.nav}>
+              <div className={styles.navContent}>
+                {nav}
+              </div>
             </div>
-          </div>
+          </>
         )}
         <div ref={contentRef} className={styles.content}>
           <div className={styles.contentInner}>
@@ -231,7 +250,9 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
             <Section id="home" anchor="">
               {header}
             </Section>
-            {/* Footer section with content positioned at bottom */}
+          </div>
+          {/* Footer section with content positioned at bottom */}
+          <div className={styles.footerContent}>
             <Section id="footer" anchor="footer" minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}vh`} contentPosition="bottom">
               {footer}
             </Section>
