@@ -14,6 +14,7 @@ function Section({ id, anchor, children, minHeight = '100vh', contentPosition = 
   const currentAnchor = useCurrentAnchor()
   const sectionAnchor = anchor ?? id
   const isActive = currentAnchor === sectionAnchor
+  console.log(isActive)
 
   const sectionStyle: React.CSSProperties = {
     minHeight,
@@ -31,9 +32,7 @@ function Section({ id, anchor, children, minHeight = '100vh', contentPosition = 
       className={styles.section}
       style={sectionStyle}
     >
-      <div style={{ opacity: isActive ? 1 : 0, transition: 'opacity 0.1s ease' }}>
-        {children}
-      </div>
+      {children}
     </section>
   )
 }
