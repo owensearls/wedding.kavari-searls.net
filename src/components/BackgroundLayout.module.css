@@ -7,10 +7,10 @@
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  /* scroll-snap-type: y proximity; */
 }
 
 .content {
-  min-height: 300vh;
   position: relative;
   z-index: 1;
   background-image: url('/background.jpg');
@@ -23,7 +23,6 @@
 .contentInner {
   position: relative;
   z-index: 3;
-  min-height: 100vh;
 }
 
 .footerImage {
@@ -37,6 +36,21 @@
   object-fit: cover;
   object-position: top;
   z-index: 2;
+  pointer-events: none;
+}
+
+.footer {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 2000px;
+  width: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.footerContent {
+  pointer-events: auto;
 }
 
 .scrollbarOverlay {

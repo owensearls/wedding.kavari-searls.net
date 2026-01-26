@@ -1,0 +1,6 @@
+.section {
+  /* scroll-snap-align: start; */
+  /* scroll-snap-stop: normal; */
+  width: 100%;
+  position: relative;
+}
