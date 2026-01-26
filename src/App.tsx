@@ -1,40 +1,44 @@
 import styles from './App.module.css'
 import BackgroundLayout from './components/BackgroundLayout'
 import Section from './components/Section'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCaretUp } from '@fortawesome/free-solid-svg-icons'
 
 function App() {
   return (
     <div className={styles.container}>
       <BackgroundLayout
+        nav={
+          <div style={{ display: "flex", gap: "15px", justifyContent: "center", padding: "10px" }}>
+            <a
+              href="#faq"
+              style={{
+                color: "#6E6B60",
+                textDecoration: "none",
+                fontSize: "18px",
+                cursor: "pointer",
+                fontStyle: "italic",
+              }}
+            >
+              <FontAwesomeIcon icon={faCaretUp} /> FAQ
+            </a>
+            <span style={{ color: "#6E6B60" }}>|</span>
+            <a
+              href="#footer"
+              style={{
+                color: "#6E6B60",
+                textDecoration: "none",
+                fontSize: "18px",
+                cursor: "pointer",
+                fontStyle: "italic"
+              }}
+            >
+              Contact
+            </a>
+          </div>
+        }
         header={
           <div style={{ textAlign: "center", color: "#6E6B60", display: "flex", flexDirection: "column", paddingTop: 25, gap: "10px" }}>
-            <div style={{ display: "flex", gap: "15px", justifyContent: "center", marginBottom: "10px" }}>
-              <a
-                href="#faq"
-                style={{
-                  color: "#6E6B60",
-                  textDecoration: "none",
-                  fontSize: "18px",
-                  cursor: "pointer",
-                  fontStyle: "italic"
-                }}
-              >
-                FAQ
-              </a>
-              <span style={{ color: "#6E6B60" }}>|</span>
-              <a
-                href="#footer"
-                style={{
-                  color: "#6E6B60",
-                  textDecoration: "none",
-                  fontSize: "18px",
-                  cursor: "pointer",
-                  fontStyle: "italic"
-                }}
-              >
-                Contact
-              </a>
-            </div>
             <h1>Sanam Louise Kavari & Owen Francis Searls</h1>
             <span style={{fontStyle: "italic", fontSize: "20px"}}>will be married</span>
             <h2>September 19, 2026, Hartland, Vermont</h2>

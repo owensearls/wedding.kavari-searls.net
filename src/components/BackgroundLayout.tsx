@@ -6,11 +6,12 @@ import Section from './Section'
 
 interface BackgroundLayoutProps {
   children?: ReactNode
+  nav?: ReactNode
   header?: ReactNode
   footer?: ReactNode
 }
 
-function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
+function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -204,6 +205,14 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         className={styles.container}
         style={{ visibility: isInitialized ? 'visible' : 'hidden' }}
       >
+        {nav && (
+          <div className={styles.nav}>
+            <div className={styles.navBackground} />
+            <div className={styles.navContent}>
+              {nav}
+            </div>
+          </div>
+        )}
         <div ref={contentRef} className={styles.content}>
           <div className={styles.contentInner}>
             {children}
@@ -211,7 +220,9 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
               {header}
             </Section>
             <Section id="footer" anchor="footer">
-              <div style={{ height: '100vh' }} />
+              <div className={styles.footerSection}>
+                {footer}
+              </div>
             </Section>
           </div>
         </div>
@@ -222,20 +233,6 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
           style={{ maxHeight: `${mountainHeight}vh` }}
           alt="Mountains"
         />
-        {footer && (
-          <div
-            className={styles.footer}
-            style={{
-              bottom: '25px',
-              opacity: currentAnchor === 'footer' ? 1 : 0,
-              transition: 'opacity 0.1s ease'
-            }}
-          >
-            <div className={styles.footerContent}>
-              {footer}
-            </div>
-          </div>
-        )}
         <div className={styles.scrollbarOverlay} />
       </div>
     </AnchorContext.Provider>
