@@ -5,7 +5,7 @@ import styles from './Section.module.css'
 interface SectionProps {
   id: string
   anchor?: string
-  children: ReactNode
+  children?: ReactNode
   minHeight?: string
 }
 

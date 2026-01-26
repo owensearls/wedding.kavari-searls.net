@@ -26,18 +26,30 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
     const image = imageRef.current
     if (!image) return
 
-    const handleImageLoad = () => {
-      const naturalHeight = image.naturalHeight
-      const viewportHeight = window.innerHeight
-      const heightInVh = (naturalHeight / viewportHeight) * 100
+    const calculateDisplayHeight = () => {
+      if (!image.complete || image.naturalWidth === 0) return
+      // Calculate displayed height based on actual render constraints
+      // The image has max-width: 2000px and maintains aspect ratio
+      const aspectRatio = image.naturalHeight / image.naturalWidth
+      const viewportWidth = window.innerWidth
+      const displayWidth = Math.min(image.naturalWidth, Math.min(2000, viewportWidth))
+      const displayHeight = displayWidth * aspectRatio
+      const heightInVh = (displayHeight / window.innerHeight) * 100
       setMountainNaturalHeightVh(heightInVh)
     }
 
     if (image.complete) {
-      handleImageLoad()
+      calculateDisplayHeight()
     } else {
-      image.addEventListener('load', handleImageLoad)
-      return () => image.removeEventListener('load', handleImageLoad)
+      image.addEventListener('load', calculateDisplayHeight)
+    }
+
+    // Recalculate on resize since viewport dimensions affect displayed height
+    window.addEventListener('resize', calculateDisplayHeight)
+
+    return () => {
+      image.removeEventListener('load', calculateDisplayHeight)
+      window.removeEventListener('resize', calculateDisplayHeight)
     }
   }, [])
 
@@ -219,20 +231,24 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
             <Section id="home" anchor="">
               {header}
             </Section>
-            <Section id="footer" anchor="footer">
-              <div className={styles.footerSection}>
-                {footer}
-              </div>
-            </Section>
+            {/* Empty spacer for scroll distance and anchor detection */}
+            <Section id="footer" anchor="footer" minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}vh`} />
           </div>
         </div>
-        <img
-          ref={imageRef}
-          src="/mountains.png"
-          className={styles.footerImage}
-          style={{ maxHeight: `${mountainHeight}vh` }}
-          alt="Mountains"
-        />
+
+        {/* Fixed footer area with mountains and footer content */}
+        <div className={styles.footerFixed}>
+          <img
+            ref={imageRef}
+            src="/mountains.png"
+            className={styles.footerImage}
+            style={{ maxHeight: `${mountainHeight}vh` }}
+            alt="Mountains"
+          />
+          <div className={styles.footerContent}>
+            {footer}
+          </div>
+        </div>
         <div className={styles.scrollbarOverlay} />
       </div>
     </AnchorContext.Provider>
