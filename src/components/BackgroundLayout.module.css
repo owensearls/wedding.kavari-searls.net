@@ -40,6 +40,7 @@
   top: 0;
   left: 0;
   right: 0;
+  height: 44px;
   z-index: 2;
   background-image: url('/background.jpg');
   background-size: cover;
@@ -51,6 +52,21 @@
 
 .navContent {
   position: relative;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  padding: 10px;
+}
+
+.navLink {
+  color: #6E6B60;
+  text-decoration: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.navDivider {
+  color: #6E6B60;
 }
 
 .contentInner {

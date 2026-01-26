@@ -1,42 +1,26 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faAngleUp } from '@fortawesome/free-solid-svg-icons'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
 import Section from './Section'
 
 interface BackgroundLayoutProps {
   children?: ReactNode
-  nav?: ReactNode
   header?: ReactNode
   footer?: ReactNode
 }
 
-function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutProps) {
+function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const navRef = useRef<HTMLDivElement>(null)
   const [mountainHeight, setMountainHeight] = useState(50)
   const [mountainNaturalHeightVh, setMountainNaturalHeightVh] = useState(100)
   const [isInitialized, setIsInitialized] = useState(false)
   const [currentAnchor, setCurrentAnchor] = useState('')
   const initialScrollSetRef = useRef(false)
-  const [navHeight, setNavHeight] = useState(48)
-
-  // Track nav height for the fixed background
-  useEffect(() => {
-    const nav = navRef.current
-    if (!nav) return
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setNavHeight(entry.contentRect.height)
-      }
-    })
-
-    observer.observe(nav)
-    return () => observer.disconnect()
-  }, [])
 
   // Calculate mountain natural height in vh units
   useEffect(() => {
@@ -234,16 +218,18 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
         className={styles.container}
         style={{ visibility: isInitialized ? 'visible' : 'hidden' }}
       >
-        {nav && (
-          <>
-            <div className={styles.navBackground} style={{ height: navHeight }} />
-            <div ref={navRef} className={styles.nav}>
-              <div className={styles.navContent}>
-                {nav}
-              </div>
-            </div>
-          </>
-        )}
+        <div className={styles.navBackground} />
+        <div className={styles.nav}>
+          <div className={styles.navContent}>
+            <a href="#faq" className={styles.navLink}>
+              <FontAwesomeIcon icon={faAngleUp} style={{ verticalAlign: 'middle' }} /> FAQ
+            </a>
+            <span className={styles.navDivider}>|</span>
+            <a href="#footer" className={styles.navLink}>
+              Contact
+            </a>
+          </div>
+        </div>
         <div ref={contentRef} className={styles.content}>
           <div className={styles.contentInner}>
             {children}

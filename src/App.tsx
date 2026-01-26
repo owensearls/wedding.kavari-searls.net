@@ -1,40 +1,11 @@
 import styles from './App.module.css'
 import BackgroundLayout from './components/BackgroundLayout'
 import Section from './components/Section'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCaretUp } from '@fortawesome/free-solid-svg-icons'
 
 function App() {
   return (
     <div className={styles.container}>
       <BackgroundLayout
-        nav={
-          <div style={{ display: "flex", gap: "15px", justifyContent: "center", padding: "10px" }}>
-            <a
-              href="#faq"
-              style={{
-                color: "#6E6B60",
-                textDecoration: "none",
-                fontSize: "18px",
-                cursor: "pointer",
-              }}
-            >
-              <FontAwesomeIcon icon={faCaretUp} style={{ verticalAlign: 'middle' }} /> FAQ
-            </a>
-            <span style={{ color: "#6E6B60" }}>|</span>
-            <a
-              href="#footer"
-              style={{
-                color: "#6E6B60",
-                textDecoration: "none",
-                fontSize: "18px",
-                cursor: "pointer",
-              }}
-            >
-              Contact
-            </a>
-          </div>
-        }
         header={
           <div style={{ textAlign: "center", color: "#6E6B60", display: "flex", flexDirection: "column", paddingTop: 75, gap: "10px" }}>
             <h1>Sanam Louise Kavari & Owen Francis Searls</h1>
