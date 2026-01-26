@@ -1,6 +1,5 @@
 .container {
   width: 100%;
-  min-width: 400px;
   background-color: white;
   position: relative;
   /* scroll-snap-type: y proximity; */
@@ -48,7 +47,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 100vh;
+  height: 100dvh;
   background-image: url('/background.jpg');
   background-size: cover;
   background-position: center bottom;
@@ -102,7 +101,7 @@
 .footerImage {
   width: 100%;
   max-width: 2000px;
-  max-height: 50vh;
+  max-height: 50dvh;
   object-fit: cover;
   object-position: top;
   position: absolute;

@@ -10,7 +10,7 @@ interface SectionProps {
   contentPosition?: 'top' | 'bottom'
 }
 
-function Section({ id, anchor, children, minHeight = '100vh', contentPosition = 'top' }: SectionProps) {
+function Section({ id, anchor, children, minHeight = '100dvh', contentPosition = 'top' }: SectionProps) {
   const currentAnchor = useCurrentAnchor()
   const sectionAnchor = anchor ?? id
   const isActive = currentAnchor === sectionAnchor

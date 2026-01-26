@@ -263,7 +263,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
           </div>
           {/* Footer section with content positioned at bottom */}
           <div className={styles.footerContent}>
-            <Section id="footer" anchor="footer" minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}vh`} contentPosition="bottom">
+            <Section id="footer" anchor="footer" minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}dvh`} contentPosition="bottom">
               {footer}
             </Section>
           </div>
@@ -275,7 +275,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
             ref={imageRef}
             src="mountains.png"
             className={styles.footerImage}
-            style={{ maxHeight: `${mountainHeight}vh` }}
+            style={{ maxHeight: `${mountainHeight}dvh` }}
             alt="Mountains"
           />
         </div>

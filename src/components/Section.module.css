@@ -3,4 +3,6 @@
   /* scroll-snap-stop: normal; */
   width: 100%;
   position: relative;
+  padding-left: 10px;
+  padding-right: 10px;
 }

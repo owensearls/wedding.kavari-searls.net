@@ -1,24 +1,39 @@
 :global(h1) {
   font-weight: 600;
-  font-size: 40px;
   line-height: 1.1;
   margin: 0.25em 0;
-  color: #6E6B60
+  color: #6E6B60;
+
+  font-size: 40px;
+
+  @media (max-width: 480px) {
+    font-size: 32px;
+  }
 }
 
 :global(h2) {
   font-weight: 600;
-  font-size: 32px;
   line-height: 1.1;
   margin: 0.25em 0;
-  color: #6E6B60
+  color: #6E6B60;
+
+  font-size: 32px;
+
+  @media (max-width: 480px) {
+    font-size: 24px;
+  }
 }
 
 :global(p) {
-  font-size: 22px;
   line-height: 1.6;
   margin: 0.5em 0 1.5em 0;
-  color: #6E6B60
+  color: #6E6B60;
+
+  font-size: 22px;
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 }
 
 .italicConnector {
