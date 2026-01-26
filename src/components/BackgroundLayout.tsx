@@ -231,12 +231,14 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
             <Section id="home" anchor="">
               {header}
             </Section>
-            {/* Empty spacer for scroll distance and anchor detection */}
-            <Section id="footer" anchor="footer" minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}vh`} />
+            {/* Footer section with content positioned at bottom */}
+            <Section id="footer" anchor="footer" minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}vh`} contentPosition="bottom">
+              {footer}
+            </Section>
           </div>
         </div>
 
-        {/* Fixed footer area with mountains and footer content */}
+        {/* Fixed mountain image */}
         <div className={styles.footerFixed}>
           <img
             ref={imageRef}
@@ -245,9 +247,6 @@ function BackgroundLayout({ children, nav, header, footer }: BackgroundLayoutPro
             style={{ maxHeight: `${mountainHeight}vh` }}
             alt="Mountains"
           />
-          <div className={styles.footerContent}>
-            {footer}
-          </div>
         </div>
         <div className={styles.scrollbarOverlay} />
       </div>

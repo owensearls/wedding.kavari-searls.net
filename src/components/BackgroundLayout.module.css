@@ -84,12 +84,6 @@
   transform: translateX(-50%);
 }
 
-.footerContent {
-  position: relative;
-  z-index: 2;
-  padding-bottom: 25px;
-  pointer-events: auto;
-}
 
 .scrollbarOverlay {
   position: fixed;
