@@ -276,7 +276,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
             src="mountains.png"
             className={styles.footerImage}
             style={{ maxHeight: `${mountainHeight}dvh` }}
-            alt="Mountains"
+            alt="Watercolor painting of Mt. Ascutney, Vermont"
           />
         </div>
         <div className={styles.scrollbarOverlay} />
