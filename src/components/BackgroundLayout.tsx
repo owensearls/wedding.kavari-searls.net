@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faAngleUp } from '@fortawesome/free-solid-svg-icons'
+import {faAngleDown, faAngleUp} from '@fortawesome/free-solid-svg-icons'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
 import Section from './Section'
@@ -228,6 +228,17 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
     return () => observer.disconnect()
   }, [isInitialized])
 
+  let navData = {href: '', text: '', icon: faAngleUp}
+  if (currentAnchor === '') {
+    navData = {href: '#faq', text: 'FAQ', icon: faAngleUp}
+  } else if (currentAnchor === 'faq') {
+    navData = {href: '#rsvp', text: 'RSVP', icon: faAngleUp}
+  } else if (currentAnchor === 'rsvp') {
+    navData = {href: '#', text: 'Home', icon: faAngleDown}
+  } else if (currentAnchor === 'footer') {
+    navData = {href: '#', text: 'Home', icon: faAngleUp}
+  }
+
   return (
     <AnchorContext.Provider value={currentAnchor}>
       <div
@@ -238,12 +249,8 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         <div className={styles.navBackground} />
         <div className={styles.nav}>
           <div className={styles.navContent}>
-            <a href="#faq" className={styles.navLink}>
-              <FontAwesomeIcon icon={faAngleUp} style={{ verticalAlign: 'middle' }} /> FAQ
-            </a>
-            <span className={styles.navDivider}>|</span>
-            <a href="#footer" className={styles.navLink}>
-              Contact
+            <a href={navData.href} className={styles.navLink}>
+              <FontAwesomeIcon icon={navData.icon} style={{ verticalAlign: 'middle' }} /> {navData.text}
             </a>
           </div>
         </div>

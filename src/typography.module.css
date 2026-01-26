@@ -1,0 +1,33 @@
+:global(h1) {
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 1.1;
+  margin: 0.25em 0;
+  color: #6E6B60
+}
+
+:global(h2) {
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.1;
+  margin: 0.25em 0;
+  color: #6E6B60
+}
+
+:global(p) {
+  font-size: 22px;
+  line-height: 1.6;
+  margin: 0.5em 0 1.5em 0;
+  color: #6E6B60
+}
+
+.italicConnector {
+  font-style: italic;
+  font-size: 32px;
+  font-weight: normal;
+}
+
+.italicText {
+  font-style: italic;
+  font-size: 32px;
+}

@@ -1,4 +1,5 @@
 import styles from './App.module.css'
+import typography from './typography.module.css'
 import BackgroundLayout from './components/BackgroundLayout'
 import Section from './components/Section'
 
@@ -7,22 +8,28 @@ function App() {
     <div className={styles.container}>
       <BackgroundLayout
         header={
-          <div style={{ textAlign: "center", color: "#6E6B60", display: "flex", flexDirection: "column", paddingTop: 75, gap: "10px" }}>
-            <h1>Sanam Louise Kavari <span style={{fontStyle: "italic", fontSize: "32px", fontWeight: "normal"}}>and</span> Owen Francis Searls</h1>
-            <span style={{fontStyle: "italic", fontSize: "32px"}}>will be married on</span>
-            <h2>September 19, 2026 <span style={{fontStyle: "italic", fontSize: "32px", fontWeight: "normal"}}>in</span> Hartland, Vermont</h2>
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", paddingTop: 75, gap: "10px" }}>
+            <h1>Sanam Louise Kavari <span className={typography.italicConnector}>and</span> Owen Francis Searls</h1>
+            <span className={typography.italicText}>will be married on</span>
+            <h2>September 19, 2026 <span className={typography.italicConnector}>in</span> Hartland, Vermont</h2>
             <h2></h2>
           </div>
         }
         footer={
-          <div style={{ color: "#6E6B60", textAlign: "center", padding: "20px 20px 0 20px" }}>
-            <p>© 2026 Sanam & Owen</p>
+          <div style={{ textAlign: "center", padding: "25px" }}>
+            <h2>Web Development <span className={typography.italicConnector}>by</span> Owen Searls</h2>
+            <h2>Artwork <span className={typography.italicConnector}>by</span> Elana Sanford</h2>
           </div>
         }
       >
-        <Section id="faq" anchor="faq" minHeight="auto">
-          <div style={{ padding: "50px 25px", color: "#6E6B60" }}>
-            <h1 style={{ textAlign: "center" }}>FAQ</h1>
+        <Section id="rsvp" anchor="rsvp" minHeight="100vh">
+            <h1 style={{ textAlign: "center", padding: "25px" }}>RSVP</h1>
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+              <h2>Pretend there is a form here</h2>
+          </div>
+        </Section>
+        <Section id="faq" anchor="faq" minHeight="100vh">
+            <h1 style={{ textAlign: "center", padding: "25px" }}>FAQ</h1>
             <div style={{ maxWidth: "600px", margin: "0 auto" }}>
               <h2>When is the wedding?</h2>
               <p>September 19, 2026</p>
@@ -35,7 +42,6 @@ function App() {
 
               <h2>Will there be accommodations nearby?</h2>
               <p>Yes, we will provide information about local accommodations.</p>
-            </div>
           </div>
         </Section>
       </BackgroundLayout>
