@@ -8,9 +8,10 @@ function App() {
       <BackgroundLayout
         header={
           <div style={{ textAlign: "center", color: "#6E6B60", display: "flex", flexDirection: "column", paddingTop: 75, gap: "10px" }}>
-            <h1>Sanam Louise Kavari & Owen Francis Searls</h1>
-            <span style={{fontStyle: "italic", fontSize: "20px"}}>will be married</span>
-            <h2>September 19, 2026, Hartland, Vermont</h2>
+            <h1>Sanam Louise Kavari <span style={{fontStyle: "italic", fontSize: "32px", fontWeight: "normal"}}>and</span> Owen Francis Searls</h1>
+            <span style={{fontStyle: "italic", fontSize: "32px"}}>will be married on</span>
+            <h2>September 19, 2026 <span style={{fontStyle: "italic", fontSize: "32px", fontWeight: "normal"}}>in</span> Hartland, Vermont</h2>
+            <h2></h2>
           </div>
         }
         footer={
