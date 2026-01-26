@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
+import Section from './Section'
 
 interface BackgroundLayoutProps {
   children?: ReactNode
+  header?: ReactNode
   footer?: ReactNode
 }
 
-function BackgroundLayout({ children, footer }: BackgroundLayoutProps) {
+function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
-  const footerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [mountainHeight, setMountainHeight] = useState(50)
   const [mountainNaturalHeightVh, setMountainNaturalHeightVh] = useState(100)
@@ -60,17 +62,12 @@ function BackgroundLayout({ children, footer }: BackgroundLayoutProps) {
       } else {
         // No hash - scroll to home section
         setCurrentAnchor('')
-        const sections = container.querySelectorAll('[data-anchor]')
-        if (sections.length > 0) {
-          const homeSection = Array.from(sections).find(
-            (s) => s.getAttribute('data-anchor') === '' || s.getAttribute('data-anchor') === 'home'
-          )
-          if (homeSection) {
-            container.scrollTo({
-              top: (homeSection as HTMLElement).offsetTop,
-              behavior: 'instant'
-            })
-          }
+        const homeSection = document.getElementById('home')
+        if (homeSection) {
+          container.scrollTo({
+            top: homeSection.offsetTop,
+            behavior: 'instant'
+          })
         }
       }
 
@@ -92,7 +89,7 @@ function BackgroundLayout({ children, footer }: BackgroundLayoutProps) {
       setCurrentAnchor(hash)
       const section = hash
         ? document.querySelector(`[data-anchor="${hash}"]`)
-        : document.querySelector('[data-anchor=""], [data-anchor="home"]')
+        : document.getElementById('home')
 
       if (section) {
         container.scrollTo({
@@ -121,21 +118,14 @@ function BackgroundLayout({ children, footer }: BackgroundLayoutProps) {
           const scrollHeight = container.scrollHeight
           const clientHeight = container.clientHeight
 
-          // Find all sections
-          const sections = Array.from(container.querySelectorAll('[data-anchor]')) as HTMLElement[]
-          if (sections.length === 0) {
+          const homeSection = document.getElementById('home')
+          if (!homeSection) {
             ticking = false
             return
           }
 
-          // Find home section (first section after any sections above it)
-          const homeSection = sections.find(
-            (s) => s.getAttribute('data-anchor') === '' || s.getAttribute('data-anchor') === 'home'
-          ) || sections[0]
-
-          const homeSectionTop = homeSection.offsetTop
-          const sectionsAboveHome = sections.filter(s => s.offsetTop < homeSectionTop)
-          const sectionsAboveHeight = sectionsAboveHome.reduce((sum, s) => sum + s.offsetHeight, 0)
+          // homeSectionTop equals height of all content above home section
+          const sectionsAboveHeight = homeSection.offsetTop
 
           // Calculate scroll position relative to home section
           // When at top of content (scrollTop = 0), mountains should be 0vh
@@ -208,40 +198,47 @@ function BackgroundLayout({ children, footer }: BackgroundLayoutProps) {
   }, [isInitialized])
 
   return (
-    <div
-      ref={containerRef}
-      className={styles.container}
-      style={{ visibility: isInitialized ? 'visible' : 'hidden' }}
-    >
-      <div ref={contentRef} className={styles.content}>
-        <div className={styles.contentInner}>
-          {children}
-        </div>
-      </div>
-      <img
-        ref={imageRef}
-        src="/mountains.png"
-        className={styles.footerImage}
-        style={{ maxHeight: `${mountainHeight}vh` }}
-        alt="Mountains"
-      />
-      {footer && (
-        <div
-          ref={footerRef}
-          className={styles.footer}
-          style={{
-            bottom: '25px',
-            opacity: currentAnchor === 'footer' ? 1 : 0,
-            transition: 'opacity 0.1s ease'
-          }}
-        >
-          <div className={styles.footerContent}>
-            {footer}
+    <AnchorContext.Provider value={currentAnchor}>
+      <div
+        ref={containerRef}
+        className={styles.container}
+        style={{ visibility: isInitialized ? 'visible' : 'hidden' }}
+      >
+        <div ref={contentRef} className={styles.content}>
+          <div className={styles.contentInner}>
+            {children}
+            <Section id="home" anchor="">
+              {header}
+            </Section>
+            <Section id="footer" anchor="footer">
+              <div style={{ height: '100vh' }} />
+            </Section>
           </div>
         </div>
-      )}
-      <div className={styles.scrollbarOverlay} />
-    </div>
+        <img
+          ref={imageRef}
+          src="/mountains.png"
+          className={styles.footerImage}
+          style={{ maxHeight: `${mountainHeight}vh` }}
+          alt="Mountains"
+        />
+        {footer && (
+          <div
+            className={styles.footer}
+            style={{
+              bottom: '25px',
+              opacity: currentAnchor === 'footer' ? 1 : 0,
+              transition: 'opacity 0.1s ease'
+            }}
+          >
+            <div className={styles.footerContent}>
+              {footer}
+            </div>
+          </div>
+        )}
+        <div className={styles.scrollbarOverlay} />
+      </div>
+    </AnchorContext.Provider>
   )
 }
 
