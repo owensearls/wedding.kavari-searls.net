@@ -10,9 +10,8 @@ function App() {
         header={
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", paddingTop: 75, gap: "10px" }}>
             <h1>Sanam Louise Kavari <span className={typography.italicConnector}>and</span> Owen Francis Searls</h1>
-            <span className={typography.italicConnector}>will be married on</span>
+              <h2><span className={typography.italicConnector}>will be married on</span></h2>
             <h2>September 19, 2026 <span className={typography.italicConnector}>in</span> Hartland, Vermont</h2>
-            <h2></h2>
           </div>
         }
         footer={
