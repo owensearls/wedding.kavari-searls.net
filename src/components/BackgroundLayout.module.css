@@ -1,12 +1,8 @@
 .container {
-  height: 100%;
   width: 100%;
   min-width: 400px;
   background-color: white;
   position: relative;
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
   /* scroll-snap-type: y proximity; */
 }
 
@@ -42,12 +38,21 @@
   right: 0;
   height: 44px;
   z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.navBackground::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
   background-image: url('/background.jpg');
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
-  background-attachment: fixed;
-  pointer-events: none;
 }
 
 .navContent {

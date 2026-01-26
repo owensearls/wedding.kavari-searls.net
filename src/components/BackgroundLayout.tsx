@@ -56,8 +56,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
 
   // Handle initial scroll position based on URL hash - runs immediately, before IntersectionObserver
   useEffect(() => {
-    const container = containerRef.current
-    if (!container || initialScrollSetRef.current) return
+    if (initialScrollSetRef.current) return
 
     // Use setTimeout to ensure DOM is fully rendered
     const timeoutId = setTimeout(() => {
@@ -68,7 +67,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         setCurrentAnchor(hash)
         const section = document.querySelector(`[data-anchor="${hash}"]`)
         if (section) {
-          container.scrollTo({
+          window.scrollTo({
             top: (section as HTMLElement).offsetTop,
             behavior: 'instant'
           })
@@ -78,7 +77,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         setCurrentAnchor('')
         const homeSection = document.getElementById('home')
         if (homeSection) {
-          container.scrollTo({
+          window.scrollTo({
             top: homeSection.offsetTop,
             behavior: 'instant'
           })
@@ -95,9 +94,6 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
 
   // Handle hash changes from browser navigation
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1)
       setCurrentAnchor(hash)
@@ -106,7 +102,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         : document.getElementById('home')
 
       if (section) {
-        container.scrollTo({
+        window.scrollTo({
           top: (section as HTMLElement).offsetTop,
           behavior: 'smooth'
         })
@@ -119,74 +115,95 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
 
   // Main scroll handler for parallax effect
   useEffect(() => {
-    const container = containerRef.current
     const image = imageRef.current
-    if (!container || !image) return
+    if (!image) return
 
     let ticking = false
+    let lastScrollTime = 0
+    let pollInterval: ReturnType<typeof setInterval> | null = null
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const scrollTop = container.scrollTop
-          const scrollHeight = container.scrollHeight
-          const clientHeight = container.clientHeight
+    const updateMountainHeight = () => {
+      const scrollTop = window.scrollY
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = window.innerHeight
 
-          const homeSection = document.getElementById('home')
-          if (!homeSection) {
-            ticking = false
-            return
-          }
+      const homeSection = document.getElementById('home')
+      if (!homeSection) {
+        return
+      }
 
-          // homeSectionTop equals height of all content above home section
-          const sectionsAboveHeight = homeSection.offsetTop
+      // homeSectionTop equals height of all content above home section
+      const sectionsAboveHeight = homeSection.offsetTop
 
-          // Calculate scroll position relative to home section
-          // When at top of content (scrollTop = 0), mountains should be 0vh
-          // When at home section (scrollTop = sectionsAboveHeight), mountains should be 50vh
-          // When scrolled down further, mountains grow to show full image
+      // Calculate scroll position relative to home section
+      // When at top of content (scrollTop = 0), mountains should be 0vh
+      // When at home section (scrollTop = sectionsAboveHeight), mountains should be 50vh
+      // When scrolled down further, mountains grow to show full image
 
-          if (scrollTop < sectionsAboveHeight) {
-            // Above home section - mountains scale from 0vh to 50vh
-            const progress = sectionsAboveHeight > 0 ? scrollTop / sectionsAboveHeight : 0
-            setMountainHeight(progress * 50)
-          } else {
-            // At or below home section - mountains scale from 50vh to natural height
-            const scrollBelowHome = scrollTop - sectionsAboveHeight
-            const maxScrollBelowHome = (scrollHeight - clientHeight) - sectionsAboveHeight
-            const scrollProgress = maxScrollBelowHome > 0 ? scrollBelowHome / maxScrollBelowHome : 0
-            const heightRange = mountainNaturalHeightVh - 50
-            const newHeight = 50 + (scrollProgress * heightRange)
-            setMountainHeight(Math.min(newHeight, mountainNaturalHeightVh))
-          }
-
-          ticking = false
-        })
-
-        ticking = true
+      if (scrollTop < sectionsAboveHeight) {
+        // Above home section - mountains scale from 0vh to 50vh
+        const progress = sectionsAboveHeight > 0 ? scrollTop / sectionsAboveHeight : 0
+        setMountainHeight(progress * 50)
+      } else {
+        // At or below home section - mountains scale from 50vh to natural height
+        const scrollBelowHome = scrollTop - sectionsAboveHeight
+        const maxScrollBelowHome = (scrollHeight - clientHeight) - sectionsAboveHeight
+        const scrollProgress = maxScrollBelowHome > 0 ? scrollBelowHome / maxScrollBelowHome : 0
+        const heightRange = mountainNaturalHeightVh - 50
+        const newHeight = 50 + (scrollProgress * heightRange)
+        setMountainHeight(Math.min(newHeight, mountainNaturalHeightVh))
       }
     }
 
-    container.addEventListener('scroll', handleScroll, { passive: true })
+    const handleScroll = () => {
+      lastScrollTime = Date.now()
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateMountainHeight()
+          ticking = false
+        })
+        ticking = true
+      }
+
+      // Safari momentum scroll workaround: poll for 150ms after last scroll event
+      // to catch position updates during momentum deceleration
+      if (!pollInterval) {
+        pollInterval = setInterval(() => {
+          if (Date.now() - lastScrollTime > 150) {
+            if (pollInterval) {
+              clearInterval(pollInterval)
+              pollInterval = null
+            }
+          } else {
+            updateMountainHeight()
+          }
+        }, 16) // ~60fps
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
 
     // Initial check
-    handleScroll()
+    updateMountainHeight()
 
     return () => {
-      container.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', handleScroll)
+      if (pollInterval) {
+        clearInterval(pollInterval)
+      }
     }
   }, [mountainNaturalHeightVh])
 
   // Update URL hash on snap with IntersectionObserver - only after initialization
   useEffect(() => {
-    const container = containerRef.current
-    if (!container || !isInitialized) return
+    if (!isInitialized) return
 
-    const sections = Array.from(container.querySelectorAll('[data-anchor]')) as HTMLElement[]
+    const sections = Array.from(document.querySelectorAll('[data-anchor]')) as HTMLElement[]
     if (sections.length === 0) return
 
     const observerOptions = {
-      root: container,
+      root: null, // Use viewport
       threshold: 0.5,
       rootMargin: '-10% 0px -10% 0px'
     }

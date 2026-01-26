@@ -1,5 +1,4 @@
 .container {
-    height: 100vh;
     width: 100%;
     max-width: 2000px;
     margin-left: max(0px, calc((100vw - 2000px) / 2));
