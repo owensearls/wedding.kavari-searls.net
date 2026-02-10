@@ -24,7 +24,7 @@ function App() {
         <Section id="rsvp" anchor="rsvp" minHeight="100dvh">
             <h1 style={{ textAlign: "center", padding: "25px" }}>RSVP</h1>
             <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-              <h2>Pretend there is a form here</h2>
+              <h2>Coming soon</h2>
           </div>
         </Section>
         <Section id="faq" anchor="faq" minHeight="100dvh">
