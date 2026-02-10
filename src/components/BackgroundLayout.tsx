@@ -29,11 +29,9 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
 
     const calculateDisplayHeight = () => {
       if (!image.complete || image.naturalWidth === 0) return
-      // Calculate displayed height based on actual render constraints
-      // The image has max-width: 2000px and maintains aspect ratio
       const aspectRatio = image.naturalHeight / image.naturalWidth
       const viewportWidth = window.innerWidth
-      const displayWidth = Math.min(image.naturalWidth, Math.min(2000, viewportWidth))
+      const displayWidth = Math.min(image.naturalWidth, viewportWidth)
       const displayHeight = displayWidth * aspectRatio
       const heightInVh = (displayHeight / window.innerHeight) * 100
       setMountainNaturalHeightVh(heightInVh)

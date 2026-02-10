@@ -100,7 +100,6 @@
 
 .footerImage {
   width: 100%;
-  max-width: 2000px;
   max-height: 50dvh;
   object-fit: cover;
   object-position: top;
