@@ -2,7 +2,7 @@
   font-weight: 600;
   line-height: 1.1;
   margin: 0.25em 0;
-  color: #6E6B60;
+  color: #6e6b60;
 
   font-size: 40px;
 
@@ -19,7 +19,7 @@
   font-weight: 600;
   line-height: 1.1;
   margin: 0.25em 0;
-  color: #6E6B60;
+  color: #6e6b60;
 
   font-size: 32px;
 
@@ -35,7 +35,7 @@
 :global(p) {
   line-height: 1.6;
   margin: 0.5em 0 1.5em 0;
-  color: #6E6B60;
+  color: #6e6b60;
 
   font-size: 22px;
 

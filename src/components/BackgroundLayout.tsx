@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {faAngleDown, faAngleUp} from '@fortawesome/free-solid-svg-icons'
+import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
 import Section from './Section'
@@ -67,7 +67,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         if (section) {
           window.scrollTo({
             top: (section as HTMLElement).offsetTop,
-            behavior: 'instant'
+            behavior: 'instant',
           })
         }
       } else {
@@ -77,7 +77,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         if (homeSection) {
           window.scrollTo({
             top: homeSection.offsetTop,
-            behavior: 'instant'
+            behavior: 'instant',
           })
         }
       }
@@ -102,7 +102,7 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
       if (section) {
         window.scrollTo({
           top: (section as HTMLElement).offsetTop,
-          behavior: 'smooth'
+          behavior: 'smooth',
         })
       }
     }
@@ -140,15 +140,18 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
 
       if (scrollTop < sectionsAboveHeight) {
         // Above home section - mountains scale from 0vh to 50vh
-        const progress = sectionsAboveHeight > 0 ? scrollTop / sectionsAboveHeight : 0
+        const progress =
+          sectionsAboveHeight > 0 ? scrollTop / sectionsAboveHeight : 0
         setMountainHeight(progress * 50)
       } else {
         // At or below home section - mountains scale from 50vh to natural height
         const scrollBelowHome = scrollTop - sectionsAboveHeight
-        const maxScrollBelowHome = (scrollHeight - clientHeight) - sectionsAboveHeight
-        const scrollProgress = maxScrollBelowHome > 0 ? scrollBelowHome / maxScrollBelowHome : 0
+        const maxScrollBelowHome =
+          scrollHeight - clientHeight - sectionsAboveHeight
+        const scrollProgress =
+          maxScrollBelowHome > 0 ? scrollBelowHome / maxScrollBelowHome : 0
         const heightRange = mountainNaturalHeightVh - 50
-        const newHeight = 50 + (scrollProgress * heightRange)
+        const newHeight = 50 + scrollProgress * heightRange
         setMountainHeight(Math.min(newHeight, mountainNaturalHeightVh))
       }
     }
@@ -197,24 +200,33 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
   useEffect(() => {
     if (!isInitialized) return
 
-    const sections = Array.from(document.querySelectorAll('[data-anchor]')) as HTMLElement[]
+    const sections = Array.from(
+      document.querySelectorAll('[data-anchor]')
+    ) as HTMLElement[]
     if (sections.length === 0) return
 
     const observerOptions = {
       root: null, // Use viewport
       threshold: 0.5,
-      rootMargin: '-10% 0px -10% 0px'
+      rootMargin: '-10% 0px -10% 0px',
     }
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          const anchor = (entry.target as HTMLElement).getAttribute('data-anchor')
+          const anchor = (entry.target as HTMLElement).getAttribute(
+            'data-anchor'
+          )
           if (anchor !== null) {
             setCurrentAnchor(anchor)
-            const newHash = anchor === '' || anchor === 'home' ? '' : `#${anchor}`
+            const newHash =
+              anchor === '' || anchor === 'home' ? '' : `#${anchor}`
             if (window.location.hash !== newHash) {
-              window.history.replaceState(null, '', newHash || window.location.pathname)
+              window.history.replaceState(
+                null,
+                '',
+                newHash || window.location.pathname
+              )
             }
           }
         }
@@ -226,15 +238,15 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
     return () => observer.disconnect()
   }, [isInitialized])
 
-  let navData = {href: '', text: '', icon: faAngleUp}
+  let navData = { href: '', text: '', icon: faAngleUp }
   if (currentAnchor === '') {
-    navData = {href: '#faq', text: 'FAQ', icon: faAngleUp}
+    navData = { href: '#faq', text: 'FAQ', icon: faAngleUp }
   } else if (currentAnchor === 'faq') {
-    navData = {href: '#rsvp', text: 'RSVP', icon: faAngleUp}
+    navData = { href: '#rsvp', text: 'RSVP', icon: faAngleUp }
   } else if (currentAnchor === 'rsvp') {
-    navData = {href: '#', text: 'Home', icon: faAngleDown}
+    navData = { href: '#', text: 'Home', icon: faAngleDown }
   } else if (currentAnchor === 'footer') {
-    navData = {href: '#', text: 'Home', icon: faAngleUp}
+    navData = { href: '#', text: 'Home', icon: faAngleUp }
   }
 
   return (
@@ -248,7 +260,11 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
         <div className={styles.nav}>
           <div className={styles.navContent}>
             <a href={navData.href} className={styles.navLink}>
-              <FontAwesomeIcon icon={navData.icon} style={{ verticalAlign: 'middle' }} /> {navData.text}
+              <FontAwesomeIcon
+                icon={navData.icon}
+                style={{ verticalAlign: 'middle' }}
+              />{' '}
+              {navData.text}
             </a>
           </div>
         </div>
@@ -261,7 +277,12 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
           </div>
           {/* Footer section with content positioned at bottom */}
           <div className={styles.footerContent}>
-            <Section id="footer" anchor="footer" minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}dvh`} contentPosition="bottom">
+            <Section
+              id="footer"
+              anchor="footer"
+              minHeight={`${Math.max(0, mountainNaturalHeightVh - 50)}dvh`}
+              contentPosition="bottom"
+            >
               {footer}
             </Section>
           </div>

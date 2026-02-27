@@ -1,10 +1,10 @@
 .container {
-    width: 100%;
+  width: 100%;
 }
 
 .header {
-    margin: 0;
-    padding: 25px;
-    text-align: center;
-    color: #6E6B60;
+  margin: 0;
+  padding: 25px;
+  text-align: center;
+  color: #6e6b60;
 }
