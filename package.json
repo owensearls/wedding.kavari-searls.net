@@ -9,18 +9,30 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pages:dev": "wrangler pages dev -- pnpm dev",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:prod": "wrangler d1 migrations apply DB --remote",
+    "db:console:local": "wrangler d1 execute DB --local --command",
+    "db:console:prod": "wrangler d1 execute DB --remote --command"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
+    "@hookform/resolvers": "^3.10.0",
+    "papaparse": "^5.5.2",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.55.0",
+    "react-router-dom": "^7.2.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250410.0",
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
+    "@types/papaparse": "^5.3.15",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
@@ -29,9 +41,12 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "kysely": "^0.27.5",
+    "kysely-d1": "^0.3.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "wrangler": "^3.114.0"
   }
 }

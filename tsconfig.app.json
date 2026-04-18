@@ -15,6 +15,9 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    },
 
     /* Linting */
     "strict": true,
@@ -24,5 +27,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "shared"]
 }

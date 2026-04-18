@@ -1,0 +1,39 @@
+body {
+  background-color: #f5f3ec;
+}
+
+.admin-button {
+  font-family: inherit;
+  font-size: 16px;
+  padding: 8px 16px;
+  background: #6e6b60;
+  color: white;
+  border: 1px solid #6e6b60;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.admin-button.ghost {
+  background: white;
+  color: #6e6b60;
+}
+
+.admin-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-input,
+.admin-textarea,
+.admin-select {
+  font-family: inherit;
+  font-size: 16px;
+  padding: 8px 10px;
+  background: white;
+  color: #4a4842;
+  border: 1px solid #6e6b60;
+  border-radius: 0;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}

@@ -1,0 +1,117 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #6e6b60;
+}
+
+.brand {
+  font-size: 22px;
+  color: #4a4842;
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  gap: 14px;
+}
+
+.navLink {
+  color: #6e6b60;
+  text-decoration: none;
+  padding: 6px 10px;
+  font-size: 16px;
+}
+
+.navLinkActive {
+  border-bottom: 2px solid #6e6b60;
+}
+
+.main {
+  padding: 24px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.card {
+  background: white;
+  border: 1px solid #6e6b60;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid #6e6b60;
+  background: white;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.3);
+  color: #4a4842;
+}
+
+.table th {
+  background: #f5f3ec;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+.guestRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 80px 80px auto;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: #4a4842;
+}
+
+.label {
+  font-size: 14px;
+  color: #6e6b60;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.error {
+  color: #b04438;
+}
+
+.muted {
+  color: #6e6b60;
+  font-style: italic;
+}

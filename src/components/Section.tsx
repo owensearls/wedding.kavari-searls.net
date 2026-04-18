@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useCurrentAnchor } from './AnchorContext'
 import styles from './Section.module.css'
 
 interface SectionProps {
@@ -17,10 +16,7 @@ function Section({
   minHeight = '100dvh',
   contentPosition = 'top',
 }: SectionProps) {
-  const currentAnchor = useCurrentAnchor()
   const sectionAnchor = anchor ?? id
-  const isActive = currentAnchor === sectionAnchor
-  console.log(isActive)
 
   const sectionStyle: React.CSSProperties = {
     minHeight,

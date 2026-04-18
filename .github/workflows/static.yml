@@ -1,31 +1,24 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Deploys the site to Cloudflare Pages.
+#
+# Requires the following repo secrets to be configured:
+#   CLOUDFLARE_API_TOKEN  - token with Pages:Edit, D1:Edit, Workers Scripts:Edit
+#   CLOUDFLARE_ACCOUNT_ID - your Cloudflare account ID
+#
+# The Pages project must already exist in the dashboard (named below) and have
+# the D1 binding `DB` configured.
+name: Deploy to Cloudflare Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ['main']
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow one concurrent deployment
 concurrency:
-  group: 'pages'
+  group: 'pages-deploy'
   cancel-in-progress: true
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -43,13 +36,15 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm run build
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
         with:
-          # Upload dist folder
-          path: './dist'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply DB --remote
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=wedding-kavari-searls

@@ -2,6 +2,7 @@ import styles from './App.module.css'
 import typography from './typography.module.css'
 import BackgroundLayout from './components/BackgroundLayout'
 import Section from './components/Section'
+import RsvpLookup from './routes/RsvpLookup'
 
 function App() {
   return (
@@ -49,9 +50,7 @@ function App() {
       >
         <Section id="rsvp" anchor="rsvp" minHeight="100dvh">
           <h1 style={{ textAlign: 'center', padding: '25px' }}>RSVP</h1>
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <h2>Coming soon</h2>
-          </div>
+          <RsvpLookup />
         </Section>
         <Section id="faq" anchor="faq" minHeight="100dvh">
           <h1 style={{ textAlign: 'center', padding: '25px' }}>FAQ</h1>
