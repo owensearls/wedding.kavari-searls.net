@@ -1,8 +1,15 @@
-name = "wedding-kavari-searls"
-pages_build_output_dir = "./dist"
-compatibility_date = "2025-04-01"
+name = "wedding-kavari-searls-net"
+main = "./dist/worker/index.js"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "wedding-rsvp"
-database_id = "PLACEHOLDER_DATABASE_ID"
+database_name = "wedding"
+# database_id must be filled in per-environment; copy from existing wrangler config
+database_id = "REPLACE_ME_WITH_REAL_ID"
+
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
