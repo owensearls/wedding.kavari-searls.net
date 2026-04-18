@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import '../index.css'
 import './admin.css'
 import AdminApp from './AdminApp'
+import { setupServerCallback } from '../rsc-client'
+setupServerCallback()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
