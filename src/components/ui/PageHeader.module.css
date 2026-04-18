@@ -1,0 +1,24 @@
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: white;
+  border: 1px solid #6e6b60;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  flex: 1;
+  font-size: 22px;
+  font-weight: 600;
+  color: #4a4842;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

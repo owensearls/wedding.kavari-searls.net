@@ -2,27 +2,10 @@ body {
   background-color: #f5f3ec;
 }
 
-.admin-button {
-  font-family: inherit;
-  font-size: 16px;
-  padding: 8px 16px;
-  background: #6e6b60;
-  color: white;
-  border: 1px solid #6e6b60;
-  border-radius: 0;
-  cursor: pointer;
-}
-
-.admin-button.ghost {
-  background: white;
-  color: #6e6b60;
-}
-
-.admin-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
+/* Global form-input styling used by admin <input>, <textarea>, and <select>
+   elements. Kept as global classes (not CSS modules) because they're applied
+   on bare native elements across many forms — turning each into a wrapper
+   component would be more ceremony than benefit for this project. */
 .admin-input,
 .admin-textarea,
 .admin-select {
@@ -36,4 +19,11 @@ body {
   outline: none;
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.admin-input:focus,
+.admin-textarea:focus,
+.admin-select:focus {
+  border-color: #4a4842;
 }

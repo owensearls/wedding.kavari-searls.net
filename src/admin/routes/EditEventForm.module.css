@@ -1,0 +1,17 @@
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: #4a4842;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.mealOptionRow {
+  display: grid;
+  grid-template-columns: 1fr 32px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
+}

@@ -1,0 +1,102 @@
+.muted {
+  color: #6e6b60;
+  font-style: italic;
+}
+
+/* ── Group block (banner row + guest rows) ───────────────────────────── */
+
+.groupHeaderRow td {
+  background: #ede8dc;
+  padding: 8px 12px;
+  border-top: 1px solid #6e6b60;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.3);
+}
+
+.groupHeaderContent {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.groupHeaderLabel {
+  font-weight: 600;
+  color: #4a4842;
+  font-size: 16px;
+}
+
+.groupHeaderStats {
+  color: #6e6b60;
+  font-size: 14px;
+}
+
+.groupHeaderActions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.guestClickRow {
+  cursor: pointer;
+}
+
+.guestClickRow:hover td {
+  background: #fafaf5;
+}
+
+.guestClickRow td {
+  background: white;
+  font-size: 14px;
+}
+
+.codeLink {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #4a4842;
+  border-bottom: 1px dashed #6e6b60;
+  text-decoration: none;
+}
+
+.codeLink:hover {
+  color: #1a1a1a;
+}
+
+.mealHint {
+  color: #6e6b60;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.notesCell {
+  font-style: italic;
+  color: #6e6b60;
+  font-size: 13px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Guest detail modal body ─────────────────────────────────────────── */
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  row-gap: 6px;
+  column-gap: 12px;
+  margin-bottom: 12px;
+}
+
+.detailLabel {
+  font-size: 13px;
+  color: #6e6b60;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+
+.detailSubheading {
+  margin: 18px 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a4842;
+}

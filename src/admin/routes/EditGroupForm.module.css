@@ -1,0 +1,59 @@
+.muted {
+  color: #6e6b60;
+  font-style: italic;
+  margin: 0;
+}
+
+.guestRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 32px;
+  gap: 10px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.guestRowHeader {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a8780;
+  margin-bottom: 4px;
+}
+
+.guestRowHeader > span {
+  padding-left: 11px;
+}
+
+.eventCheckboxes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.eventCheckbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid rgba(110, 107, 96, 0.35);
+  background: #fafaf5;
+  font-size: 14px;
+  color: #4a4842;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.eventCheckbox:hover {
+  border-color: #6e6b60;
+}
+
+.eventCheckbox:has(input:checked) {
+  border-color: #6e6b60;
+  background: #ede8dc;
+}
+
+.eventCheckbox input {
+  accent-color: #6e6b60;
+}

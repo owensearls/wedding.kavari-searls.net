@@ -1,0 +1,42 @@
+.shell {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: white;
+  border: 1px solid #6e6b60;
+  padding: 16px 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #4a4842;
+}
+
+.section {
+  background: white;
+  border: 1px solid #6e6b60;
+  border-top: none;
+  padding: 20px;
+}
+
+.section + .section {
+  border-top: 1px solid rgba(110, 107, 96, 0.25);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #6e6b60;
+  border-top: none;
+  margin-bottom: 20px;
+}

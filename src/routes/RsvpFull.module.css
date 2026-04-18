@@ -170,10 +170,12 @@
   cursor: not-allowed;
 }
 
-.error {
-  color: #b04438;
+.centered {
   text-align: center;
-  margin-top: 12px;
+}
+
+.detailsHeading {
+  margin: 0 0 8px 0;
 }
 
 .success {

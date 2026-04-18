@@ -1,8 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Papa from 'papaparse'
+import Button from '../../components/ui/Button'
+import EditFormSection from '../../components/ui/EditFormSection'
+import EditFormShell from '../../components/ui/EditFormShell'
+import ErrorMessage from '../../components/ui/ErrorMessage'
+import SectionLabel from '../../components/ui/SectionLabel'
+import Table from '../../components/ui/Table'
 import { importRows, type ImportResult } from '../api'
-import styles from '../AdminApp.module.css'
+import styles from './Import.module.css'
 
 const EXAMPLE = `groupLabel,firstName,lastName,email,phone,events
 The Smith family,Alice,Smith,alice@example.com,,"ceremony,reception"
@@ -20,11 +26,10 @@ function Import() {
 
   const preview = useMemo(() => {
     if (!csv.trim()) return null
-    const parsed = Papa.parse<Record<string, string>>(csv.trim(), {
+    return Papa.parse<Record<string, string>>(csv.trim(), {
       header: true,
       skipEmptyLines: true,
     })
-    return parsed
   }, [csv])
 
   async function onSubmit() {
@@ -45,21 +50,18 @@ function Import() {
     }
   }
 
-  return (
-    <div className={styles.editForm}>
-      <div className={styles.editFormHeader}>
-        <h2 className={styles.editFormTitle}>Import guests</h2>
-        <button
-          type="button"
-          className="admin-button ghost"
-          onClick={() => navigate('/groups')}
-        >
-          ← Back to list
-        </button>
-      </div>
+  const previewColumns =
+    preview && preview.data.length > 0
+      ? Object.keys(preview.data[0] ?? {})
+      : []
 
-      <div className={styles.editFormSection}>
-        <p className={styles.muted} style={{ marginTop: 0 }}>
+  return (
+    <EditFormShell
+      title="Import guests"
+      onBack={() => navigate('/groups')}
+    >
+      <EditFormSection>
+        <p className={styles.helper}>
           Paste a CSV. Columns: <code>groupLabel</code>, <code>firstName</code>,{' '}
           <code>lastName</code>, <code>email</code>, <code>phone</code>,{' '}
           <code>events</code> (comma-separated event slugs). Existing invites
@@ -72,62 +74,54 @@ function Import() {
           placeholder={EXAMPLE}
           onChange={(e) => setCsv(e.target.value)}
         />
-        <div className={styles.row} style={{ marginTop: 12 }}>
-          <button
-            type="button"
-            className="admin-button"
+        <div className={styles.row}>
+          <Button
             onClick={onSubmit}
             disabled={submitting || !csv.trim()}
           >
             {submitting ? 'Importing…' : 'Import'}
-          </button>
-          <button
-            type="button"
-            className="admin-button ghost"
-            onClick={() => setCsv(EXAMPLE)}
-          >
+          </Button>
+          <Button variant="ghost" onClick={() => setCsv(EXAMPLE)}>
             Load example
-          </button>
+          </Button>
         </div>
-        {error && <p className={styles.error}>{error}</p>}
-      </div>
+        <ErrorMessage variant="inline">{error}</ErrorMessage>
+      </EditFormSection>
 
       {preview && preview.data.length > 0 && (
-        <div className={styles.editFormSection}>
-          <div className={styles.sectionLabel}>
-            Preview ({preview.data.length} rows)
-          </div>
-          {preview.errors.length > 0 && (
-            <p className={styles.error}>
-              CSV parse errors: {preview.errors.map((e) => e.message).join('; ')}
-            </p>
-          )}
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  {Object.keys(preview.data[0] ?? {}).map((k) => (
-                    <th key={k}>{k}</th>
+        <EditFormSection>
+          <SectionLabel>Preview ({preview.data.length} rows)</SectionLabel>
+          <ErrorMessage>
+            {preview.errors.length > 0
+              ? `CSV parse errors: ${preview.errors
+                  .map((e) => e.message)
+                  .join('; ')}`
+              : null}
+          </ErrorMessage>
+          <Table>
+            <thead>
+              <tr>
+                {previewColumns.map((k) => (
+                  <th key={k}>{k}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {preview.data.slice(0, 50).map((row, i) => (
+                <tr key={i}>
+                  {previewColumns.map((k) => (
+                    <td key={k}>{row[k] ?? ''}</td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {preview.data.slice(0, 50).map((row, i) => (
-                  <tr key={i}>
-                    {Object.keys(preview.data[0] ?? {}).map((k) => (
-                      <td key={k}>{row[k] ?? ''}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              ))}
+            </tbody>
+          </Table>
+        </EditFormSection>
       )}
 
       {result && (
-        <div className={styles.editFormSection}>
-          <div className={styles.sectionLabel}>Result</div>
+        <EditFormSection>
+          <SectionLabel>Result</SectionLabel>
           <p>Created {result.created.length} invites.</p>
           {result.skipped.length > 0 && (
             <p>
@@ -135,34 +129,32 @@ function Import() {
             </p>
           )}
           {result.created.length > 0 && (
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Label</th>
-                    <th>Guest</th>
-                    <th>Invite code</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.created.flatMap((c) =>
-                    c.guests.map((g) => (
-                      <tr key={g.id}>
-                        <td>{c.label}</td>
-                        <td>{g.displayName}</td>
-                        <td>
-                          <code>{g.inviteCode}</code>
-                        </td>
-                      </tr>
-                    )),
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <thead>
+                <tr>
+                  <th>Label</th>
+                  <th>Guest</th>
+                  <th>Invite code</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.created.flatMap((c) =>
+                  c.guests.map((g) => (
+                    <tr key={g.id}>
+                      <td>{c.label}</td>
+                      <td>{g.displayName}</td>
+                      <td>
+                        <code>{g.inviteCode}</code>
+                      </td>
+                    </tr>
+                  )),
+                )}
+              </tbody>
+            </Table>
           )}
-        </div>
+        </EditFormSection>
       )}
-    </div>
+    </EditFormShell>
   )
 }
 
