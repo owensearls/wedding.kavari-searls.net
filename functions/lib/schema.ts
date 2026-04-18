@@ -10,7 +10,7 @@ export interface GuestTable {
   display_name: string
   email: string | null
   phone: string | null
-  invite_code: string | null
+  invite_code: string
   group_label: string | null
   dietary_restrictions: string | null
   notes: string | null

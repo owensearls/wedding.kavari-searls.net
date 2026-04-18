@@ -51,7 +51,7 @@ export interface LookupCandidate {
   firstName: string
   lastName: string | null
   email: string | null
-  inviteCode: string | null
+  inviteCode: string
   partyLeaderId: string
   groupLabel: string
 }
@@ -98,7 +98,7 @@ export function aggregateLookupMatches(
     if (existing) {
       if (s > existing.bestScore) {
         existing.bestScore = s
-        if (row.inviteCode) existing.inviteCode = row.inviteCode
+        existing.inviteCode = row.inviteCode
       }
       existing.guestNames.add(row.displayName)
     } else {

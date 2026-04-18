@@ -19,14 +19,6 @@ function AdminApp() {
             Guests
           </NavLink>
           <NavLink
-            to="/import"
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
-          >
-            Import
-          </NavLink>
-          <NavLink
             to="/events"
             className={({ isActive }) =>
               `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`

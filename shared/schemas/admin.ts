@@ -93,7 +93,7 @@ export const adminGroupListGuestSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   email: z.string().nullable(),
-  inviteCode: z.string().nullable(),
+  inviteCode: z.string(),
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
   eventStatuses: z.array(adminGuestEventStatusSchema),
@@ -119,7 +119,7 @@ export const adminGuestDetailSchema = z.object({
   displayName: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
-  inviteCode: z.string().nullable(),
+  inviteCode: z.string(),
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
   notesJson: notesJsonSchema,
@@ -139,7 +139,7 @@ export type AdminGuestDetail = z.infer<typeof adminGuestDetailSchema>
 
 export const adminResponseRowSchema = z.object({
   groupLabel: z.string(),
-  inviteCode: z.string().nullable(),
+  inviteCode: z.string(),
   guestName: z.string(),
   eventName: z.string(),
   status: z.string(),

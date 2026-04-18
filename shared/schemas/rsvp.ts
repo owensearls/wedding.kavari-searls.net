@@ -64,7 +64,7 @@ export const guestSchema = z.object({
   displayName: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
-  inviteCode: z.string().nullable(),
+  inviteCode: z.string(),
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
   notesJson: notesJsonSchema,
