@@ -1,6 +1,6 @@
 import { getDb, type Env } from '../../lib/db'
 import { jsonError } from '../../lib/responses'
-import { score } from '../../lib/fuzzy'
+import { aggregateLookupMatches } from '../../lib/fuzzy'
 import { lookupQuerySchema, type LookupResponse } from '@shared/schemas/rsvp'
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -15,7 +15,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const db = getDb(context.env.DB)
 
-  const candidates = await db
+  const rows = await db
     .selectFrom('guest')
     .innerJoin('guest_group', 'guest_group.id', 'guest.guest_group_id')
     .select([
@@ -30,51 +30,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ])
     .execute()
 
-  const scoredByGroup = new Map<
-    string,
-    {
-      groupId: string
-      groupLabel: string
-      inviteCode: string
-      score: number
-      guestNames: Set<string>
-    }
-  >()
-
-  for (const row of candidates) {
-    const fullName =
-      `${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() || row.displayName
-    const candidateText = [row.displayName, fullName, row.email]
-      .filter(Boolean)
-      .join(' ')
-    const s = score(query, candidateText)
-    if (s <= 0) continue
-
-    const existing = scoredByGroup.get(row.groupId)
-    if (existing) {
-      existing.score = Math.max(existing.score, s)
-      existing.guestNames.add(row.displayName)
-    } else {
-      scoredByGroup.set(row.groupId, {
-        groupId: row.groupId,
-        groupLabel: row.groupLabel,
-        inviteCode: row.inviteCode,
-        score: s,
-        guestNames: new Set([row.displayName]),
-      })
-    }
+  const body: LookupResponse = {
+    matches: aggregateLookupMatches(rows, query),
   }
-
-  const matches = [...scoredByGroup.values()]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8)
-    .map((m) => ({
-      guestGroupId: m.groupId,
-      inviteCode: m.inviteCode,
-      label: m.groupLabel,
-      guestNames: [...m.guestNames],
-    }))
-
-  const body: LookupResponse = { matches }
   return Response.json(body)
 }

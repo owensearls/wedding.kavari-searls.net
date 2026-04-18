@@ -1,0 +1,126 @@
+import { describe, expect, it } from 'vitest'
+import {
+  ageGroupSchema,
+  guestRsvpSchema,
+  lookupQuerySchema,
+  rsvpStatusSchema,
+  rsvpSubmissionSchema,
+} from './rsvp'
+
+describe('lookupQuerySchema', () => {
+  it('accepts a normal query', () => {
+    expect(lookupQuerySchema.parse({ query: 'alice' }).query).toBe('alice')
+  })
+
+  it('trims whitespace', () => {
+    expect(lookupQuerySchema.parse({ query: '  alice  ' }).query).toBe('alice')
+  })
+
+  it('rejects empty string', () => {
+    expect(() => lookupQuerySchema.parse({ query: '' })).toThrow()
+    expect(() => lookupQuerySchema.parse({ query: '   ' })).toThrow()
+  })
+
+  it('rejects overly long queries', () => {
+    expect(() => lookupQuerySchema.parse({ query: 'a'.repeat(500) })).toThrow()
+  })
+
+  it('rejects missing query key', () => {
+    expect(() => lookupQuerySchema.parse({})).toThrow()
+  })
+})
+
+describe('rsvpStatusSchema', () => {
+  it('accepts the three known statuses', () => {
+    expect(rsvpStatusSchema.parse('attending')).toBe('attending')
+    expect(rsvpStatusSchema.parse('declined')).toBe('declined')
+    expect(rsvpStatusSchema.parse('pending')).toBe('pending')
+  })
+
+  it('rejects unknown values', () => {
+    expect(() => rsvpStatusSchema.parse('maybe')).toThrow()
+  })
+})
+
+describe('ageGroupSchema', () => {
+  it('accepts adult/child/infant', () => {
+    expect(ageGroupSchema.parse('adult')).toBe('adult')
+    expect(ageGroupSchema.parse('child')).toBe('child')
+    expect(ageGroupSchema.parse('infant')).toBe('infant')
+  })
+
+  it('rejects other ages', () => {
+    expect(() => ageGroupSchema.parse('teen')).toThrow()
+  })
+})
+
+describe('guestRsvpSchema', () => {
+  it('allows null mealChoiceId', () => {
+    const r = guestRsvpSchema.parse({
+      guestId: 'g1',
+      eventId: 'e1',
+      status: 'attending',
+      mealChoiceId: null,
+    })
+    expect(r.mealChoiceId).toBeNull()
+  })
+
+  it('allows omitted mealChoiceId', () => {
+    const r = guestRsvpSchema.parse({
+      guestId: 'g1',
+      eventId: 'e1',
+      status: 'declined',
+    })
+    expect(r.mealChoiceId).toBeUndefined()
+  })
+})
+
+describe('rsvpSubmissionSchema', () => {
+  const minimal = {
+    respondedByGuestId: 'g1',
+    rsvps: [{ guestId: 'g1', eventId: 'e1', status: 'attending' }],
+  }
+
+  it('accepts a minimal payload and fills in defaults', () => {
+    const parsed = rsvpSubmissionSchema.parse(minimal)
+    expect(parsed.rsvps).toHaveLength(1)
+    expect(parsed.guestUpdates).toEqual([])
+    expect(parsed.songRequests).toEqual([])
+  })
+
+  it('accepts guest updates and song requests', () => {
+    const parsed = rsvpSubmissionSchema.parse({
+      ...minimal,
+      guestUpdates: [{ guestId: 'g1', dietaryRestrictions: 'vegan' }],
+      songRequests: [{ guestId: 'g1', title: 'Wagon Wheel' }],
+    })
+    expect(parsed.guestUpdates).toHaveLength(1)
+    expect(parsed.songRequests?.[0]?.title).toBe('Wagon Wheel')
+  })
+
+  it('rejects missing respondedByGuestId', () => {
+    expect(() =>
+      rsvpSubmissionSchema.parse({
+        rsvps: minimal.rsvps,
+      }),
+    ).toThrow()
+  })
+
+  it('rejects unknown status values', () => {
+    expect(() =>
+      rsvpSubmissionSchema.parse({
+        respondedByGuestId: 'g1',
+        rsvps: [{ guestId: 'g1', eventId: 'e1', status: 'yes' }],
+      }),
+    ).toThrow()
+  })
+
+  it('rejects empty song title', () => {
+    expect(() =>
+      rsvpSubmissionSchema.parse({
+        ...minimal,
+        songRequests: [{ guestId: 'g1', title: '' }],
+      }),
+    ).toThrow()
+  })
+})

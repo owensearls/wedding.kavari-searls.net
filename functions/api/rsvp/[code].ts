@@ -175,10 +175,61 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return jsonError(403, 'respondedByGuestId is not in this group')
   }
 
-  // Validate every referenced guest belongs to this group.
+  // Pull invitations for this group (+ per-guest subsets, if any) and meal
+  // options, so we can validate that every submitted rsvp targets an event
+  // the group was actually invited to, a guest allowed at that event, and a
+  // meal option that belongs to that event.
+  const invitations = await db
+    .selectFrom('invitation')
+    .select(['id', 'event_id'])
+    .where('guest_group_id', '=', group.id)
+    .execute()
+  const invitationByEventId = new Map(invitations.map((i) => [i.event_id, i]))
+  const invitationIds = invitations.map((i) => i.id)
+  const invitationGuests = invitationIds.length
+    ? await db
+        .selectFrom('invitation_guest')
+        .select(['invitation_id', 'guest_id'])
+        .where('invitation_id', 'in', invitationIds)
+        .execute()
+    : []
+  const guestSubsetByInvitationId = new Map<string, Set<string>>()
+  for (const ig of invitationGuests) {
+    const set = guestSubsetByInvitationId.get(ig.invitation_id) ?? new Set()
+    set.add(ig.guest_id)
+    guestSubsetByInvitationId.set(ig.invitation_id, set)
+  }
+
+  const eventIds = invitations.map((i) => i.event_id)
+  const mealOptions = eventIds.length
+    ? await db
+        .selectFrom('meal_option')
+        .select(['id', 'event_id'])
+        .where('event_id', 'in', eventIds)
+        .execute()
+    : []
+  const mealEventByMealId = new Map(mealOptions.map((m) => [m.id, m.event_id]))
+
   for (const r of submission.rsvps) {
     if (!allowedGuestIds.has(r.guestId)) {
       return jsonError(403, `Guest ${r.guestId} is not in this group`)
+    }
+    const invitation = invitationByEventId.get(r.eventId)
+    if (!invitation) {
+      return jsonError(403, `Group is not invited to event ${r.eventId}`)
+    }
+    const subset = guestSubsetByInvitationId.get(invitation.id)
+    if (subset && !subset.has(r.guestId)) {
+      return jsonError(403, `Guest ${r.guestId} is not invited to event ${r.eventId}`)
+    }
+    if (r.mealChoiceId) {
+      const mealEvent = mealEventByMealId.get(r.mealChoiceId)
+      if (mealEvent !== r.eventId) {
+        return jsonError(
+          400,
+          `Meal choice ${r.mealChoiceId} does not belong to event ${r.eventId}`,
+        )
+      }
     }
   }
 

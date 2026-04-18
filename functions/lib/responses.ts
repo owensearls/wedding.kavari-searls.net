@@ -1,13 +1,14 @@
-import { ZodError, type ZodSchema } from 'zod'
+import type { z } from 'zod'
+import { ZodError } from 'zod'
 
 export function jsonError(status: number, message: string, details?: unknown) {
   return Response.json({ error: message, details }, { status })
 }
 
-export async function parseJson<T>(
+export async function parseJson<S extends z.ZodTypeAny>(
   request: Request,
-  schema: ZodSchema<T>,
-): Promise<{ data: T } | { error: Response }> {
+  schema: S,
+): Promise<{ data: z.output<S> } | { error: Response }> {
   let raw: unknown
   try {
     raw = await request.json()
