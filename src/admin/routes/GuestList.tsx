@@ -78,25 +78,11 @@ function GuestList() {
     }
   }
 
-  async function onSave() {
-    if (!editing) return
-    setSaving(true)
-    setError(null)
-    try {
-      await saveGroup(editing)
-      setEditing(null)
-      await refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed')
-    } finally {
-      setSaving(false)
-    }
-  }
-
   async function onDelete(id: string) {
     if (!confirm('Delete this invite and all its guests/RSVPs?')) return
     try {
       await deleteGroup(id)
+      setEditing(null)
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed')
@@ -123,9 +109,23 @@ function GuestList() {
         group={editing}
         events={events}
         saving={saving}
-        error={error}
-        onChange={setEditing}
-        onSave={onSave}
+        serverError={error}
+        onSubmit={async (data) => {
+          setSaving(true)
+          setError(null)
+          try {
+            await saveGroup(data)
+            setEditing(null)
+            await refresh()
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Save failed')
+          } finally {
+            setSaving(false)
+          }
+        }}
+        onDelete={
+          editing.id ? () => onDelete(editing.id!) : undefined
+        }
         onCancel={() => {
           setEditing(null)
           setError(null)
@@ -140,7 +140,7 @@ function GuestList() {
     if (ao !== bo) return ao - bo
     return a.name.localeCompare(b.name)
   })
-  const colCount = 2 + eventColumns.length + 1 // name + code + events + notes
+  const colCount = 2 + eventColumns.length + 2 // name + code + events + notes + edit
 
   return (
     <div>
@@ -181,6 +181,7 @@ function GuestList() {
                 <th key={ev.id}>{ev.name}</th>
               ))}
               <th>Notes</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -191,7 +192,6 @@ function GuestList() {
                 eventColumns={eventColumns}
                 colCount={colCount}
                 onEdit={() => startEdit(g.id)}
-                onDelete={() => onDelete(g.id)}
                 onOpenGuest={(guestId) => setDetailGuestId(guestId)}
               />
             ))}

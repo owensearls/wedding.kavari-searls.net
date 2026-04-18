@@ -1,4 +1,10 @@
-import type { AdminGroupInput, AdminGuestInput } from '@shared/schemas/admin'
+import { useForm, useFieldArray } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  adminGroupInputSchema,
+  type AdminGroupInput,
+  type AdminGuestInput,
+} from '@shared/schemas/admin'
 import Button from '../../components/ui/Button'
 import EditFormActions from '../../components/ui/EditFormActions'
 import EditFormSection from '../../components/ui/EditFormSection'
@@ -24,9 +30,9 @@ interface EditGroupFormProps {
   group: AdminGroupInput
   events: AdminEventRecord[]
   saving: boolean
-  error: string | null
-  onChange: (next: AdminGroupInput) => void
-  onSave: () => void
+  serverError: string | null
+  onSubmit: (data: AdminGroupInput) => void
+  onDelete?: () => void
   onCancel: () => void
 }
 
@@ -34,192 +40,202 @@ function EditGroupForm({
   group,
   events,
   saving,
-  error,
-  onChange,
-  onSave,
+  serverError,
+  onSubmit,
+  onDelete,
   onCancel,
 }: EditGroupFormProps) {
-  const primary = group.guests[0]
-  const additional = group.guests.slice(1)
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm<AdminGroupInput>({
+    resolver: zodResolver(adminGroupInputSchema),
+    defaultValues: group,
+  })
 
-  function updatePrimary<K extends keyof AdminGuestInput>(
-    key: K,
-    value: AdminGuestInput[K],
-  ) {
-    const next = [...group.guests]
-    next[0] = { ...next[0], [key]: value }
-    onChange({ ...group, guests: next })
-  }
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'guests',
+  })
 
-  function updateAdditional(
-    rowIndex: number,
-    field: keyof AdminGuestInput,
-    value: string,
-  ) {
-    const next = [...group.guests]
-    const idx = rowIndex + 1
-    next[idx] = { ...next[idx], [field]: value }
-    onChange({ ...group, guests: next })
-  }
+  const invitedEventIds = watch('invitedEventIds') ?? []
 
-  function removeAdditional(rowIndex: number) {
-    const idx = rowIndex + 1
-    const next = group.guests.filter((_, j) => j !== idx)
-    onChange({ ...group, guests: next })
-  }
-
-  function toggleEvent(eventId: string, checked: boolean) {
-    const set = new Set(group.invitedEventIds ?? [])
-    if (checked) set.add(eventId)
-    else set.delete(eventId)
-    onChange({ ...group, invitedEventIds: [...set] })
+  function fieldError(path: string): string | undefined {
+    const parts = path.split('.')
+    let obj: unknown = errors
+    for (const p of parts) {
+      if (obj == null || typeof obj !== 'object') return undefined
+      obj = (obj as Record<string, unknown>)[p]
+    }
+    return (obj as { message?: string } | undefined)?.message
   }
 
   return (
-    <EditFormShell
-      title={group.id ? 'Edit invite' : 'New invite'}
-      onBack={onCancel}
-    >
-      <ErrorMessage>{error}</ErrorMessage>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <EditFormShell
+        title={group.id ? 'Edit invite' : 'New invite'}
+        onBack={onCancel}
+      >
+        <ErrorMessage>{serverError}</ErrorMessage>
 
-      <EditFormSection>
-        <SectionLabel>Guest</SectionLabel>
-        <FormGrid cols={4}>
-          <FieldGroup label="First name">
-            <input
-              className="admin-input"
-              value={primary?.firstName ?? ''}
-              onChange={(e) => updatePrimary('firstName', e.target.value)}
-            />
-          </FieldGroup>
-          <FieldGroup label="Last name">
-            <input
-              className="admin-input"
-              value={primary?.lastName ?? ''}
-              onChange={(e) => updatePrimary('lastName', e.target.value)}
-            />
-          </FieldGroup>
-          <FieldGroup label="Email">
-            <input
-              className="admin-input"
-              value={primary?.email ?? ''}
-              onChange={(e) => updatePrimary('email', e.target.value)}
-            />
-          </FieldGroup>
-          <FieldGroup label="Phone">
-            <input
-              className="admin-input"
-              value={primary?.phone ?? ''}
-              onChange={(e) => updatePrimary('phone', e.target.value)}
-            />
-          </FieldGroup>
-        </FormGrid>
-      </EditFormSection>
-
-      <EditFormSection>
-        <SectionLabel
-          action={
-            <Button
-              variant="ghost"
-              onClick={() =>
-                onChange({ ...group, guests: [...group.guests, blankGuest()] })
-              }
-            >
-              + Add
-            </Button>
-          }
-        >
-          Additional guests
-        </SectionLabel>
-
-        {additional.length === 0 ? (
-          <p className={styles.muted}>
-            No additional guests on this invite yet.
-          </p>
-        ) : (
-          <>
-            <FieldGroup
-              label="Invite label"
-              hint="optional"
-              style={{ maxWidth: 360, marginBottom: 16 }}
-            >
+        <EditFormSection>
+          <SectionLabel>Guest</SectionLabel>
+          <FormGrid cols={4}>
+            <FieldGroup label="First name" error={fieldError('guests.0.firstName')}>
               <input
-                className="admin-input"
-                placeholder="e.g. The Smith family"
-                value={group.label}
-                onChange={(e) => onChange({ ...group, label: e.target.value })}
+                className={`admin-input ${fieldError('guests.0.firstName') ? styles.inputError : ''}`}
+                {...register('guests.0.firstName')}
               />
             </FieldGroup>
-            <div className={`${styles.guestRow} ${styles.guestRowHeader}`}>
-              <span>First</span>
-              <span>Last</span>
-              <span>Email</span>
-              <span>Phone</span>
-              <span />
-            </div>
-            {additional.map((guest, i) => (
-              <div className={styles.guestRow} key={guest.id ?? `new-${i}`}>
+            <FieldGroup label="Last name">
+              <input
+                className="admin-input"
+                {...register('guests.0.lastName')}
+              />
+            </FieldGroup>
+            <FieldGroup label="Email" error={fieldError('guests.0.email')}>
+              <input
+                className={`admin-input ${fieldError('guests.0.email') ? styles.inputError : ''}`}
+                {...register('guests.0.email')}
+              />
+            </FieldGroup>
+            <FieldGroup label="Phone">
+              <input
+                className="admin-input"
+                {...register('guests.0.phone')}
+              />
+            </FieldGroup>
+          </FormGrid>
+        </EditFormSection>
+
+        <EditFormSection>
+          <SectionLabel
+            action={
+              <Button variant="ghost" onClick={() => append(blankGuest())}>
+                + Add
+              </Button>
+            }
+          >
+            Additional guests
+          </SectionLabel>
+
+          {fields.length <= 1 ? (
+            <p className={styles.muted}>
+              No additional guests on this invite yet.
+            </p>
+          ) : (
+            <>
+              <FieldGroup
+                label="Invite label"
+                error={fieldError('label')}
+                style={{ maxWidth: 360, marginBottom: 16 }}
+              >
                 <input
-                  className="admin-input"
-                  value={guest.firstName}
-                  onChange={(e) => updateAdditional(i, 'firstName', e.target.value)}
+                  className={`admin-input ${fieldError('label') ? styles.inputError : ''}`}
+                  placeholder="e.g. The Smith family"
+                  {...register('label')}
                 />
-                <input
-                  className="admin-input"
-                  value={guest.lastName ?? ''}
-                  onChange={(e) => updateAdditional(i, 'lastName', e.target.value)}
-                />
-                <input
-                  className="admin-input"
-                  value={guest.email ?? ''}
-                  onChange={(e) => updateAdditional(i, 'email', e.target.value)}
-                />
-                <input
-                  className="admin-input"
-                  value={guest.phone ?? ''}
-                  onChange={(e) => updateAdditional(i, 'phone', e.target.value)}
-                />
-                <RemoveButton
-                  label="Remove guest"
-                  onClick={() => removeAdditional(i)}
-                />
+              </FieldGroup>
+              <div className={`${styles.guestRow} ${styles.guestRowHeader}`}>
+                <span>First</span>
+                <span>Last</span>
+                <span>Email</span>
+                <span>Phone</span>
+                <span />
               </div>
-            ))}
-          </>
-        )}
-      </EditFormSection>
+              {fields.slice(1).map((field, i) => {
+                const idx = i + 1
+                return (
+                  <div key={field.id}>
+                    <div className={styles.guestRow}>
+                      <input
+                        className={`admin-input ${fieldError(`guests.${idx}.firstName`) ? styles.inputError : ''}`}
+                        {...register(`guests.${idx}.firstName`)}
+                      />
+                      <input
+                        className="admin-input"
+                        {...register(`guests.${idx}.lastName`)}
+                      />
+                      <input
+                        className={`admin-input ${fieldError(`guests.${idx}.email`) ? styles.inputError : ''}`}
+                        {...register(`guests.${idx}.email`)}
+                      />
+                      <input
+                        className="admin-input"
+                        {...register(`guests.${idx}.phone`)}
+                      />
+                      <RemoveButton
+                        label="Remove guest"
+                        onClick={() => remove(idx)}
+                      />
+                    </div>
+                    {(fieldError(`guests.${idx}.firstName`) ||
+                      fieldError(`guests.${idx}.email`)) && (
+                      <div className={styles.guestRowErrors}>
+                        {fieldError(`guests.${idx}.firstName`) && (
+                          <span className={styles.fieldError}>
+                            First name: {fieldError(`guests.${idx}.firstName`)}
+                          </span>
+                        )}
+                        {fieldError(`guests.${idx}.email`) && (
+                          <span className={styles.fieldError}>
+                            Email: {fieldError(`guests.${idx}.email`)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </>
+          )}
+        </EditFormSection>
 
-      <EditFormSection>
-        <SectionLabel>Invited to</SectionLabel>
-        {events.length === 0 ? (
-          <p className={styles.muted}>
-            Create some events on the Events tab first.
-          </p>
-        ) : (
-          <div className={styles.eventCheckboxes}>
-            {events.map((ev) => (
-              <label key={ev.id} className={styles.eventCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={(group.invitedEventIds ?? []).includes(ev.id!)}
-                  onChange={(e) => toggleEvent(ev.id!, e.target.checked)}
-                />
-                <span>{ev.name}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </EditFormSection>
+        <EditFormSection>
+          <SectionLabel>Invited to</SectionLabel>
+          {events.length === 0 ? (
+            <p className={styles.muted}>
+              Create some events on the Events tab first.
+            </p>
+          ) : (
+            <div className={styles.eventCheckboxes}>
+              {events.map((ev) => (
+                <label key={ev.id} className={styles.eventCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={invitedEventIds.includes(ev.id!)}
+                    {...register('invitedEventIds')}
+                    value={ev.id!}
+                  />
+                  <span>{ev.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </EditFormSection>
 
-      <EditFormActions>
-        <Button onClick={onSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save invite'}
-        </Button>
-        <Button variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-      </EditFormActions>
-    </EditFormShell>
+        <EditFormActions>
+          <Button type="submit" disabled={saving}>
+            {saving ? 'Saving…' : 'Save invite'}
+          </Button>
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+          {onDelete && (
+            <button
+              type="button"
+              className={styles.deleteBtn}
+              onClick={onDelete}
+            >
+              Delete invite
+            </button>
+          )}
+        </EditFormActions>
+      </EditFormShell>
+    </form>
   )
 }
 

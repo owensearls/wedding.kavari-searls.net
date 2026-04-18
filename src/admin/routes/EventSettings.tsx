@@ -101,7 +101,6 @@ function EventSettings() {
               <th>Slug</th>
               <th>Starts</th>
               <th>Location</th>
-              <th>Meal?</th>
               <th></th>
             </tr>
           </thead>
@@ -114,7 +113,6 @@ function EventSettings() {
                 </td>
                 <td>{formatForDisplay(ev.startsAt)}</td>
                 <td>{ev.locationName ?? ''}</td>
-                <td>{ev.requiresMealChoice ? 'Yes' : 'No'}</td>
                 <td>
                   <Button variant="ghost" onClick={() => setEditing(ev)}>
                     Edit

@@ -67,6 +67,22 @@
   margin-bottom: 18px;
 }
 
+.eventCardSingle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eventCardSingle .eventName {
+  margin-bottom: 0;
+}
+
+.eventCardSingle .eventMeta {
+  margin-bottom: 0;
+}
+
 .guestRow {
   display: grid;
   grid-template-columns: 1fr auto;

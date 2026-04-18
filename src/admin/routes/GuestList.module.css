@@ -7,9 +7,10 @@
 
 .groupHeaderRow td {
   background: #ede8dc;
-  padding: 8px 12px;
+  padding: 4px 12px;
   border-top: 1px solid #6e6b60;
   border-bottom: 1px solid rgba(110, 107, 96, 0.3);
+  font-size: 13px;
 }
 
 .groupHeaderContent {
@@ -22,18 +23,12 @@
 .groupHeaderLabel {
   font-weight: 600;
   color: #4a4842;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .groupHeaderStats {
   color: #6e6b60;
-  font-size: 14px;
-}
-
-.groupHeaderActions {
-  margin-left: auto;
-  display: inline-flex;
-  gap: 8px;
+  font-size: 12px;
 }
 
 .guestClickRow {
@@ -99,4 +94,30 @@
   font-size: 16px;
   font-weight: 600;
   color: #4a4842;
+}
+
+.editCell {
+  width: 32px;
+  padding: 0 8px !important;
+  text-align: center;
+}
+
+.editIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  color: #b0aca0;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.editIcon:hover {
+  color: #4a4842;
+  border-color: #6e6b60;
 }

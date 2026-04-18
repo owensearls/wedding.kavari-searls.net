@@ -51,13 +51,25 @@ describe('adminGroupInputSchema', () => {
     ).toThrow()
   })
 
-  it('requires a non-empty label', () => {
+  it('allows empty label for a single guest', () => {
+    const parsed = adminGroupInputSchema.parse({
+      guests: [{ firstName: 'Alice' }],
+    })
+    expect(parsed.label).toBe('')
+  })
+
+  it('requires label when there are multiple guests', () => {
     expect(() =>
       adminGroupInputSchema.parse({
         label: '',
-        guests: [{ firstName: 'Alice' }],
+        guests: [{ firstName: 'Alice' }, { firstName: 'Bob' }],
       }),
     ).toThrow()
+    const parsed = adminGroupInputSchema.parse({
+      label: 'The Smiths',
+      guests: [{ firstName: 'Alice' }, { firstName: 'Bob' }],
+    })
+    expect(parsed.label).toBe('The Smiths')
   })
 })
 

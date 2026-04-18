@@ -196,6 +196,7 @@ function RsvpFull() {
                 event={ev}
                 guestById={guestById}
                 state={state}
+                singleGuest={data.guests.length === 1}
                 onStatusChange={setStatus}
                 onMealChange={setMeal}
               />

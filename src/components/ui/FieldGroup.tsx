@@ -4,11 +4,12 @@ import styles from './FieldGroup.module.css'
 interface FieldGroupProps {
   label: string
   hint?: string
+  error?: string
   children: ReactNode
   style?: CSSProperties
 }
 
-function FieldGroup({ label, hint, children, style }: FieldGroupProps) {
+function FieldGroup({ label, hint, error, children, style }: FieldGroupProps) {
   return (
     <div className={styles.fieldGroup} style={style}>
       <label className={styles.label}>
@@ -16,6 +17,7 @@ function FieldGroup({ label, hint, children, style }: FieldGroupProps) {
         {hint && <> <span className={styles.hint}>({hint})</span></>}
       </label>
       {children}
+      {error && <span className={styles.error}>{error}</span>}
     </div>
   )
 }

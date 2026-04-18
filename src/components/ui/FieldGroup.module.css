@@ -14,3 +14,8 @@
   color: #b0aca0;
   font-weight: normal;
 }
+
+.error {
+  font-size: 12px;
+  color: #b04438;
+}

@@ -1,5 +1,4 @@
 import type { AdminGroupListItem } from '@shared/schemas/admin'
-import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import type { AdminEventRecord } from '../api'
@@ -10,55 +9,45 @@ interface GroupBlockProps {
   eventColumns: AdminEventRecord[]
   colCount: number
   onEdit: () => void
-  onDelete: () => void
   onOpenGuest: (guestId: string) => void
 }
 
-// Renders a single guest group as a block inside the flat guest table: one
-// banner row with the group label + summary stats + admin actions, followed
-// by one row per guest.
 function GroupBlock({
   group,
   eventColumns,
   colCount,
   onEdit,
-  onDelete,
   onOpenGuest,
 }: GroupBlockProps) {
+  const showHeader = group.guestCount > 1
   return (
     <>
-      <tr className={styles.groupHeaderRow}>
-        <td colSpan={colCount}>
-          <div className={styles.groupHeaderContent}>
-            <span className={styles.groupHeaderLabel}>{group.label}</span>
-            <span className={styles.groupHeaderStats}>
-              {group.guestCount} guest{group.guestCount === 1 ? '' : 's'} ·{' '}
-              <StatusBadge
-                status="attending"
-                label={`${group.attendingCount} attending`}
-              />{' '}
-              ·{' '}
-              <StatusBadge
-                status="declined"
-                label={`${group.declinedCount} declined`}
-              />{' '}
-              ·{' '}
-              <StatusBadge
-                status="pending"
-                label={`${group.pendingCount} pending`}
-              />
-            </span>
-            <span className={styles.groupHeaderActions}>
-              <Button variant="ghost" onClick={onEdit}>
-                Edit
-              </Button>
-              <Button variant="ghost" onClick={onDelete}>
-                Delete
-              </Button>
-            </span>
-          </div>
-        </td>
-      </tr>
+      {showHeader && (
+        <tr className={styles.groupHeaderRow}>
+          <td colSpan={colCount}>
+            <div className={styles.groupHeaderContent}>
+              <span className={styles.groupHeaderLabel}>{group.label}</span>
+              <span className={styles.groupHeaderStats}>
+                {group.guestCount} guests ·{' '}
+                <StatusBadge
+                  status="attending"
+                  label={`${group.attendingCount} attending`}
+                />{' '}
+                ·{' '}
+                <StatusBadge
+                  status="declined"
+                  label={`${group.declinedCount} declined`}
+                />{' '}
+                ·{' '}
+                <StatusBadge
+                  status="pending"
+                  label={`${group.pendingCount} pending`}
+                />
+              </span>
+            </div>
+          </td>
+        </tr>
+      )}
       {group.guests.map((guest) => (
         <tr
           key={guest.id}
@@ -92,6 +81,19 @@ function GroupBlock({
             {[guest.dietaryRestrictions, guest.notes]
               .filter(Boolean)
               .join(' · ')}
+          </td>
+          <td className={styles.editCell}>
+            <button
+              type="button"
+              className={styles.editIcon}
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit()
+              }}
+              title="Edit invite"
+            >
+              ✎
+            </button>
           </td>
         </tr>
       ))}
