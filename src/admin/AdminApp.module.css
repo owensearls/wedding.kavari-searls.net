@@ -84,9 +84,47 @@
   top: 0;
 }
 
+.groupRow td {
+  background: white;
+  font-weight: 500;
+}
+
+.subRow td {
+  background: #fafaf5;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.1);
+}
+
+.subRowContent {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  padding-left: 28px;
+  font-size: 14px;
+}
+
+.subRowContent::before {
+  content: '↳';
+  color: #9a968a;
+  font-size: 14px;
+  margin-left: -20px;
+  margin-right: 4px;
+}
+
+.subRowName {
+  color: #4a4842;
+  font-weight: 500;
+}
+
+.subRowMeta {
+  color: #6e6b60;
+  font-style: italic;
+  font-size: 13px;
+}
+
 .guestRow {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 90px auto;
+  grid-template-columns: 1fr 1fr 1fr 1fr auto;
   gap: 8px;
   margin-bottom: 8px;
   align-items: center;

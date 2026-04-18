@@ -8,11 +8,6 @@ import {
 } from './admin'
 
 describe('adminGuestInputSchema', () => {
-  it('fills in sensible defaults', () => {
-    const parsed = adminGuestInputSchema.parse({ firstName: 'Alice' })
-    expect(parsed.ageGroup).toBe('adult')
-  })
-
   it('coerces blank email/phone/dietary to null', () => {
     const parsed = adminGuestInputSchema.parse({
       firstName: 'Alice',
@@ -35,20 +30,9 @@ describe('adminGuestInputSchema', () => {
     ).toThrow()
   })
 
-  it('accepts a blank ageGroup and defaults to adult', () => {
-    const parsed = adminGuestInputSchema.parse({ firstName: 'Alice', ageGroup: '' })
-    expect(parsed.ageGroup).toBe('adult')
-  })
-
   it('requires firstName', () => {
     expect(() => adminGuestInputSchema.parse({ firstName: '' })).toThrow()
     expect(() => adminGuestInputSchema.parse({})).toThrow()
-  })
-
-  it('rejects unknown ageGroup values', () => {
-    expect(() =>
-      adminGuestInputSchema.parse({ firstName: 'Alice', ageGroup: 'teen' }),
-    ).toThrow()
   })
 })
 
@@ -85,10 +69,10 @@ describe('adminImportRowSchema', () => {
       lastName: 'Smith',
       email: 'alice@example.com',
       phone: '+1 555 1234',
-      ageGroup: 'adult',
       events: 'ceremony,reception',
     })
-    expect(parsed.ageGroup).toBe('adult')
+    expect(parsed.firstName).toBe('Alice')
+    expect(parsed.events).toBe('ceremony,reception')
   })
 
   it('coerces blank optional cells to undefined', () => {
@@ -99,13 +83,11 @@ describe('adminImportRowSchema', () => {
       lastName: '',
       email: '',
       phone: '',
-      ageGroup: '',
       events: '',
     })
     expect(parsed.lastName).toBeUndefined()
     expect(parsed.email).toBeUndefined()
     expect(parsed.phone).toBeUndefined()
-    expect(parsed.ageGroup).toBeUndefined()
     expect(parsed.events).toBeUndefined()
   })
 
@@ -115,16 +97,6 @@ describe('adminImportRowSchema', () => {
     ).toThrow()
     expect(() =>
       adminImportRowSchema.parse({ groupLabel: 'Smiths', firstName: '' }),
-    ).toThrow()
-  })
-
-  it('rejects invalid ageGroup values', () => {
-    expect(() =>
-      adminImportRowSchema.parse({
-        groupLabel: 'Smiths',
-        firstName: 'Alice',
-        ageGroup: 'teen',
-      }),
     ).toThrow()
   })
 })

@@ -3,12 +3,12 @@ import Papa from 'papaparse'
 import { importRows, type ImportResult } from '../api'
 import styles from '../AdminApp.module.css'
 
-const EXAMPLE = `groupLabel,firstName,lastName,email,phone,ageGroup,events
-The Smith family,Alice,Smith,alice@example.com,,adult,"ceremony,reception"
-The Smith family,Bob,Smith,,,adult,"ceremony,reception"
-The Smith family,Charlie,Smith,,,child,ceremony
-Jordan & guest,Jordan,Lee,jordan@example.com,,adult,"ceremony,reception"
-Jordan & guest,Plus,one,,,adult,reception`
+const EXAMPLE = `groupLabel,firstName,lastName,email,phone,events
+The Smith family,Alice,Smith,alice@example.com,,"ceremony,reception"
+The Smith family,Bob,Smith,,,"ceremony,reception"
+The Smith family,Charlie,Smith,,,ceremony
+Jordan & guest,Jordan,Lee,jordan@example.com,,"ceremony,reception"
+Jordan & guest,Plus,one,,,reception`
 
 function Import() {
   const [csv, setCsv] = useState('')
@@ -50,9 +50,8 @@ function Import() {
         <p className={styles.muted}>
           Paste a CSV. Columns: <code>groupLabel</code>, <code>firstName</code>,{' '}
           <code>lastName</code>, <code>email</code>, <code>phone</code>,{' '}
-          <code>ageGroup</code> (adult/child/infant), <code>events</code>{' '}
-          (comma-separated event slugs). Existing groups (matched by label) are
-          skipped.
+          <code>events</code> (comma-separated event slugs). Existing groups
+          (matched by label) are skipped.
         </p>
         <textarea
           className="admin-textarea"

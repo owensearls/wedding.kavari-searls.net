@@ -117,7 +117,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     displayName: g.display_name,
     email: g.email,
     phone: g.phone,
-    ageGroup: g.age_group,
     dietaryRestrictions: g.dietary_restrictions,
     notes: g.notes,
   }))

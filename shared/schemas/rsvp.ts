@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-export const ageGroupSchema = z.enum(['adult', 'child', 'infant'])
-export type AgeGroup = z.infer<typeof ageGroupSchema>
-
 export const rsvpStatusSchema = z.enum(['pending', 'attending', 'declined'])
 export type RsvpStatus = z.infer<typeof rsvpStatusSchema>
 
@@ -61,7 +58,6 @@ export const guestSchema = z.object({
   displayName: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
-  ageGroup: ageGroupSchema,
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
 })

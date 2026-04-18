@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ageGroupSchema,
   guestRsvpSchema,
   lookupQuerySchema,
   rsvpStatusSchema,
@@ -39,18 +38,6 @@ describe('rsvpStatusSchema', () => {
 
   it('rejects unknown values', () => {
     expect(() => rsvpStatusSchema.parse('maybe')).toThrow()
-  })
-})
-
-describe('ageGroupSchema', () => {
-  it('accepts adult/child/infant', () => {
-    expect(ageGroupSchema.parse('adult')).toBe('adult')
-    expect(ageGroupSchema.parse('child')).toBe('child')
-    expect(ageGroupSchema.parse('infant')).toBe('infant')
-  })
-
-  it('rejects other ages', () => {
-    expect(() => ageGroupSchema.parse('teen')).toThrow()
   })
 })
 

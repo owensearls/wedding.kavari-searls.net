@@ -20,7 +20,6 @@ export interface GuestTable {
   display_name: string
   email: string | null
   phone: string | null
-  age_group: 'adult' | 'child' | 'infant'
   is_plus_one: number
   dietary_restrictions: string | null
   notes: string | null

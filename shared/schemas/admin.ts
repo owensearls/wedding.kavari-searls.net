@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { ageGroupSchema } from './rsvp'
 
 // Trim-empty-string to undefined. Keeps "0" and whitespace-only-but-non-empty
 // cells behaving sensibly; blank CSV / form cells become undefined so optional
@@ -20,7 +19,6 @@ export const adminGuestInputSchema = z.object({
     z.string().email().max(200).nullable().optional(),
   ),
   phone: z.preprocess(blankToNull, z.string().max(50).nullable().optional()),
-  ageGroup: z.preprocess(blankToUndef, ageGroupSchema.default('adult')),
   dietaryRestrictions: z.preprocess(
     blankToNull,
     z.string().max(500).nullable().optional(),
@@ -45,7 +43,6 @@ export const adminImportRowSchema = z.object({
   lastName: z.preprocess(blankToUndef, z.string().optional()),
   email: z.preprocess(blankToUndef, z.string().optional()),
   phone: z.preprocess(blankToUndef, z.string().optional()),
-  ageGroup: z.preprocess(blankToUndef, ageGroupSchema.optional()),
   events: z.preprocess(blankToUndef, z.string().optional()),
 })
 export type AdminImportRow = z.infer<typeof adminImportRowSchema>
@@ -86,6 +83,13 @@ export const adminEventInputSchema = z.object({
 })
 export type AdminEventInput = z.infer<typeof adminEventInputSchema>
 
+export const adminGroupListGuestSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  email: z.string().nullable(),
+})
+export type AdminGroupListGuest = z.infer<typeof adminGroupListGuestSchema>
+
 export const adminGroupListItemSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -95,6 +99,7 @@ export const adminGroupListItemSchema = z.object({
   declinedCount: z.number(),
   pendingCount: z.number(),
   updatedAt: z.string(),
+  guests: z.array(adminGroupListGuestSchema),
 })
 export type AdminGroupListItem = z.infer<typeof adminGroupListItemSchema>
 

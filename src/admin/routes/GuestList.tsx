@@ -19,7 +19,6 @@ const blankGuest = (): AdminGuestInput => ({
   lastName: '',
   email: '',
   phone: '',
-  ageGroup: 'adult',
   dietaryRestrictions: '',
   notes: '',
 })
@@ -91,6 +90,23 @@ function GuestList() {
     }
   }
 
+  if (editing) {
+    return (
+      <EditGroupForm
+        group={editing}
+        events={events}
+        saving={saving}
+        error={error}
+        onChange={setEditing}
+        onSave={onSave}
+        onCancel={() => {
+          setEditing(null)
+          setError(null)
+        }}
+      />
+    )
+  }
+
   return (
     <div>
       <div className={`${styles.row} ${styles.card}`}>
@@ -130,181 +146,221 @@ function GuestList() {
                 </tr>
               )}
               {groups.map((g) => (
-                <tr key={g.id}>
-                  <td>{g.label}</td>
-                  <td>
-                    <code>{g.inviteCode}</code>
-                  </td>
-                  <td>{g.guestCount}</td>
-                  <td>{g.attendingCount}</td>
-                  <td>{g.declinedCount}</td>
-                  <td>{g.pendingCount}</td>
-                  <td className={styles.row}>
-                    <button
-                      type="button"
-                      className="admin-button ghost"
-                      onClick={() => startEdit(g.id)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="admin-button ghost"
-                      onClick={() => onDelete(g.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                <GroupRows
+                  key={g.id}
+                  group={g}
+                  onEdit={() => startEdit(g.id)}
+                  onDelete={() => onDelete(g.id)}
+                />
               ))}
             </tbody>
           </table>
         </div>
       )}
+    </div>
+  )
+}
 
-      {editing && (
-        <div className={styles.card} style={{ marginTop: 24 }}>
-          <h3>{editing.id ? 'Edit group' : 'New group'}</h3>
-          <label className={styles.label}>Label (e.g. "The Smith family")</label>
-          <input
-            className="admin-input"
-            value={editing.label}
-            onChange={(e) =>
-              setEditing({ ...editing, label: e.target.value })
-            }
-          />
-
-          <h4 style={{ marginTop: 18 }}>Guests</h4>
-          <div className={`${styles.guestRow} ${styles.guestRowHeader}`}>
-            <span>First</span>
-            <span>Last</span>
-            <span>Email</span>
-            <span>Phone</span>
-            <span>Age</span>
-            <span></span>
-          </div>
-          {editing.guests.map((guest, idx) => (
-            <div className={styles.guestRow} key={idx}>
-              <input
-                className="admin-input"
-                value={guest.firstName}
-                onChange={(e) => {
-                  const next = [...editing.guests]
-                  next[idx] = { ...guest, firstName: e.target.value }
-                  setEditing({ ...editing, guests: next })
-                }}
-              />
-              <input
-                className="admin-input"
-                value={guest.lastName ?? ''}
-                onChange={(e) => {
-                  const next = [...editing.guests]
-                  next[idx] = { ...guest, lastName: e.target.value }
-                  setEditing({ ...editing, guests: next })
-                }}
-              />
-              <input
-                className="admin-input"
-                value={guest.email ?? ''}
-                onChange={(e) => {
-                  const next = [...editing.guests]
-                  next[idx] = { ...guest, email: e.target.value }
-                  setEditing({ ...editing, guests: next })
-                }}
-              />
-              <input
-                className="admin-input"
-                value={guest.phone ?? ''}
-                onChange={(e) => {
-                  const next = [...editing.guests]
-                  next[idx] = { ...guest, phone: e.target.value }
-                  setEditing({ ...editing, guests: next })
-                }}
-              />
-              <select
-                className="admin-select"
-                value={guest.ageGroup}
-                onChange={(e) => {
-                  const next = [...editing.guests]
-                  next[idx] = {
-                    ...guest,
-                    ageGroup: e.target.value as 'adult' | 'child' | 'infant',
-                  }
-                  setEditing({ ...editing, guests: next })
-                }}
-              >
-                <option value="adult">Adult</option>
-                <option value="child">Child</option>
-                <option value="infant">Infant</option>
-              </select>
-              <button
-                type="button"
-                className="admin-button ghost"
-                onClick={() => {
-                  const next = editing.guests.filter((_, i) => i !== idx)
-                  setEditing({
-                    ...editing,
-                    guests: next.length > 0 ? next : [blankGuest()],
-                  })
-                }}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+function GroupRows({
+  group,
+  onEdit,
+  onDelete,
+}: {
+  group: AdminGroupListItem
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  return (
+    <>
+      <tr className={styles.groupRow}>
+        <td>{group.label}</td>
+        <td>
+          <code>{group.inviteCode}</code>
+        </td>
+        <td>{group.guestCount}</td>
+        <td>{group.attendingCount}</td>
+        <td>{group.declinedCount}</td>
+        <td>{group.pendingCount}</td>
+        <td className={styles.row}>
+          <button type="button" className="admin-button ghost" onClick={onEdit}>
+            Edit
+          </button>
           <button
             type="button"
             className="admin-button ghost"
-            onClick={() =>
-              setEditing({ ...editing, guests: [...editing.guests, blankGuest()] })
-            }
+            onClick={onDelete}
           >
-            Add guest
+            Delete
           </button>
+        </td>
+      </tr>
+      {group.guests.map((guest) => (
+        <tr key={guest.id} className={styles.subRow}>
+          <td colSpan={7}>
+            <div className={styles.subRowContent}>
+              <span className={styles.subRowName}>{guest.displayName}</span>
+              {guest.email && (
+                <span className={styles.subRowMeta}>{guest.email}</span>
+              )}
+            </div>
+          </td>
+        </tr>
+      ))}
+    </>
+  )
+}
 
-          <h4 style={{ marginTop: 18 }}>Invited to</h4>
-          {events.length === 0 && (
-            <p className={styles.muted}>
-              Create some events on the Events tab first.
-            </p>
-          )}
-          <div className={styles.row}>
-            {events.map((ev) => (
-              <label key={ev.id} className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={editing.invitedEventIds.includes(ev.id!)}
-                  onChange={(e) => {
-                    const set = new Set(editing.invitedEventIds)
-                    if (e.target.checked) set.add(ev.id!)
-                    else set.delete(ev.id!)
-                    setEditing({ ...editing, invitedEventIds: [...set] })
-                  }}
-                />
-                {ev.name}
-              </label>
-            ))}
-          </div>
+function EditGroupForm({
+  group,
+  events,
+  saving,
+  error,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  group: AdminGroupInput
+  events: AdminEventRecord[]
+  saving: boolean
+  error: string | null
+  onChange: (next: AdminGroupInput) => void
+  onSave: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div>
+      <div className={`${styles.row} ${styles.card}`}>
+        <h2 style={{ margin: 0, flex: 1 }}>
+          {group.id ? 'Edit group' : 'New group'}
+        </h2>
+        <button type="button" className="admin-button ghost" onClick={onCancel}>
+          ← Back to list
+        </button>
+      </div>
 
-          <div className={styles.row} style={{ marginTop: 18 }}>
-            <button
-              type="button"
-              className="admin-button"
-              onClick={onSave}
-              disabled={saving}
-            >
-              {saving ? 'Saving…' : 'Save group'}
-            </button>
+      {error && <p className={styles.error}>{error}</p>}
+
+      <div className={styles.card}>
+        <label className={styles.label}>Label (e.g. "The Smith family")</label>
+        <input
+          className="admin-input"
+          value={group.label}
+          onChange={(e) => onChange({ ...group, label: e.target.value })}
+        />
+
+        <h4 style={{ marginTop: 18 }}>Guests</h4>
+        <div className={`${styles.guestRow} ${styles.guestRowHeader}`}>
+          <span>First</span>
+          <span>Last</span>
+          <span>Email</span>
+          <span>Phone</span>
+          <span></span>
+        </div>
+        {group.guests.map((guest, idx) => (
+          <div className={styles.guestRow} key={idx}>
+            <input
+              className="admin-input"
+              value={guest.firstName}
+              onChange={(e) => {
+                const next = [...group.guests]
+                next[idx] = { ...guest, firstName: e.target.value }
+                onChange({ ...group, guests: next })
+              }}
+            />
+            <input
+              className="admin-input"
+              value={guest.lastName ?? ''}
+              onChange={(e) => {
+                const next = [...group.guests]
+                next[idx] = { ...guest, lastName: e.target.value }
+                onChange({ ...group, guests: next })
+              }}
+            />
+            <input
+              className="admin-input"
+              value={guest.email ?? ''}
+              onChange={(e) => {
+                const next = [...group.guests]
+                next[idx] = { ...guest, email: e.target.value }
+                onChange({ ...group, guests: next })
+              }}
+            />
+            <input
+              className="admin-input"
+              value={guest.phone ?? ''}
+              onChange={(e) => {
+                const next = [...group.guests]
+                next[idx] = { ...guest, phone: e.target.value }
+                onChange({ ...group, guests: next })
+              }}
+            />
             <button
               type="button"
               className="admin-button ghost"
-              onClick={() => setEditing(null)}
+              onClick={() => {
+                const next = group.guests.filter((_, i) => i !== idx)
+                onChange({
+                  ...group,
+                  guests: next.length > 0 ? next : [blankGuest()],
+                })
+              }}
             >
-              Cancel
+              Remove
             </button>
           </div>
+        ))}
+        <button
+          type="button"
+          className="admin-button ghost"
+          onClick={() =>
+            onChange({ ...group, guests: [...group.guests, blankGuest()] })
+          }
+        >
+          Add guest
+        </button>
+
+        <h4 style={{ marginTop: 18 }}>Invited to</h4>
+        {events.length === 0 && (
+          <p className={styles.muted}>
+            Create some events on the Events tab first.
+          </p>
+        )}
+        <div className={styles.row}>
+          {events.map((ev) => (
+            <label key={ev.id} className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={(group.invitedEventIds ?? []).includes(ev.id!)}
+                onChange={(e) => {
+                  const set = new Set(group.invitedEventIds ?? [])
+                  if (e.target.checked) set.add(ev.id!)
+                  else set.delete(ev.id!)
+                  onChange({ ...group, invitedEventIds: [...set] })
+                }}
+              />
+              {ev.name}
+            </label>
+          ))}
         </div>
-      )}
+
+        <div className={styles.row} style={{ marginTop: 18 }}>
+          <button
+            type="button"
+            className="admin-button"
+            onClick={onSave}
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : 'Save group'}
+          </button>
+          <button
+            type="button"
+            className="admin-button ghost"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -16,6 +16,42 @@ const blankEvent = (): AdminEventInput => ({
   mealOptions: [],
 })
 
+// --- Date helpers ------------------------------------------------------------
+//
+// <input type="datetime-local"> works with "YYYY-MM-DDTHH:MM" strings in the
+// user's local wall clock, with no timezone. The DB stores whatever we send;
+// we keep things simple by round-tripping local wall-clock ISO strings of the
+// form "YYYY-MM-DDTHH:MM:00" (no offset). Browsers parse these as local time,
+// which is what we want for a wedding with a single venue timezone.
+
+const pad = (n: number) => String(n).padStart(2, '0')
+
+function isoToLocalInput(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function localInputToIso(v: string): string | null {
+  if (!v) return null
+  const trimmed = v.slice(0, 16)
+  return trimmed.length === 16 ? `${trimmed}:00` : null
+}
+
+function formatForDisplay(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 function EventSettings() {
   const [events, setEvents] = useState<AdminEventRecord[]>([])
   const [editing, setEditing] = useState<AdminEventInput | null>(null)
@@ -98,7 +134,7 @@ function EventSettings() {
                   <td>
                     <code>{ev.slug}</code>
                   </td>
-                  <td>{ev.startsAt ?? ''}</td>
+                  <td>{formatForDisplay(ev.startsAt)}</td>
                   <td>{ev.locationName ?? ''}</td>
                   <td>{ev.requiresMealChoice ? 'Yes' : 'No'}</td>
                   <td>
@@ -132,13 +168,16 @@ function EventSettings() {
             value={editing.slug}
             onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
           />
-          <label className={styles.label}>Starts at (ISO 8601)</label>
+          <label className={styles.label}>Starts at</label>
           <input
             className="admin-input"
-            value={editing.startsAt ?? ''}
-            placeholder="2026-09-19T16:00:00-04:00"
+            type="datetime-local"
+            value={isoToLocalInput(editing.startsAt)}
             onChange={(e) =>
-              setEditing({ ...editing, startsAt: e.target.value })
+              setEditing({
+                ...editing,
+                startsAt: localInputToIso(e.target.value),
+              })
             }
           />
           <label className={styles.label}>Location name</label>
@@ -157,12 +196,16 @@ function EventSettings() {
               setEditing({ ...editing, address: e.target.value })
             }
           />
-          <label className={styles.label}>RSVP deadline (ISO 8601)</label>
+          <label className={styles.label}>RSVP deadline</label>
           <input
             className="admin-input"
-            value={editing.rsvpDeadline ?? ''}
+            type="datetime-local"
+            value={isoToLocalInput(editing.rsvpDeadline)}
             onChange={(e) =>
-              setEditing({ ...editing, rsvpDeadline: e.target.value })
+              setEditing({
+                ...editing,
+                rsvpDeadline: localInputToIso(e.target.value),
+              })
             }
           />
           <label className={styles.label}>Sort order</label>
@@ -231,7 +274,9 @@ function EventSettings() {
                     type="button"
                     className="admin-button ghost"
                     onClick={() => {
-                      const next = editing.mealOptions.filter((_, i) => i !== idx)
+                      const next = editing.mealOptions.filter(
+                        (_, i) => i !== idx,
+                      )
                       setEditing({ ...editing, mealOptions: next })
                     }}
                   >

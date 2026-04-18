@@ -17,8 +17,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const groupIds = groups.map((g) => g.id)
   const guests = await db
     .selectFrom('guest')
-    .select(['id', 'guest_group_id'])
+    .select([
+      'id',
+      'guest_group_id',
+      'display_name',
+      'email',
+      'first_name',
+      'last_name',
+    ])
     .where('guest_group_id', 'in', groupIds)
+    .orderBy('guest.first_name')
     .execute()
   const rsvps = await db
     .selectFrom('rsvp')
@@ -28,17 +36,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .execute()
 
   const items: AdminGroupListItem[] = groups.map((g) => {
-    const guestCount = guests.filter((x) => x.guest_group_id === g.id).length
+    const groupGuests = guests.filter((x) => x.guest_group_id === g.id)
     const groupRsvps = rsvps.filter((r) => r.groupId === g.id)
     return {
       id: g.id,
       label: g.label,
       inviteCode: g.invite_code,
-      guestCount,
+      guestCount: groupGuests.length,
       attendingCount: groupRsvps.filter((r) => r.status === 'attending').length,
       declinedCount: groupRsvps.filter((r) => r.status === 'declined').length,
       pendingCount: groupRsvps.filter((r) => r.status === 'pending').length,
       updatedAt: g.updated_at,
+      guests: groupGuests.map((x) => ({
+        id: x.id,
+        displayName: x.display_name,
+        email: x.email,
+      })),
     }
   })
   return Response.json({ groups: items })
@@ -97,7 +110,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   for (const g of input.guests) {
     const id = g.id ?? newId('gst')
     const displayName = `${g.firstName}${g.lastName ? ' ' + g.lastName : ''}`
-    const ageGroup = g.ageGroup ?? 'adult'
     if (g.id) {
       await db
         .updateTable('guest')
@@ -107,7 +119,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           display_name: displayName,
           email: g.email ? g.email : null,
           phone: g.phone ?? null,
-          age_group: ageGroup,
           is_plus_one: 0,
           dietary_restrictions: g.dietaryRestrictions ?? null,
           notes: g.notes ?? null,
@@ -126,7 +137,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           display_name: displayName,
           email: g.email ? g.email : null,
           phone: g.phone ?? null,
-          age_group: ageGroup,
           is_plus_one: 0,
           dietary_restrictions: g.dietaryRestrictions ?? null,
           notes: g.notes ?? null,

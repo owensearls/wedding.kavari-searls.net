@@ -61,7 +61,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           display_name: displayName,
           email: row.email && row.email.length ? row.email : null,
           phone: row.phone ?? null,
-          age_group: row.ageGroup ?? 'adult',
           is_plus_one: 0,
           dietary_restrictions: null,
           notes: null,
