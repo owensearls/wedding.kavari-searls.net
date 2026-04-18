@@ -24,6 +24,7 @@ const rscHandler = createRscHandler(); // no auth: Node target is dev/on-prem be
 async function serveStatic(pathname: string): Promise<Response | null> {
   const safe = pathname.replace(/\?.*$/, "").replace(/^\/+/, "");
   const filePath = join(CLIENT_DIR, safe || "index.html");
+  if (filePath !== CLIENT_DIR && !filePath.startsWith(CLIENT_DIR + "/")) return null;
   try {
     const info = await stat(filePath);
     if (!info.isFile()) return null;
@@ -37,6 +38,7 @@ async function serveStatic(pathname: string): Promise<Response | null> {
 }
 
 const listener = createRequestListener(async (request) => {
+  // TODO(task-4): wire this up to a real DB — plan will initialize better-sqlite3 + Kysely at process start and assign to __NODE_ENV__.
   const env = (globalThis as any).__NODE_ENV__ as { DB: unknown };
   return runWithEnv(env as any, async () => {
     const url = new URL(request.url);

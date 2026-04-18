@@ -24,6 +24,7 @@ export default {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/@rsc/")) {
         // Access config values live on env, not globals — forward via closure.
+        // TODO(task-7): replace this globalThis shim by extending runWithEnv's env object so verifyAccessJwt reads from getEnv() instead of globals.
         (globalThis as any).ACCESS_AUD = env.ACCESS_AUD;
         (globalThis as any).ACCESS_TEAM_DOMAIN = env.ACCESS_TEAM_DOMAIN;
         return handler(request);
