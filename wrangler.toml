@@ -1,9 +1,8 @@
 name = "wedding-kavari-searls"
-compatibility_date = "2025-04-01"
 pages_build_output_dir = "./dist"
+compatibility_date = "2025-04-01"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "wedding-rsvp"
 database_id = "PLACEHOLDER_DATABASE_ID"
-migrations_dir = "migrations"
