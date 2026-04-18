@@ -2,7 +2,6 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import styles from './AdminApp.module.css'
 import GuestList from './routes/GuestList'
 import Import from './routes/Import'
-import Responses from './routes/Responses'
 import EventSettings from './routes/EventSettings'
 
 function AdminApp() {
@@ -28,14 +27,6 @@ function AdminApp() {
             Import
           </NavLink>
           <NavLink
-            to="/responses"
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
-          >
-            Responses
-          </NavLink>
-          <NavLink
             to="/events"
             className={({ isActive }) =>
               `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
@@ -50,7 +41,6 @@ function AdminApp() {
           <Route path="/" element={<Navigate to="/groups" replace />} />
           <Route path="/groups" element={<GuestList />} />
           <Route path="/import" element={<Import />} />
-          <Route path="/responses" element={<Responses />} />
           <Route path="/events" element={<EventSettings />} />
         </Routes>
       </main>

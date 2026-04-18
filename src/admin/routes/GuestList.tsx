@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react'
 import {
   deleteGroup,
   getGroup,
+  getGuest,
   listEvents,
   listGroups,
+  listResponses,
   saveGroup,
   type AdminEventRecord,
 } from '../api'
 import type {
   AdminGroupInput,
   AdminGroupListItem,
+  AdminGuestDetail,
   AdminGuestInput,
 } from '@shared/schemas/admin'
 import styles from '../AdminApp.module.css'
@@ -37,6 +40,7 @@ function GuestList() {
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<AdminGroupInput | null>(null)
   const [saving, setSaving] = useState(false)
+  const [detailGuestId, setDetailGuestId] = useState<string | null>(null)
 
   async function refresh() {
     setLoading(true)
@@ -90,6 +94,51 @@ function GuestList() {
     }
   }
 
+  async function onExport() {
+    setError(null)
+    try {
+      const res = await listResponses()
+      const header = [
+        'groupLabel',
+        'inviteCode',
+        'guestName',
+        'eventName',
+        'status',
+        'mealLabel',
+        'dietaryRestrictions',
+        'respondedAt',
+      ]
+      const escape = (v: string | null) =>
+        v === null ? '' : `"${v.replace(/"/g, '""')}"`
+      const csv = [
+        header.join(','),
+        ...res.rows.map((r) =>
+          [
+            r.groupLabel,
+            r.inviteCode,
+            r.guestName,
+            r.eventName,
+            r.status,
+            r.mealLabel,
+            r.dietaryRestrictions,
+            r.respondedAt,
+          ]
+            .map(escape)
+            .join(','),
+        ),
+      ].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `rsvp-responses-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed')
+    }
+  }
+
   if (editing) {
     return (
       <EditGroupForm
@@ -107,10 +156,28 @@ function GuestList() {
     )
   }
 
+  // Sorted events for the column layout.
+  const eventColumns = [...events].sort((a, b) => {
+    const ao = a.sortOrder ?? 0
+    const bo = b.sortOrder ?? 0
+    if (ao !== bo) return ao - bo
+    return a.name.localeCompare(b.name)
+  })
+
+  const colCount = 2 + eventColumns.length + 1 // name + code + events + notes
+
   return (
     <div>
       <div className={`${styles.row} ${styles.card}`}>
-        <h2 style={{ margin: 0, flex: 1 }}>Guest groups</h2>
+        <h2 style={{ margin: 0, flex: 1 }}>Guests</h2>
+        <button
+          type="button"
+          className="admin-button ghost"
+          onClick={onExport}
+          disabled={groups.length === 0}
+        >
+          Export CSV
+        </button>
         <button
           type="button"
           className="admin-button"
@@ -128,85 +195,317 @@ function GuestList() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Label</th>
+                <th>Name</th>
                 <th>Invite code</th>
-                <th>Guests</th>
-                <th>Attending</th>
-                <th>Declined</th>
-                <th>Pending</th>
-                <th></th>
+                {eventColumns.map((ev) => (
+                  <th key={ev.id}>{ev.name}</th>
+                ))}
+                <th>Notes</th>
               </tr>
             </thead>
             <tbody>
               {groups.length === 0 && (
                 <tr>
-                  <td colSpan={7} className={styles.muted}>
+                  <td colSpan={colCount} className={styles.muted}>
                     No groups yet — create one or use the Import page.
                   </td>
                 </tr>
               )}
               {groups.map((g) => (
-                <GroupRows
+                <GroupBlock
                   key={g.id}
                   group={g}
+                  eventColumns={eventColumns}
+                  colCount={colCount}
                   onEdit={() => startEdit(g.id)}
                   onDelete={() => onDelete(g.id)}
+                  onOpenGuest={(guestId) => setDetailGuestId(guestId)}
                 />
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {detailGuestId && (
+        <GuestDetailModal
+          key={detailGuestId}
+          guestId={detailGuestId}
+          onClose={() => setDetailGuestId(null)}
+        />
+      )}
     </div>
   )
 }
 
-function GroupRows({
+function GroupBlock({
   group,
+  eventColumns,
+  colCount,
   onEdit,
   onDelete,
+  onOpenGuest,
 }: {
   group: AdminGroupListItem
+  eventColumns: AdminEventRecord[]
+  colCount: number
   onEdit: () => void
   onDelete: () => void
+  onOpenGuest: (guestId: string) => void
 }) {
   return (
     <>
-      <tr className={styles.groupRow}>
-        <td>{group.label}</td>
-        <td>
-          <code>{group.inviteCode}</code>
-        </td>
-        <td>{group.guestCount}</td>
-        <td>{group.attendingCount}</td>
-        <td>{group.declinedCount}</td>
-        <td>{group.pendingCount}</td>
-        <td className={styles.row}>
-          <button type="button" className="admin-button ghost" onClick={onEdit}>
-            Edit
-          </button>
-          <button
-            type="button"
-            className="admin-button ghost"
-            onClick={onDelete}
-          >
-            Delete
-          </button>
+      <tr className={styles.groupHeaderRow}>
+        <td colSpan={colCount}>
+          <div className={styles.groupHeaderContent}>
+            <span className={styles.groupHeaderLabel}>{group.label}</span>
+            <span className={styles.groupHeaderStats}>
+              {group.guestCount} guest{group.guestCount === 1 ? '' : 's'} ·{' '}
+              <span className={styles.statusAttending}>
+                {group.attendingCount} attending
+              </span>{' '}
+              ·{' '}
+              <span className={styles.statusDeclined}>
+                {group.declinedCount} declined
+              </span>{' '}
+              ·{' '}
+              <span className={styles.statusPending}>
+                {group.pendingCount} pending
+              </span>
+            </span>
+            <span className={styles.groupHeaderActions}>
+              <button
+                type="button"
+                className="admin-button ghost"
+                onClick={onEdit}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="admin-button ghost"
+                onClick={onDelete}
+              >
+                Delete
+              </button>
+            </span>
+          </div>
         </td>
       </tr>
       {group.guests.map((guest) => (
-        <tr key={guest.id} className={styles.subRow}>
-          <td colSpan={7}>
-            <div className={styles.subRowContent}>
-              <span className={styles.subRowName}>{guest.displayName}</span>
-              {guest.email && (
-                <span className={styles.subRowMeta}>{guest.email}</span>
-              )}
-            </div>
+        <tr
+          key={guest.id}
+          className={styles.guestClickRow}
+          onClick={() => onOpenGuest(guest.id)}
+        >
+          <td>{guest.displayName}</td>
+          <td>
+            <a
+              href={`/rsvp/${encodeURIComponent(guest.inviteCode)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className={styles.codeLink}
+            >
+              {guest.inviteCode}
+            </a>
+          </td>
+          {eventColumns.map((ev) => {
+            const s = guest.eventStatuses.find((es) => es.eventId === ev.id)
+            return (
+              <td key={ev.id} className={statusClassFor(s?.status)}>
+                {statusLabel(s?.status)}
+                {s?.mealLabel ? (
+                  <span className={styles.mealHint}> · {s.mealLabel}</span>
+                ) : null}
+              </td>
+            )
+          })}
+          <td className={styles.notesCell}>
+            {[guest.dietaryRestrictions, guest.notes]
+              .filter(Boolean)
+              .join(' · ')}
           </td>
         </tr>
       ))}
     </>
+  )
+}
+
+function statusLabel(
+  status: 'pending' | 'attending' | 'declined' | 'not-invited' | undefined,
+): string {
+  switch (status) {
+    case 'attending':
+      return 'Attending'
+    case 'declined':
+      return 'Declined'
+    case 'pending':
+      return 'Pending'
+    case 'not-invited':
+    case undefined:
+      return '—'
+  }
+}
+
+function statusClassFor(
+  status: 'pending' | 'attending' | 'declined' | 'not-invited' | undefined,
+): string | undefined {
+  switch (status) {
+    case 'attending':
+      return styles.statusAttending
+    case 'declined':
+      return styles.statusDeclined
+    case 'pending':
+      return styles.statusPending
+    case 'not-invited':
+    case undefined:
+      return styles.statusNotInvited
+  }
+}
+
+function GuestDetailModal({
+  guestId,
+  onClose,
+}: {
+  guestId: string
+  onClose: () => void
+}) {
+  const [data, setData] = useState<AdminGuestDetail | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getGuest(guestId)
+      .then((d) => {
+        if (!cancelled) setData(d)
+      })
+      .catch((err: unknown) => {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : 'Failed to load')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [guestId])
+
+  return (
+    <div className={styles.modalBackdrop} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 style={{ margin: 0 }}>
+            {data?.displayName ?? 'Guest details'}
+          </h2>
+          <button
+            type="button"
+            className="admin-button ghost"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+
+        {error && <p className={styles.error}>{error}</p>}
+        {!data && !error && <p>Loading…</p>}
+
+        {data && (
+          <div className={styles.modalBody}>
+            <div className={styles.detailGrid}>
+              <div className={styles.detailLabel}>Group</div>
+              <div>{data.groupLabel}</div>
+              <div className={styles.detailLabel}>Invite code</div>
+              <div>
+                <a
+                  href={`/rsvp/${encodeURIComponent(data.inviteCode)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.codeLink}
+                >
+                  {data.inviteCode}
+                </a>
+              </div>
+              {data.email && (
+                <>
+                  <div className={styles.detailLabel}>Email</div>
+                  <div>{data.email}</div>
+                </>
+              )}
+              {data.phone && (
+                <>
+                  <div className={styles.detailLabel}>Phone</div>
+                  <div>{data.phone}</div>
+                </>
+              )}
+              {data.dietaryRestrictions && (
+                <>
+                  <div className={styles.detailLabel}>Dietary</div>
+                  <div>{data.dietaryRestrictions}</div>
+                </>
+              )}
+              {data.notes && (
+                <>
+                  <div className={styles.detailLabel}>Notes</div>
+                  <div>{data.notes}</div>
+                </>
+              )}
+            </div>
+
+            <h3 style={{ marginTop: 18 }}>Events</h3>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Event</th>
+                    <th>Status</th>
+                    <th>Meal</th>
+                    <th>Responded</th>
+                    <th>By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.events.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className={styles.muted}>
+                        Not invited to any events yet.
+                      </td>
+                    </tr>
+                  )}
+                  {data.events.map((e) => (
+                    <tr key={e.eventId}>
+                      <td>{e.eventName}</td>
+                      <td className={statusClassFor(e.status)}>
+                        {statusLabel(e.status)}
+                      </td>
+                      <td>{e.mealLabel ?? '—'}</td>
+                      <td>
+                        {e.respondedAt
+                          ? new Date(e.respondedAt).toLocaleString()
+                          : '—'}
+                      </td>
+                      <td>{e.respondedByDisplayName ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {data.songRequests.length > 0 && (
+              <>
+                <h3 style={{ marginTop: 18 }}>Song requests</h3>
+                <ul>
+                  {data.songRequests.map((s) => (
+                    <li key={s.id}>
+                      {s.title}
+                      {s.artist ? ` — ${s.artist}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

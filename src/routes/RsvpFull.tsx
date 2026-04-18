@@ -72,7 +72,7 @@ function buildInitialState(data: RsvpGroupResponse): FormState {
     dietary,
     notes,
     songs,
-    respondedByGuestId: data.guests[0]?.id ?? '',
+    respondedByGuestId: data.actingGuestId || data.guests[0]?.id || '',
   }
 }
 

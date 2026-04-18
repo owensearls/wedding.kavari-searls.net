@@ -10,10 +10,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .select([
       'guest.id as guestId',
       'guest.display_name as guestName',
+      'guest.invite_code as inviteCode',
       'guest.dietary_restrictions as dietary',
       'guest_group.id as groupId',
       'guest_group.label as groupLabel',
-      'guest_group.invite_code as inviteCode',
     ])
     .execute()
 

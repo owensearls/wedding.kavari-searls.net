@@ -12,12 +12,21 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   if (!code) return jsonError(400, 'Missing invite code')
   const db = getDb(context.env.DB)
 
+  // Invite codes now live on the guest; resolving it gets us the acting
+  // guest first, then their group.
+  const actingGuest = await db
+    .selectFrom('guest')
+    .select(['id', 'guest_group_id'])
+    .where('invite_code', '=', code)
+    .executeTakeFirst()
+  if (!actingGuest) return jsonError(404, 'Invite code not found')
+
   const group = await db
     .selectFrom('guest_group')
     .selectAll()
-    .where('invite_code', '=', code)
+    .where('id', '=', actingGuest.guest_group_id)
     .executeTakeFirst()
-  if (!group) return jsonError(404, 'Invite code not found')
+  if (!group) return jsonError(404, 'Group not found')
 
   const guests = await db
     .selectFrom('guest')
@@ -115,6 +124,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     displayName: g.display_name,
     email: g.email,
     phone: g.phone,
+    inviteCode: g.invite_code,
     dietaryRestrictions: g.dietary_restrictions,
     notes: g.notes,
   }))
@@ -123,8 +133,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     group: {
       id: group.id,
       label: group.label,
-      inviteCode: group.invite_code,
     },
+    actingGuestId: actingGuest.id,
     guests: guestResponse,
     events: eventResponse,
     rsvps: rsvps.map((r) => ({
@@ -153,12 +163,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const submission = parsed.data
 
   const db = getDb(context.env.DB)
-  const group = await db
-    .selectFrom('guest_group')
-    .select(['id'])
+  const actingGuest = await db
+    .selectFrom('guest')
+    .select(['id', 'guest_group_id'])
     .where('invite_code', '=', code)
     .executeTakeFirst()
-  if (!group) return jsonError(404, 'Invite code not found')
+  if (!actingGuest) return jsonError(404, 'Invite code not found')
+  const group = { id: actingGuest.guest_group_id }
 
   const groupGuests = await db
     .selectFrom('guest')

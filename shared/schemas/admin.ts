@@ -30,7 +30,6 @@ export type AdminGuestInput = z.infer<typeof adminGuestInputSchema>
 export const adminGroupInputSchema = z.object({
   id: z.string().optional(),
   label: z.string().min(1).max(200),
-  inviteCode: z.string().min(4).max(40).optional(),
   notes: z.preprocess(blankToNull, z.string().max(500).nullable().optional()),
   guests: z.array(adminGuestInputSchema).min(1),
   invitedEventIds: z.array(z.string()).default([]),
@@ -81,17 +80,30 @@ export const adminEventInputSchema = z.object({
 })
 export type AdminEventInput = z.infer<typeof adminEventInputSchema>
 
+// Per-event RSVP status for a single guest, as returned by the admin list.
+// 'not-invited' covers the "group isn't invited" case AND the "group is
+// invited but this guest isn't in the invitation_guest subset" case.
+export const adminGuestEventStatusSchema = z.object({
+  eventId: z.string(),
+  status: z.enum(['pending', 'attending', 'declined', 'not-invited']),
+  mealLabel: z.string().nullable(),
+})
+export type AdminGuestEventStatus = z.infer<typeof adminGuestEventStatusSchema>
+
 export const adminGroupListGuestSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   email: z.string().nullable(),
+  inviteCode: z.string(),
+  dietaryRestrictions: z.string().nullable(),
+  notes: z.string().nullable(),
+  eventStatuses: z.array(adminGuestEventStatusSchema),
 })
 export type AdminGroupListGuest = z.infer<typeof adminGroupListGuestSchema>
 
 export const adminGroupListItemSchema = z.object({
   id: z.string(),
   label: z.string(),
-  inviteCode: z.string(),
   guestCount: z.number(),
   attendingCount: z.number(),
   declinedCount: z.number(),
@@ -100,6 +112,37 @@ export const adminGroupListItemSchema = z.object({
   guests: z.array(adminGroupListGuestSchema),
 })
 export type AdminGroupListItem = z.infer<typeof adminGroupListItemSchema>
+
+// Full submission details for a single guest, used by the click-in modal on
+// the guest list.
+export const adminGuestDetailSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  inviteCode: z.string(),
+  dietaryRestrictions: z.string().nullable(),
+  notes: z.string().nullable(),
+  groupLabel: z.string(),
+  events: z.array(
+    z.object({
+      eventId: z.string(),
+      eventName: z.string(),
+      status: z.enum(['pending', 'attending', 'declined', 'not-invited']),
+      mealLabel: z.string().nullable(),
+      respondedAt: z.string().nullable(),
+      respondedByDisplayName: z.string().nullable(),
+    }),
+  ),
+  songRequests: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      artist: z.string().nullable(),
+    }),
+  ),
+})
+export type AdminGuestDetail = z.infer<typeof adminGuestDetailSchema>
 
 export const adminResponseRowSchema = z.object({
   groupLabel: z.string(),

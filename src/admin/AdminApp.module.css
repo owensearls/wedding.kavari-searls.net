@@ -84,42 +84,141 @@
   top: 0;
 }
 
-.groupRow td {
-  background: white;
-  font-weight: 500;
+.groupHeaderRow td {
+  background: #ede8dc;
+  padding: 8px 12px;
+  border-top: 1px solid #6e6b60;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.3);
 }
 
-.subRow td {
-  background: #fafaf5;
-  padding: 4px 12px;
-  border-bottom: 1px solid rgba(110, 107, 96, 0.1);
-}
-
-.subRowContent {
+.groupHeaderContent {
   display: flex;
-  gap: 16px;
-  align-items: baseline;
-  padding-left: 28px;
-  font-size: 14px;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.subRowContent::before {
-  content: '↳';
-  color: #9a968a;
-  font-size: 14px;
-  margin-left: -20px;
-  margin-right: 4px;
-}
-
-.subRowName {
+.groupHeaderLabel {
+  font-weight: 600;
   color: #4a4842;
+  font-size: 16px;
+}
+
+.groupHeaderStats {
+  color: #6e6b60;
+  font-size: 14px;
+}
+
+.groupHeaderActions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.guestClickRow {
+  cursor: pointer;
+}
+
+.guestClickRow:hover td {
+  background: #fafaf5;
+}
+
+.guestClickRow td {
+  background: white;
+  font-size: 14px;
+}
+
+.codeLink {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #4a4842;
+  border-bottom: 1px dashed #6e6b60;
+  text-decoration: none;
+}
+
+.codeLink:hover {
+  color: #1a1a1a;
+}
+
+.statusAttending {
+  color: #2d6a3f;
   font-weight: 500;
 }
 
-.subRowMeta {
+.statusDeclined {
+  color: #8b3a2f;
+}
+
+.statusPending {
+  color: #8a6a1a;
+}
+
+.statusNotInvited {
+  color: #b0aca0;
+}
+
+.mealHint {
   color: #6e6b60;
   font-style: italic;
   font-size: 13px;
+}
+
+.notesCell {
+  font-style: italic;
+  color: #6e6b60;
+  font-size: 13px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 28, 22, 0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.modal {
+  background: white;
+  border: 1px solid #6e6b60;
+  max-width: 720px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.modalBody {
+  font-size: 15px;
+  color: #4a4842;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  row-gap: 6px;
+  column-gap: 12px;
+  margin-bottom: 12px;
+}
+
+.detailLabel {
+  font-size: 13px;
+  color: #6e6b60;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
 }
 
 .guestRow {

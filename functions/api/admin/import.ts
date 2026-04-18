@@ -18,7 +18,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   const now = nowIso()
-  const created: { groupId: string; label: string; inviteCode: string }[] = []
+  const created: {
+    groupId: string
+    label: string
+    guests: { id: string; displayName: string; inviteCode: string }[]
+  }[] = []
   const skipped: string[] = []
 
   for (const [label, rows] of groupedByLabel) {
@@ -33,13 +37,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     const groupId = newId('grp')
-    const inviteCode = newInviteCode()
     await db
       .insertInto('guest_group')
       .values({
         id: groupId,
         label,
-        invite_code: inviteCode,
         primary_contact_guest_id: null,
         notes: null,
         created_at: now,
@@ -48,9 +50,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .execute()
 
     const eventIdsForGroup = new Set<string>()
+    const createdGuests: {
+      id: string
+      displayName: string
+      inviteCode: string
+    }[] = []
     for (const row of rows) {
       const id = newId('gst')
       const displayName = `${row.firstName}${row.lastName ? ' ' + row.lastName : ''}`
+      const inviteCode = newInviteCode()
       await db
         .insertInto('guest')
         .values({
@@ -61,6 +69,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           display_name: displayName,
           email: row.email && row.email.length ? row.email : null,
           phone: row.phone ?? null,
+          invite_code: inviteCode,
           is_plus_one: 0,
           dietary_restrictions: null,
           notes: null,
@@ -68,9 +77,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           updated_at: now,
         })
         .execute()
+      createdGuests.push({ id, displayName, inviteCode })
 
       if (row.events) {
-        for (const slug of row.events.split(',').map((s) => s.trim()).filter(Boolean)) {
+        for (const slug of row.events
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)) {
           const eid = eventBySlug.get(slug)
           if (eid) eventIdsForGroup.add(eid)
         }
@@ -88,7 +101,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         .execute()
     }
 
-    created.push({ groupId, label, inviteCode })
+    created.push({ groupId, label, guests: createdGuests })
   }
 
   return Response.json({ created, skipped })

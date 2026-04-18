@@ -2,6 +2,7 @@ import type {
   AdminEventInput,
   AdminGroupInput,
   AdminGroupListItem,
+  AdminGuestDetail,
   AdminResponseRow,
 } from '@shared/schemas/admin'
 
@@ -31,7 +32,7 @@ export function listGroups() {
 }
 
 export function saveGroup(input: AdminGroupInput) {
-  return jsonRequest<{ id: string; inviteCode: string }>('/api/admin/groups', {
+  return jsonRequest<{ id: string }>('/api/admin/groups', {
     method: 'POST',
     body: JSON.stringify(input),
   })
@@ -45,8 +46,14 @@ export function deleteGroup(id: string) {
 }
 
 export function getGroup(id: string) {
-  return jsonRequest<AdminGroupInput & { id: string; inviteCode: string }>(
+  return jsonRequest<AdminGroupInput & { id: string }>(
     `/api/admin/groups/${encodeURIComponent(id)}`,
+  )
+}
+
+export function getGuest(id: string) {
+  return jsonRequest<AdminGuestDetail>(
+    `/api/admin/guests/${encodeURIComponent(id)}`,
   )
 }
 
@@ -70,7 +77,11 @@ export function listResponses() {
 }
 
 export interface ImportResult {
-  created: { groupId: string; label: string; inviteCode: string }[]
+  created: {
+    groupId: string
+    label: string
+    guests: { id: string; displayName: string; inviteCode: string }[]
+  }[]
   skipped: string[]
 }
 

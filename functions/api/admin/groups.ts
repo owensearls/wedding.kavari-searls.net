@@ -3,6 +3,7 @@ import { parseJson } from '../../lib/responses'
 import {
   adminGroupInputSchema,
   type AdminGroupListItem,
+  type AdminGuestEventStatus,
 } from '@shared/schemas/admin'
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -24,34 +25,95 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       'email',
       'first_name',
       'last_name',
+      'invite_code',
+      'dietary_restrictions',
+      'notes',
     ])
     .where('guest_group_id', 'in', groupIds)
     .orderBy('guest.first_name')
     .execute()
+
+  const invitations = await db
+    .selectFrom('invitation')
+    .select(['id', 'guest_group_id', 'event_id'])
+    .where('guest_group_id', 'in', groupIds)
+    .execute()
+  const invitationIds = invitations.map((i) => i.id)
+  const invitationGuests = invitationIds.length
+    ? await db
+        .selectFrom('invitation_guest')
+        .select(['invitation_id', 'guest_id'])
+        .where('invitation_id', 'in', invitationIds)
+        .execute()
+    : []
+  const guestSubsetByInvitationId = new Map<string, Set<string>>()
+  for (const ig of invitationGuests) {
+    const set = guestSubsetByInvitationId.get(ig.invitation_id) ?? new Set()
+    set.add(ig.guest_id)
+    guestSubsetByInvitationId.set(ig.invitation_id, set)
+  }
+
   const rsvps = await db
     .selectFrom('rsvp')
     .innerJoin('guest', 'guest.id', 'rsvp.guest_id')
-    .select(['guest.guest_group_id as groupId', 'rsvp.status as status'])
+    .leftJoin('meal_option', 'meal_option.id', 'rsvp.meal_choice_id')
+    .select([
+      'guest.guest_group_id as groupId',
+      'rsvp.guest_id as guestId',
+      'rsvp.event_id as eventId',
+      'rsvp.status as status',
+      'meal_option.label as mealLabel',
+    ])
     .where('guest.guest_group_id', 'in', groupIds)
     .execute()
 
   const items: AdminGroupListItem[] = groups.map((g) => {
     const groupGuests = guests.filter((x) => x.guest_group_id === g.id)
     const groupRsvps = rsvps.filter((r) => r.groupId === g.id)
+    const groupInvitations = invitations.filter(
+      (i) => i.guest_group_id === g.id,
+    )
+
     return {
       id: g.id,
       label: g.label,
-      inviteCode: g.invite_code,
       guestCount: groupGuests.length,
       attendingCount: groupRsvps.filter((r) => r.status === 'attending').length,
       declinedCount: groupRsvps.filter((r) => r.status === 'declined').length,
       pendingCount: groupRsvps.filter((r) => r.status === 'pending').length,
       updatedAt: g.updated_at,
-      guests: groupGuests.map((x) => ({
-        id: x.id,
-        displayName: x.display_name,
-        email: x.email,
-      })),
+      guests: groupGuests.map((gst) => {
+        const eventStatuses: AdminGuestEventStatus[] = []
+        for (const inv of groupInvitations) {
+          const subset = guestSubsetByInvitationId.get(inv.id)
+          const isInvited = !subset || subset.has(gst.id)
+          if (!isInvited) {
+            eventStatuses.push({
+              eventId: inv.event_id,
+              status: 'not-invited',
+              mealLabel: null,
+            })
+            continue
+          }
+          const rsvp = groupRsvps.find(
+            (r) => r.guestId === gst.id && r.eventId === inv.event_id,
+          )
+          eventStatuses.push({
+            eventId: inv.event_id,
+            status: rsvp?.status ?? 'pending',
+            mealLabel: rsvp?.mealLabel ?? null,
+          })
+        }
+        return {
+          id: gst.id,
+          displayName: gst.display_name,
+          email: gst.email,
+          inviteCode: gst.invite_code,
+          dietaryRestrictions: gst.dietary_restrictions,
+          notes: gst.notes,
+          eventStatuses,
+        }
+      }),
     }
   })
   return Response.json({ groups: items })
@@ -65,7 +127,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const db = getDb(context.env.DB)
   const now = nowIso()
   const groupId = input.id ?? newId('grp')
-  const inviteCode = input.inviteCode ?? newInviteCode()
 
   if (input.id) {
     await db
@@ -83,7 +144,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .values({
         id: groupId,
         label: input.label,
-        invite_code: inviteCode,
         primary_contact_guest_id: null,
         notes: input.notes ?? null,
         created_at: now,
@@ -137,6 +197,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           display_name: displayName,
           email: g.email ? g.email : null,
           phone: g.phone ?? null,
+          invite_code: newInviteCode(),
           is_plus_one: 0,
           dietary_restrictions: g.dietaryRestrictions ?? null,
           notes: g.notes ?? null,
@@ -160,5 +221,5 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .execute()
   }
 
-  return Response.json({ id: groupId, inviteCode })
+  return Response.json({ id: groupId })
 }

@@ -125,19 +125,23 @@ function Import() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Label</th>
+                    <th>Group</th>
+                    <th>Guest</th>
                     <th>Invite code</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {result.created.map((c) => (
-                    <tr key={c.groupId}>
-                      <td>{c.label}</td>
-                      <td>
-                        <code>{c.inviteCode}</code>
-                      </td>
-                    </tr>
-                  ))}
+                  {result.created.flatMap((c) =>
+                    c.guests.map((g) => (
+                      <tr key={g.id}>
+                        <td>{c.label}</td>
+                        <td>{g.displayName}</td>
+                        <td>
+                          <code>{g.inviteCode}</code>
+                        </td>
+                      </tr>
+                    )),
+                  )}
                 </tbody>
               </table>
             </div>

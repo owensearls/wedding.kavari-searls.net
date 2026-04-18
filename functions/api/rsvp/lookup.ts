@@ -24,9 +24,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       'guest.email as email',
       'guest.first_name as firstName',
       'guest.last_name as lastName',
+      'guest.invite_code as inviteCode',
       'guest_group.id as groupId',
       'guest_group.label as groupLabel',
-      'guest_group.invite_code as inviteCode',
     ])
     .execute()
 

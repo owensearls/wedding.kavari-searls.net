@@ -58,6 +58,7 @@ export const guestSchema = z.object({
   displayName: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
+  inviteCode: z.string(),
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
 })
@@ -99,8 +100,10 @@ export const rsvpGroupResponseSchema = z.object({
   group: z.object({
     id: z.string(),
     label: z.string(),
-    inviteCode: z.string(),
   }),
+  // The guest whose invite_code was used to open the page. Defaults the
+  // "who is RSVPing" selector in the form.
+  actingGuestId: z.string(),
   guests: z.array(guestSchema),
   events: z.array(eventSchema),
   rsvps: z.array(rsvpRecordSchema),

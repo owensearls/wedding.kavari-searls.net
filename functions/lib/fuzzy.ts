@@ -43,20 +43,25 @@ export function score(query: string, candidate: string): number {
 }
 
 // One guest-row candidate the lookup query can match against. Flattened from
-// the DB join so the aggregation is pure and unit-testable.
+// the DB join so the aggregation is pure and unit-testable. Each guest has
+// their own invite_code now.
 export interface LookupCandidate {
   guestId: string
   displayName: string
   firstName: string
   lastName: string | null
   email: string | null
+  inviteCode: string
   groupId: string
   groupLabel: string
-  inviteCode: string
 }
 
 export interface AggregatedLookupMatch {
   guestGroupId: string
+  // Code of the highest-scoring guest in this group. All codes in the group
+  // resolve to the same RSVP form, so any one works; we pick the best match
+  // so a search for "Alice" lands the user on Alice's code (handy when we
+  // eventually want per-guest tracking of "who opened the invitation").
   inviteCode: string
   label: string
   guestNames: string[]
@@ -92,7 +97,10 @@ export function aggregateLookupMatches(
 
     const existing = byGroup.get(row.groupId)
     if (existing) {
-      existing.bestScore = Math.max(existing.bestScore, s)
+      if (s > existing.bestScore) {
+        existing.bestScore = s
+        existing.inviteCode = row.inviteCode
+      }
       existing.guestNames.add(row.displayName)
     } else {
       byGroup.set(row.groupId, {

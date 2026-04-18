@@ -27,7 +27,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   return Response.json({
     id: group.id,
     label: group.label,
-    inviteCode: group.invite_code,
     notes: group.notes,
     invitedEventIds: invitations.map((i) => i.event_id),
     guests: guests.map((g) => ({
@@ -36,6 +35,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       lastName: g.last_name,
       email: g.email,
       phone: g.phone,
+      inviteCode: g.invite_code,
       dietaryRestrictions: g.dietary_restrictions,
       notes: g.notes,
     })),

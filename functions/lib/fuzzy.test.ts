@@ -102,9 +102,9 @@ describe('aggregateLookupMatches', () => {
       firstName: 'Alice',
       lastName: 'Smith',
       email: 'alice@example.com',
+      inviteCode: 'alice01',
       groupId: 'grpA',
       groupLabel: 'The Smith family',
-      inviteCode: 'smith01',
     },
     {
       guestId: 'g2',
@@ -112,9 +112,9 @@ describe('aggregateLookupMatches', () => {
       firstName: 'Bob',
       lastName: 'Smith',
       email: null,
+      inviteCode: 'bob0002',
       groupId: 'grpA',
       groupLabel: 'The Smith family',
-      inviteCode: 'smith01',
     },
     {
       guestId: 'g3',
@@ -122,9 +122,9 @@ describe('aggregateLookupMatches', () => {
       firstName: 'Jordan',
       lastName: 'Lee',
       email: 'jordan@example.com',
+      inviteCode: 'jordn22',
       groupId: 'grpB',
       groupLabel: 'Jordan & guest',
-      inviteCode: 'jordn22',
     },
   ]
 
@@ -132,18 +132,19 @@ describe('aggregateLookupMatches', () => {
     expect(aggregateLookupMatches(candidates, 'zzzzz')).toEqual([])
   })
 
-  it('matches by email', () => {
+  it('matches by email and returns that guest’s code', () => {
     const result = aggregateLookupMatches(candidates, 'alice@example.com')
     expect(result).toHaveLength(1)
-    expect(result[0].inviteCode).toBe('smith01')
+    expect(result[0].inviteCode).toBe('alice01')
     expect(result[0].guestNames).toEqual(['Alice Smith'])
   })
 
-  it('matches by last name and dedupes into one group', () => {
-    const result = aggregateLookupMatches(candidates, 'smith')
+  it('matches by last name, dedupes into one group, uses best scorer’s code', () => {
+    const result = aggregateLookupMatches(candidates, 'bob smith')
     expect(result).toHaveLength(1)
-    expect(result[0].inviteCode).toBe('smith01')
-    // Both guests whose text scored > 0 should show up.
+    // "bob smith" matches Bob's full name exactly (highest score), so Bob's
+    // code is the one returned even though both Smith siblings score > 0.
+    expect(result[0].inviteCode).toBe('bob0002')
     expect(result[0].guestNames.sort()).toEqual(['Alice Smith', 'Bob Smith'])
   })
 
@@ -176,8 +177,9 @@ describe('aggregateLookupMatches', () => {
       ],
       'alice@example.com',
     )
-    // Alice's exact email beats anyone else — first result should be her group.
-    expect(result[0].inviteCode).toBe('smith01')
+    // Alice's exact email beats anyone else — first result should be her group
+    // and the returned code should be Alice's (best-scoring guest in the group).
+    expect(result[0].inviteCode).toBe('alice01')
   })
 
   it('respects the limit', () => {

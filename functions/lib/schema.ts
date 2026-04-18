@@ -5,7 +5,6 @@
 export interface GuestGroupTable {
   id: string
   label: string
-  invite_code: string
   primary_contact_guest_id: string | null
   notes: string | null
   created_at: string
@@ -20,6 +19,7 @@ export interface GuestTable {
   display_name: string
   email: string | null
   phone: string | null
+  invite_code: string
   is_plus_one: number
   dietary_restrictions: string | null
   notes: string | null
