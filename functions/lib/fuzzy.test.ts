@@ -75,9 +75,6 @@ describe('score', () => {
   })
 
   it('rewards all-tokens-matched bonus', () => {
-    // Normalized substring "al sm" isn't contiguous in "alice smith" (there's a
-    // space but "al sm" with one space vs "alice smith" with one space and
-    // more letters). So both fall through to token matching. Both tokens match.
     const both = score('al sm', 'alice smith')
     const one = score('al xyz', 'alice smith')
     expect(both).toBeGreaterThan(one)
@@ -103,7 +100,7 @@ describe('aggregateLookupMatches', () => {
       lastName: 'Smith',
       email: 'alice@example.com',
       inviteCode: 'alice01',
-      groupId: 'grpA',
+      partyLeaderId: 'g1',
       groupLabel: 'The Smith family',
     },
     {
@@ -113,7 +110,7 @@ describe('aggregateLookupMatches', () => {
       lastName: 'Smith',
       email: null,
       inviteCode: 'bob0002',
-      groupId: 'grpA',
+      partyLeaderId: 'g1',
       groupLabel: 'The Smith family',
     },
     {
@@ -123,7 +120,7 @@ describe('aggregateLookupMatches', () => {
       lastName: 'Lee',
       email: 'jordan@example.com',
       inviteCode: 'jordn22',
-      groupId: 'grpB',
+      partyLeaderId: 'g3',
       groupLabel: 'Jordan & guest',
     },
   ]
@@ -132,14 +129,14 @@ describe('aggregateLookupMatches', () => {
     expect(aggregateLookupMatches(candidates, 'zzzzz')).toEqual([])
   })
 
-  it('matches by email and returns that guest’s code', () => {
+  it("matches by email and returns that guest's code", () => {
     const result = aggregateLookupMatches(candidates, 'alice@example.com')
     expect(result).toHaveLength(1)
     expect(result[0].inviteCode).toBe('alice01')
     expect(result[0].guestNames).toEqual(['Alice Smith'])
   })
 
-  it('matches by last name, dedupes into one group, uses best scorer’s code', () => {
+  it("matches by last name, dedupes into one group, uses best scorer's code", () => {
     const result = aggregateLookupMatches(candidates, 'bob smith')
     expect(result).toHaveLength(1)
     // "bob smith" matches Bob's full name exactly (highest score), so Bob's
@@ -156,23 +153,18 @@ describe('aggregateLookupMatches', () => {
   })
 
   it('sorts multiple matching groups by best score descending', () => {
-    // "smith" only matches the Smith family; "lee" only matches Jordan Lee; but
-    // if we search a query that lands in both groups with different strengths,
-    // ordering should reflect the score. Use a query that exact-matches Jordan's
-    // email (score 1000) and substring-matches nothing in the Smith family.
     const result = aggregateLookupMatches(
       [
         ...candidates,
-        // Also substring-matches "alice"
         {
           guestId: 'g4',
           displayName: 'Alison Kavari',
           firstName: 'Alison',
           lastName: 'Kavari',
           email: null,
-          groupId: 'grpC',
-          groupLabel: 'The Kavari family',
           inviteCode: 'kvri33',
+          partyLeaderId: 'g4',
+          groupLabel: 'The Kavari family',
         },
       ],
       'alice@example.com',
@@ -189,9 +181,9 @@ describe('aggregateLookupMatches', () => {
       firstName: 'Alice',
       lastName: String(i),
       email: null,
-      groupId: `grp${i}`,
-      groupLabel: `Group ${i}`,
       inviteCode: `code${i}`,
+      partyLeaderId: `g${i}`,
+      groupLabel: `Group ${i}`,
     }))
     const result = aggregateLookupMatches(many, 'alice', 5)
     expect(result).toHaveLength(5)

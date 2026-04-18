@@ -72,17 +72,25 @@ describe('rsvpSubmissionSchema', () => {
     const parsed = rsvpSubmissionSchema.parse(minimal)
     expect(parsed.rsvps).toHaveLength(1)
     expect(parsed.guestUpdates).toEqual([])
-    expect(parsed.songRequests).toEqual([])
   })
 
-  it('accepts guest updates and song requests', () => {
+  it('accepts guest updates with notesJson', () => {
     const parsed = rsvpSubmissionSchema.parse({
       ...minimal,
-      guestUpdates: [{ guestId: 'g1', dietaryRestrictions: 'vegan' }],
-      songRequests: [{ guestId: 'g1', title: 'Wagon Wheel' }],
+      guestUpdates: [
+        {
+          guestId: 'g1',
+          dietaryRestrictions: 'vegan',
+          notesJson: {
+            songRequest: { title: 'Wagon Wheel', artist: null },
+          },
+        },
+      ],
     })
     expect(parsed.guestUpdates).toHaveLength(1)
-    expect(parsed.songRequests?.[0]?.title).toBe('Wagon Wheel')
+    expect(parsed.guestUpdates[0].notesJson?.songRequest?.title).toBe(
+      'Wagon Wheel',
+    )
   })
 
   it('rejects missing respondedByGuestId', () => {
@@ -98,15 +106,6 @@ describe('rsvpSubmissionSchema', () => {
       rsvpSubmissionSchema.parse({
         respondedByGuestId: 'g1',
         rsvps: [{ guestId: 'g1', eventId: 'e1', status: 'yes' }],
-      }),
-    ).toThrow()
-  })
-
-  it('rejects empty song title', () => {
-    expect(() =>
-      rsvpSubmissionSchema.parse({
-        ...minimal,
-        songRequests: [{ guestId: 'g1', title: '' }],
       }),
     ).toThrow()
   })

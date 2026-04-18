@@ -12,34 +12,36 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   if (!code) return jsonError(400, 'Missing invite code')
   const db = getDb(context.env.DB)
 
-  // Invite codes now live on the guest; resolving it gets us the acting
-  // guest first, then their group.
+  // Invite codes live on the guest row.
   const actingGuest = await db
     .selectFrom('guest')
-    .select(['id', 'guest_group_id'])
+    .select(['id', 'party_leader_id'])
     .where('invite_code', '=', code)
     .executeTakeFirst()
   if (!actingGuest) return jsonError(404, 'Invite code not found')
 
-  const group = await db
-    .selectFrom('guest_group')
-    .selectAll()
-    .where('id', '=', actingGuest.guest_group_id)
-    .executeTakeFirst()
-  if (!group) return jsonError(404, 'Group not found')
+  const leaderId = actingGuest.party_leader_id ?? actingGuest.id
 
-  const guests = await db
+  const leader = await db
     .selectFrom('guest')
     .selectAll()
-    .where('guest_group_id', '=', group.id)
+    .where('id', '=', leaderId)
+    .executeTakeFirst()
+  if (!leader) return jsonError(404, 'Party leader not found')
+
+  // All party members: leader + anyone pointing to leader.
+  const members = await db
+    .selectFrom('guest')
+    .selectAll()
+    .where('party_leader_id', '=', leaderId)
     .execute()
+  const allGuests = [leader, ...members]
 
   const invitations = await db
     .selectFrom('invitation')
     .selectAll()
-    .where('guest_group_id', '=', group.id)
+    .where('guest_id', '=', leaderId)
     .execute()
-  const invitationIds = invitations.map((i) => i.id)
   const eventIds = invitations.map((i) => i.event_id)
 
   const events = eventIds.length
@@ -59,15 +61,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         .execute()
     : []
 
-  const invitationGuests = invitationIds.length
-    ? await db
-        .selectFrom('invitation_guest')
-        .selectAll()
-        .where('invitation_id', 'in', invitationIds)
-        .execute()
-    : []
-
-  const guestIds = guests.map((g) => g.id)
+  const guestIds = allGuests.map((g) => g.id)
   const rsvps = guestIds.length
     ? await db
         .selectFrom('rsvp')
@@ -76,48 +70,37 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         .execute()
     : []
 
-  const songRequests = guestIds.length
-    ? await db
-        .selectFrom('song_request')
-        .selectAll()
-        .where('guest_id', 'in', guestIds)
-        .execute()
-    : []
+  const eventResponse: EventDetails[] = events.map((e) => ({
+    id: e.id,
+    name: e.name,
+    slug: e.slug,
+    startsAt: e.starts_at,
+    endsAt: e.ends_at,
+    locationName: e.location_name,
+    address: e.address,
+    rsvpDeadline: e.rsvp_deadline,
+    requiresMealChoice: !!e.requires_meal_choice,
+    sortOrder: e.sort_order,
+    invitedGuestIds: guestIds,
+    mealOptions: mealOptions
+      .filter((m) => m.event_id === e.id)
+      .map((m) => ({
+        id: m.id,
+        label: m.label,
+        description: m.description,
+      })),
+  }))
 
-  const eventResponse: EventDetails[] = events.map((e) => {
-    const invitation = invitations.find((inv) => inv.event_id === e.id)
-    const explicitInvitedGuestIds = invitation
-      ? invitationGuests
-          .filter((ig) => ig.invitation_id === invitation.id)
-          .map((ig) => ig.guest_id)
-      : []
-    const invitedGuestIds =
-      explicitInvitedGuestIds.length > 0
-        ? explicitInvitedGuestIds
-        : guestIds.slice()
-    return {
-      id: e.id,
-      name: e.name,
-      slug: e.slug,
-      startsAt: e.starts_at,
-      endsAt: e.ends_at,
-      locationName: e.location_name,
-      address: e.address,
-      rsvpDeadline: e.rsvp_deadline,
-      requiresMealChoice: !!e.requires_meal_choice,
-      sortOrder: e.sort_order,
-      invitedGuestIds,
-      mealOptions: mealOptions
-        .filter((m) => m.event_id === e.id)
-        .map((m) => ({
-          id: m.id,
-          label: m.label,
-          description: m.description,
-        })),
+  function parseNotesJson(raw: string | null) {
+    if (!raw) return null
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return null
     }
-  })
+  }
 
-  const guestResponse: Guest[] = guests.map((g) => ({
+  const guestResponse: Guest[] = allGuests.map((g) => ({
     id: g.id,
     firstName: g.first_name,
     lastName: g.last_name,
@@ -127,12 +110,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     inviteCode: g.invite_code,
     dietaryRestrictions: g.dietary_restrictions,
     notes: g.notes,
+    notesJson: parseNotesJson(g.notes_json),
   }))
 
   const body: RsvpGroupResponse = {
     group: {
-      id: group.id,
-      label: group.label,
+      id: leaderId,
+      label: leader.group_label ?? '',
     },
     actingGuestId: actingGuest.id,
     guests: guestResponse,
@@ -143,12 +127,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       status: r.status,
       mealChoiceId: r.meal_choice_id,
       respondedAt: r.responded_at,
-    })),
-    songRequests: songRequests.map((s) => ({
-      id: s.id,
-      guestId: s.guest_id,
-      title: s.title,
-      artist: s.artist,
     })),
   }
   return Response.json(body)
@@ -165,47 +143,35 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const db = getDb(context.env.DB)
   const actingGuest = await db
     .selectFrom('guest')
-    .select(['id', 'guest_group_id'])
+    .select(['id', 'party_leader_id'])
     .where('invite_code', '=', code)
     .executeTakeFirst()
   if (!actingGuest) return jsonError(404, 'Invite code not found')
-  const group = { id: actingGuest.guest_group_id }
 
-  const groupGuests = await db
+  const leaderId = actingGuest.party_leader_id ?? actingGuest.id
+
+  const partyGuests = await db
     .selectFrom('guest')
     .select(['id'])
-    .where('guest_group_id', '=', group.id)
+    .where((eb) =>
+      eb.or([
+        eb('id', '=', leaderId),
+        eb('party_leader_id', '=', leaderId),
+      ]),
+    )
     .execute()
-  const allowedGuestIds = new Set(groupGuests.map((g) => g.id))
+  const allowedGuestIds = new Set(partyGuests.map((g) => g.id))
 
   if (!allowedGuestIds.has(submission.respondedByGuestId)) {
     return jsonError(403, 'respondedByGuestId is not in this group')
   }
 
-  // Pull invitations for this group (+ per-guest subsets, if any) and meal
-  // options, so we can validate that every submitted rsvp targets an event
-  // the group was actually invited to, a guest allowed at that event, and a
-  // meal option that belongs to that event.
   const invitations = await db
     .selectFrom('invitation')
     .select(['id', 'event_id'])
-    .where('guest_group_id', '=', group.id)
+    .where('guest_id', '=', leaderId)
     .execute()
-  const invitationByEventId = new Map(invitations.map((i) => [i.event_id, i]))
-  const invitationIds = invitations.map((i) => i.id)
-  const invitationGuests = invitationIds.length
-    ? await db
-        .selectFrom('invitation_guest')
-        .select(['invitation_id', 'guest_id'])
-        .where('invitation_id', 'in', invitationIds)
-        .execute()
-    : []
-  const guestSubsetByInvitationId = new Map<string, Set<string>>()
-  for (const ig of invitationGuests) {
-    const set = guestSubsetByInvitationId.get(ig.invitation_id) ?? new Set()
-    set.add(ig.guest_id)
-    guestSubsetByInvitationId.set(ig.invitation_id, set)
-  }
+  const invitedEventIds = new Set(invitations.map((i) => i.event_id))
 
   const eventIds = invitations.map((i) => i.event_id)
   const mealOptions = eventIds.length
@@ -221,13 +187,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (!allowedGuestIds.has(r.guestId)) {
       return jsonError(403, `Guest ${r.guestId} is not in this group`)
     }
-    const invitation = invitationByEventId.get(r.eventId)
-    if (!invitation) {
+    if (!invitedEventIds.has(r.eventId)) {
       return jsonError(403, `Group is not invited to event ${r.eventId}`)
-    }
-    const subset = guestSubsetByInvitationId.get(invitation.id)
-    if (subset && !subset.has(r.guestId)) {
-      return jsonError(403, `Guest ${r.guestId} is not invited to event ${r.eventId}`)
     }
     if (r.mealChoiceId) {
       const mealEvent = mealEventByMealId.get(r.mealChoiceId)
@@ -242,7 +203,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const now = nowIso()
 
-  // Upsert RSVPs row-by-row. D1 supports onConflict.
   for (const r of submission.rsvps) {
     await db
       .insertInto('rsvp')
@@ -273,37 +233,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .set({
         dietary_restrictions: update.dietaryRestrictions ?? null,
         notes: update.notes ?? null,
+        notes_json: update.notesJson ? JSON.stringify(update.notesJson) : null,
         updated_at: now,
       })
       .where('id', '=', update.guestId)
       .execute()
   }
 
-  // Replace song requests for any guest that submitted them this round.
-  const songRequests = submission.songRequests ?? []
-  const songGuestIds = [...new Set(songRequests.map((s) => s.guestId))]
-  for (const gid of songGuestIds) {
-    if (!allowedGuestIds.has(gid)) continue
-    await db.deleteFrom('song_request').where('guest_id', '=', gid).execute()
-  }
-  for (const s of songRequests) {
-    if (!allowedGuestIds.has(s.guestId)) continue
-    await db
-      .insertInto('song_request')
-      .values({
-        id: newId('song'),
-        guest_id: s.guestId,
-        title: s.title,
-        artist: s.artist ?? null,
-        created_at: now,
-      })
-      .execute()
-  }
-
+  // Update leader's updated_at as a group-level timestamp.
   await db
-    .updateTable('guest_group')
+    .updateTable('guest')
     .set({ updated_at: now })
-    .where('id', '=', group.id)
+    .where('id', '=', leaderId)
     .execute()
 
   return Response.json({ ok: true, respondedAt: now })

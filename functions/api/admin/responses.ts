@@ -6,14 +6,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const guests = await db
     .selectFrom('guest')
-    .innerJoin('guest_group', 'guest_group.id', 'guest.guest_group_id')
     .select([
-      'guest.id as guestId',
-      'guest.display_name as guestName',
-      'guest.invite_code as inviteCode',
-      'guest.dietary_restrictions as dietary',
-      'guest_group.id as groupId',
-      'guest_group.label as groupLabel',
+      'id as guestId',
+      'display_name as guestName',
+      'invite_code as inviteCode',
+      'dietary_restrictions as dietary',
+      'party_leader_id as partyLeaderId',
+      'group_label as groupLabel',
     ])
     .execute()
 
@@ -26,7 +25,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const invitations = await db
     .selectFrom('invitation')
-    .select(['guest_group_id', 'event_id'])
+    .select(['guest_id', 'event_id'])
     .execute()
 
   const rsvps = await db
@@ -46,15 +45,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const out: AdminResponseRow[] = []
   for (const g of guests) {
+    // Find invited events via the party leader's invitations.
+    const leaderId = g.partyLeaderId ?? g.guestId
     const eventIdsForGroup = invitations
-      .filter((i) => i.guest_group_id === g.groupId)
+      .filter((i) => i.guest_id === leaderId)
       .map((i) => i.event_id)
     for (const eid of eventIdsForGroup) {
       const ev = eventById.get(eid)
       if (!ev) continue
       const r = rsvpMap.get(rsvpKey(g.guestId, eid))
       out.push({
-        groupLabel: g.groupLabel,
+        groupLabel: g.groupLabel ?? '',
         inviteCode: g.inviteCode,
         guestName: g.guestName,
         eventName: ev.name,

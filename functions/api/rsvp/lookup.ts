@@ -15,9 +15,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const db = getDb(context.env.DB)
 
+  // Self-join to resolve each guest's party leader for grouping.
   const rows = await db
     .selectFrom('guest')
-    .innerJoin('guest_group', 'guest_group.id', 'guest.guest_group_id')
     .select([
       'guest.id as guestId',
       'guest.display_name as displayName',
@@ -25,13 +25,25 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       'guest.first_name as firstName',
       'guest.last_name as lastName',
       'guest.invite_code as inviteCode',
-      'guest_group.id as groupId',
-      'guest_group.label as groupLabel',
+      'guest.party_leader_id as partyLeaderId',
+      'guest.group_label as groupLabel',
     ])
     .execute()
 
+  // Map into LookupCandidate shape — partyLeaderId is self for leaders.
+  const candidates = rows.map((r) => ({
+    guestId: r.guestId,
+    displayName: r.displayName,
+    firstName: r.firstName,
+    lastName: r.lastName,
+    email: r.email,
+    inviteCode: r.inviteCode,
+    partyLeaderId: r.partyLeaderId ?? r.guestId,
+    groupLabel: r.groupLabel ?? '',
+  }))
+
   const body: LookupResponse = {
-    matches: aggregateLookupMatches(rows, query),
+    matches: aggregateLookupMatches(candidates, query),
   }
   return Response.json(body)
 }

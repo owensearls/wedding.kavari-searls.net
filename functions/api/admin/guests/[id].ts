@@ -9,24 +9,26 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const guest = await db
     .selectFrom('guest')
-    .innerJoin('guest_group', 'guest_group.id', 'guest.guest_group_id')
-    .select([
-      'guest.id as id',
-      'guest.display_name as displayName',
-      'guest.email as email',
-      'guest.phone as phone',
-      'guest.invite_code as inviteCode',
-      'guest.dietary_restrictions as dietaryRestrictions',
-      'guest.notes as notes',
-      'guest.guest_group_id as groupId',
-      'guest_group.label as groupLabel',
-    ])
-    .where('guest.id', '=', id)
+    .selectAll()
+    .where('id', '=', id)
     .executeTakeFirst()
   if (!guest) return jsonError(404, 'Guest not found')
 
-  // Events the group is invited to, the guest-level subset (when set), and
-  // any submitted RSVP rows.
+  // Resolve group label: use own group_label (should always be set), or
+  // fall back to leader's group_label for safety.
+  let groupLabel = guest.group_label ?? ''
+  const leaderId = guest.party_leader_id ?? guest.id
+
+  if (!groupLabel && guest.party_leader_id) {
+    const leader = await db
+      .selectFrom('guest')
+      .select(['group_label'])
+      .where('id', '=', guest.party_leader_id)
+      .executeTakeFirst()
+    groupLabel = leader?.group_label ?? ''
+  }
+
+  // Events the party is invited to.
   const invitations = await db
     .selectFrom('invitation')
     .innerJoin('event', 'event.id', 'invitation.event_id')
@@ -36,24 +38,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       'event.name as eventName',
       'event.sort_order as sortOrder',
     ])
-    .where('invitation.guest_group_id', '=', guest.groupId)
+    .where('invitation.guest_id', '=', leaderId)
     .orderBy('event.sort_order')
     .execute()
-
-  const invitationIds = invitations.map((i) => i.invitationId)
-  const invitationGuests = invitationIds.length
-    ? await db
-        .selectFrom('invitation_guest')
-        .select(['invitation_id', 'guest_id'])
-        .where('invitation_id', 'in', invitationIds)
-        .execute()
-    : []
-  const guestsByInvitation = new Map<string, Set<string>>()
-  for (const ig of invitationGuests) {
-    const set = guestsByInvitation.get(ig.invitation_id) ?? new Set()
-    set.add(ig.guest_id)
-    guestsByInvitation.set(ig.invitation_id, set)
-  }
 
   const rsvps = await db
     .selectFrom('rsvp')
@@ -69,25 +56,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .where('rsvp.guest_id', '=', id)
     .execute()
 
-  const songRequests = await db
-    .selectFrom('song_request')
-    .select(['id', 'title', 'artist'])
-    .where('guest_id', '=', id)
-    .execute()
+  function parseNotesJson(raw: string | null) {
+    if (!raw) return null
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
+  }
 
   const events: AdminGuestDetail['events'] = invitations.map((inv) => {
-    const subset = guestsByInvitation.get(inv.invitationId)
-    const invited = !subset || subset.has(id)
-    if (!invited) {
-      return {
-        eventId: inv.eventId,
-        eventName: inv.eventName,
-        status: 'not-invited',
-        mealLabel: null,
-        respondedAt: null,
-        respondedByDisplayName: null,
-      }
-    }
     const rsvp = rsvps.find((r) => r.eventId === inv.eventId)
     return {
       eventId: inv.eventId,
@@ -101,19 +79,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const body: AdminGuestDetail = {
     id: guest.id,
-    displayName: guest.displayName,
+    displayName: guest.display_name,
     email: guest.email,
     phone: guest.phone,
-    inviteCode: guest.inviteCode,
-    dietaryRestrictions: guest.dietaryRestrictions,
+    inviteCode: guest.invite_code,
+    dietaryRestrictions: guest.dietary_restrictions,
     notes: guest.notes,
-    groupLabel: guest.groupLabel,
+    notesJson: parseNotesJson(guest.notes_json),
+    groupLabel,
     events,
-    songRequests: songRequests.map((s) => ({
-      id: s.id,
-      title: s.title,
-      artist: s.artist,
-    })),
   }
   return Response.json(body)
 }

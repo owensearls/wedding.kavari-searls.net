@@ -63,7 +63,7 @@ function RsvpLookup() {
           )}
           {matches.map((m) => (
             <Link
-              key={m.guestGroupId}
+              key={m.partyLeaderId}
               to={`/rsvp/${m.inviteCode}`}
               className={styles.match}
             >

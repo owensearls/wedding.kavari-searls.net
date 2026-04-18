@@ -51,23 +51,22 @@ export interface LookupCandidate {
   firstName: string
   lastName: string | null
   email: string | null
-  inviteCode: string
-  groupId: string
+  inviteCode: string | null
+  partyLeaderId: string
   groupLabel: string
 }
 
 export interface AggregatedLookupMatch {
-  guestGroupId: string
+  partyLeaderId: string
   // Code of the highest-scoring guest in this group. All codes in the group
   // resolve to the same RSVP form, so any one works; we pick the best match
-  // so a search for "Alice" lands the user on Alice's code (handy when we
-  // eventually want per-guest tracking of "who opened the invitation").
+  // so a search for "Alice" lands the user on Alice's code.
   inviteCode: string
   label: string
   guestNames: string[]
 }
 
-// Group candidates that score > 0 by their guest_group, return the top-N by
+// Group candidates that score > 0 by their party leader, return the top-N by
 // best score descending. Only guest names that actually scored are surfaced,
 // so the UI can show the caller which person it matched on.
 export function aggregateLookupMatches(
@@ -78,7 +77,7 @@ export function aggregateLookupMatches(
   const byGroup = new Map<
     string,
     {
-      groupId: string
+      partyLeaderId: string
       groupLabel: string
       inviteCode: string
       bestScore: number
@@ -95,18 +94,18 @@ export function aggregateLookupMatches(
     const s = score(query, candidateText)
     if (s <= 0) continue
 
-    const existing = byGroup.get(row.groupId)
+    const existing = byGroup.get(row.partyLeaderId)
     if (existing) {
       if (s > existing.bestScore) {
         existing.bestScore = s
-        existing.inviteCode = row.inviteCode
+        if (row.inviteCode) existing.inviteCode = row.inviteCode
       }
       existing.guestNames.add(row.displayName)
     } else {
-      byGroup.set(row.groupId, {
-        groupId: row.groupId,
+      byGroup.set(row.partyLeaderId, {
+        partyLeaderId: row.partyLeaderId,
         groupLabel: row.groupLabel,
-        inviteCode: row.inviteCode,
+        inviteCode: row.inviteCode ?? '',
         bestScore: s,
         guestNames: new Set([row.displayName]),
       })
@@ -117,7 +116,7 @@ export function aggregateLookupMatches(
     .sort((a, b) => b.bestScore - a.bestScore)
     .slice(0, limit)
     .map((m) => ({
-      guestGroupId: m.groupId,
+      partyLeaderId: m.partyLeaderId,
       inviteCode: m.inviteCode,
       label: m.groupLabel,
       guestNames: [...m.guestNames],

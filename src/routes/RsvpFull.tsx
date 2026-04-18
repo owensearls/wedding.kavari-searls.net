@@ -55,16 +55,14 @@ function buildInitialState(data: RsvpGroupResponse): FormState {
   }
   const dietary: FormState['dietary'] = {}
   const notes: FormState['notes'] = {}
+  const songs: FormState['songs'] = {}
   for (const g of data.guests) {
     dietary[g.id] = g.dietaryRestrictions ?? ''
     notes[g.id] = g.notes ?? ''
-  }
-  const songs: FormState['songs'] = {}
-  for (const g of data.guests) {
-    const existing = data.songRequests.find((s) => s.guestId === g.id)
+    const sr = g.notesJson?.songRequest
     songs[g.id] = {
-      title: existing?.title ?? '',
-      artist: existing?.artist ?? '',
+      title: sr?.title ?? '',
+      artist: sr?.artist ?? '',
     }
   }
   return {
@@ -164,18 +162,24 @@ function RsvpFull() {
             mealChoiceId: v.mealChoiceId,
           }
         }),
-        guestUpdates: data.guests.map((g) => ({
-          guestId: g.id,
-          dietaryRestrictions: state.dietary[g.id]?.trim() || null,
-          notes: state.notes[g.id]?.trim() || null,
-        })),
-        songRequests: data.guests
-          .filter((g) => state.songs[g.id]?.title?.trim())
-          .map((g) => ({
+        guestUpdates: data.guests.map((g) => {
+          const songTitle = state.songs[g.id]?.title?.trim()
+          const songArtist = state.songs[g.id]?.artist?.trim()
+          const notesJson = songTitle
+            ? {
+                songRequest: {
+                  title: songTitle,
+                  artist: songArtist || null,
+                },
+              }
+            : null
+          return {
             guestId: g.id,
-            title: state.songs[g.id].title.trim(),
-            artist: state.songs[g.id].artist?.trim() || null,
-          })),
+            dietaryRestrictions: state.dietary[g.id]?.trim() || null,
+            notes: state.notes[g.id]?.trim() || null,
+            notesJson,
+          }
+        }),
       }
       await rsvpGroupSubmit(code, submission)
       setSubmitted(true)

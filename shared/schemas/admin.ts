@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { notesJsonSchema } from './rsvp'
 
 // Trim-empty-string to undefined. Keeps "0" and whitespace-only-but-non-empty
 // cells behaving sensibly; blank CSV / form cells become undefined so optional
@@ -81,8 +82,6 @@ export const adminEventInputSchema = z.object({
 export type AdminEventInput = z.infer<typeof adminEventInputSchema>
 
 // Per-event RSVP status for a single guest, as returned by the admin list.
-// 'not-invited' covers the "group isn't invited" case AND the "group is
-// invited but this guest isn't in the invitation_guest subset" case.
 export const adminGuestEventStatusSchema = z.object({
   eventId: z.string(),
   status: z.enum(['pending', 'attending', 'declined', 'not-invited']),
@@ -94,7 +93,7 @@ export const adminGroupListGuestSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   email: z.string().nullable(),
-  inviteCode: z.string(),
+  inviteCode: z.string().nullable(),
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
   eventStatuses: z.array(adminGuestEventStatusSchema),
@@ -120,9 +119,10 @@ export const adminGuestDetailSchema = z.object({
   displayName: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
-  inviteCode: z.string(),
+  inviteCode: z.string().nullable(),
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
+  notesJson: notesJsonSchema,
   groupLabel: z.string(),
   events: z.array(
     z.object({
@@ -134,19 +134,12 @@ export const adminGuestDetailSchema = z.object({
       respondedByDisplayName: z.string().nullable(),
     }),
   ),
-  songRequests: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      artist: z.string().nullable(),
-    }),
-  ),
 })
 export type AdminGuestDetail = z.infer<typeof adminGuestDetailSchema>
 
 export const adminResponseRowSchema = z.object({
   groupLabel: z.string(),
-  inviteCode: z.string(),
+  inviteCode: z.string().nullable(),
   guestName: z.string(),
   eventName: z.string(),
   status: z.string(),

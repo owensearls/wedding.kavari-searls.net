@@ -1,28 +1,20 @@
-// Kysely Database type — kept in sync by hand with migrations/0001_init.sql.
+// Kysely Database type — kept in sync by hand with migrations.
 // Booleans and dates are stored as INTEGER (0/1) and TEXT (ISO strings) in
 // SQLite, so we type them as `number` and `string` here.
 
-export interface GuestGroupTable {
-  id: string
-  label: string
-  primary_contact_guest_id: string | null
-  notes: string | null
-  created_at: string
-  updated_at: string
-}
-
 export interface GuestTable {
   id: string
-  guest_group_id: string
+  party_leader_id: string | null
   first_name: string
   last_name: string | null
   display_name: string
   email: string | null
   phone: string | null
-  invite_code: string
-  is_plus_one: number
+  invite_code: string | null
+  group_label: string | null
   dietary_restrictions: string | null
   notes: string | null
+  notes_json: string | null
   created_at: string
   updated_at: string
 }
@@ -42,13 +34,8 @@ export interface EventTable {
 
 export interface InvitationTable {
   id: string
-  guest_group_id: string
-  event_id: string
-}
-
-export interface InvitationGuestTable {
-  invitation_id: string
   guest_id: string
+  event_id: string
 }
 
 export interface MealOptionTable {
@@ -68,21 +55,10 @@ export interface RsvpTable {
   responded_by_guest_id: string | null
 }
 
-export interface SongRequestTable {
-  id: string
-  guest_id: string
-  title: string
-  artist: string | null
-  created_at: string
-}
-
 export interface Database {
-  guest_group: GuestGroupTable
   guest: GuestTable
   event: EventTable
   invitation: InvitationTable
-  invitation_guest: InvitationGuestTable
   meal_option: MealOptionTable
   rsvp: RsvpTable
-  song_request: SongRequestTable
 }

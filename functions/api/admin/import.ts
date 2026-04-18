@@ -26,28 +26,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const skipped: string[] = []
 
   for (const [label, rows] of groupedByLabel) {
+    // Skip if a leader with this group_label already exists.
     const existing = await db
-      .selectFrom('guest_group')
+      .selectFrom('guest')
       .select(['id'])
-      .where('label', '=', label)
+      .where('group_label', '=', label)
+      .where('party_leader_id', 'is', null)
       .executeTakeFirst()
     if (existing) {
       skipped.push(label)
       continue
     }
-
-    const groupId = newId('grp')
-    await db
-      .insertInto('guest_group')
-      .values({
-        id: groupId,
-        label,
-        primary_contact_guest_id: null,
-        notes: null,
-        created_at: now,
-        updated_at: now,
-      })
-      .execute()
 
     const eventIdsForGroup = new Set<string>()
     const createdGuests: {
@@ -55,24 +44,33 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       displayName: string
       inviteCode: string
     }[] = []
-    for (const row of rows) {
+
+    let leaderId: string | null = null
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
       const id = newId('gst')
       const displayName = `${row.firstName}${row.lastName ? ' ' + row.lastName : ''}`
       const inviteCode = newInviteCode()
+      const isLeader = i === 0
+
+      if (isLeader) leaderId = id
+
       await db
         .insertInto('guest')
         .values({
           id,
-          guest_group_id: groupId,
+          party_leader_id: isLeader ? null : leaderId,
           first_name: row.firstName,
           last_name: row.lastName ?? null,
           display_name: displayName,
           email: row.email && row.email.length ? row.email : null,
           phone: row.phone ?? null,
           invite_code: inviteCode,
-          is_plus_one: 0,
+          group_label: label,
           dietary_restrictions: null,
           notes: null,
+          notes_json: null,
           created_at: now,
           updated_at: now,
         })
@@ -95,13 +93,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         .insertInto('invitation')
         .values({
           id: newId('inv'),
-          guest_group_id: groupId,
+          guest_id: leaderId!,
           event_id: eventId,
         })
         .execute()
     }
 
-    created.push({ groupId, label, guests: createdGuests })
+    created.push({ groupId: leaderId!, label, guests: createdGuests })
   }
 
   return Response.json({ created, skipped })

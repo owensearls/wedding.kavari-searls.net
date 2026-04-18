@@ -489,17 +489,15 @@ function GuestDetailModal({
               </table>
             </div>
 
-            {data.songRequests.length > 0 && (
+            {data.notesJson?.songRequest && (
               <>
-                <h3 style={{ marginTop: 18 }}>Song requests</h3>
-                <ul>
-                  {data.songRequests.map((s) => (
-                    <li key={s.id}>
-                      {s.title}
-                      {s.artist ? ` — ${s.artist}` : ''}
-                    </li>
-                  ))}
-                </ul>
+                <h3 style={{ marginTop: 18 }}>Song request</h3>
+                <p>
+                  {data.notesJson.songRequest.title}
+                  {data.notesJson.songRequest.artist
+                    ? ` — ${data.notesJson.songRequest.artist}`
+                    : ''}
+                </p>
               </>
             )}
           </div>

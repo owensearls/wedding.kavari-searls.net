@@ -9,7 +9,7 @@ export const lookupQuerySchema = z.object({
 export type LookupQuery = z.infer<typeof lookupQuerySchema>
 
 export const lookupMatchSchema = z.object({
-  guestGroupId: z.string(),
+  partyLeaderId: z.string(),
   inviteCode: z.string(),
   label: z.string(),
   guestNames: z.array(z.string()),
@@ -20,6 +20,20 @@ export const lookupResponseSchema = z.object({
   matches: z.array(lookupMatchSchema),
 })
 export type LookupResponse = z.infer<typeof lookupResponseSchema>
+
+export const notesJsonSchema = z
+  .object({
+    songRequest: z
+      .object({
+        title: z.string().min(1).max(200),
+        artist: z.string().max(200).nullable().optional(),
+      })
+      .optional(),
+  })
+  .passthrough()
+  .nullable()
+  .optional()
+export type NotesJson = z.infer<typeof notesJsonSchema>
 
 export const guestRsvpSchema = z.object({
   guestId: z.string(),
@@ -32,21 +46,13 @@ export const guestUpdateSchema = z.object({
   guestId: z.string(),
   dietaryRestrictions: z.string().max(500).nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
-})
-
-export const songRequestSchema = z.object({
-  title: z.string().min(1).max(200),
-  artist: z.string().max(200).nullable().optional(),
+  notesJson: notesJsonSchema,
 })
 
 export const rsvpSubmissionSchema = z.object({
   respondedByGuestId: z.string(),
   rsvps: z.array(guestRsvpSchema),
   guestUpdates: z.array(guestUpdateSchema).optional().default([]),
-  songRequests: z
-    .array(songRequestSchema.extend({ guestId: z.string() }))
-    .optional()
-    .default([]),
 })
 export type RsvpSubmission = z.infer<typeof rsvpSubmissionSchema>
 
@@ -58,9 +64,10 @@ export const guestSchema = z.object({
   displayName: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
-  inviteCode: z.string(),
+  inviteCode: z.string().nullable(),
   dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
+  notesJson: notesJsonSchema,
 })
 export type Guest = z.infer<typeof guestSchema>
 
@@ -101,19 +108,9 @@ export const rsvpGroupResponseSchema = z.object({
     id: z.string(),
     label: z.string(),
   }),
-  // The guest whose invite_code was used to open the page. Defaults the
-  // "who is RSVPing" selector in the form.
   actingGuestId: z.string(),
   guests: z.array(guestSchema),
   events: z.array(eventSchema),
   rsvps: z.array(rsvpRecordSchema),
-  songRequests: z.array(
-    z.object({
-      id: z.string(),
-      guestId: z.string(),
-      title: z.string(),
-      artist: z.string().nullable(),
-    }),
-  ),
 })
 export type RsvpGroupResponse = z.infer<typeof rsvpGroupResponseSchema>

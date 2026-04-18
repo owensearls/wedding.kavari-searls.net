@@ -6,30 +6,34 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   if (!id) return jsonError(400, 'Missing id')
   const db = getDb(context.env.DB)
 
-  const group = await db
-    .selectFrom('guest_group')
-    .selectAll()
-    .where('id', '=', id)
-    .executeTakeFirst()
-  if (!group) return jsonError(404, 'Not found')
-
-  const guests = await db
+  // id is the party leader's guest id.
+  const leader = await db
     .selectFrom('guest')
     .selectAll()
-    .where('guest_group_id', '=', id)
+    .where('id', '=', id)
+    .where('party_leader_id', 'is', null)
+    .executeTakeFirst()
+  if (!leader) return jsonError(404, 'Not found')
+
+  const members = await db
+    .selectFrom('guest')
+    .selectAll()
+    .where('party_leader_id', '=', id)
     .execute()
+  const allGuests = [leader, ...members]
+
   const invitations = await db
     .selectFrom('invitation')
     .select(['event_id'])
-    .where('guest_group_id', '=', id)
+    .where('guest_id', '=', id)
     .execute()
 
   return Response.json({
-    id: group.id,
-    label: group.label,
-    notes: group.notes,
+    id: leader.id,
+    label: leader.group_label ?? '',
+    notes: leader.notes,
     invitedEventIds: invitations.map((i) => i.event_id),
-    guests: guests.map((g) => ({
+    guests: allGuests.map((g) => ({
       id: g.id,
       firstName: g.first_name,
       lastName: g.last_name,
@@ -46,6 +50,8 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
   const id = String(context.params.id ?? '')
   if (!id) return jsonError(400, 'Missing id')
   const db = getDb(context.env.DB)
-  await db.deleteFrom('guest_group').where('id', '=', id).execute()
+  // Deleting the leader cascades to members (via party_leader_id FK),
+  // invitations (via guest_id FK), and RSVPs.
+  await db.deleteFrom('guest').where('id', '=', id).execute()
   return Response.json({ ok: true })
 }
