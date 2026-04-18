@@ -17,12 +17,6 @@ const blankEvent = (): AdminEventInput => ({
 })
 
 // --- Date helpers ------------------------------------------------------------
-//
-// <input type="datetime-local"> works with "YYYY-MM-DDTHH:MM" strings in the
-// user's local wall clock, with no timezone. The DB stores whatever we send;
-// we keep things simple by round-tripping local wall-clock ISO strings of the
-// form "YYYY-MM-DDTHH:MM:00" (no offset). Browsers parse these as local time,
-// which is what we want for a wedding with a single venue timezone.
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -91,6 +85,22 @@ function EventSettings() {
     }
   }
 
+  if (editing) {
+    return (
+      <EditEventForm
+        event={editing}
+        saving={saving}
+        error={error}
+        onChange={setEditing}
+        onSave={onSave}
+        onCancel={() => {
+          setEditing(null)
+          setError(null)
+        }}
+      />
+    )
+  }
+
   return (
     <div>
       <div className={`${styles.row} ${styles.card}`}>
@@ -152,151 +162,213 @@ function EventSettings() {
           </table>
         </div>
       )}
+    </div>
+  )
+}
 
-      {editing && (
-        <div className={styles.card} style={{ marginTop: 24 }}>
-          <h3>{editing.id ? 'Edit event' : 'New event'}</h3>
-          <label className={styles.label}>Name</label>
-          <input
-            className="admin-input"
-            value={editing.name}
-            onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-          />
-          <label className={styles.label}>Slug (lowercase, no spaces)</label>
-          <input
-            className="admin-input"
-            value={editing.slug}
-            onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
-          />
-          <label className={styles.label}>Starts at</label>
-          <input
-            className="admin-input"
-            type="datetime-local"
-            value={isoToLocalInput(editing.startsAt)}
-            onChange={(e) =>
-              setEditing({
-                ...editing,
-                startsAt: localInputToIso(e.target.value),
-              })
-            }
-          />
-          <label className={styles.label}>Location name</label>
-          <input
-            className="admin-input"
-            value={editing.locationName ?? ''}
-            onChange={(e) =>
-              setEditing({ ...editing, locationName: e.target.value })
-            }
-          />
-          <label className={styles.label}>Address</label>
-          <input
-            className="admin-input"
-            value={editing.address ?? ''}
-            onChange={(e) =>
-              setEditing({ ...editing, address: e.target.value })
-            }
-          />
-          <label className={styles.label}>RSVP deadline</label>
-          <input
-            className="admin-input"
-            type="datetime-local"
-            value={isoToLocalInput(editing.rsvpDeadline)}
-            onChange={(e) =>
-              setEditing({
-                ...editing,
-                rsvpDeadline: localInputToIso(e.target.value),
-              })
-            }
-          />
-          <label className={styles.label}>Sort order</label>
+function EditEventForm({
+  event,
+  saving,
+  error,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  event: AdminEventInput
+  saving: boolean
+  error: string | null
+  onChange: (next: AdminEventInput) => void
+  onSave: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div className={styles.editForm}>
+      <div className={styles.editFormHeader}>
+        <h2 className={styles.editFormTitle}>
+          {event.id ? 'Edit event' : 'New event'}
+        </h2>
+        <button type="button" className="admin-button ghost" onClick={onCancel}>
+          ← Back to list
+        </button>
+      </div>
+
+      {error && <p className={styles.error}>{error}</p>}
+
+      <div className={styles.editFormSection}>
+        <div className={styles.sectionLabel}>Details</div>
+        <div className={styles.formGrid2}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Name</label>
+            <input
+              className="admin-input"
+              value={event.name}
+              onChange={(e) => onChange({ ...event, name: e.target.value })}
+            />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>
+              Slug <span className={styles.fieldHint}>(lowercase, no spaces)</span>
+            </label>
+            <input
+              className="admin-input"
+              value={event.slug}
+              onChange={(e) => onChange({ ...event, slug: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className={styles.formGrid2} style={{ marginTop: 12 }}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Location name</label>
+            <input
+              className="admin-input"
+              value={event.locationName ?? ''}
+              onChange={(e) =>
+                onChange({ ...event, locationName: e.target.value })
+              }
+            />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Address</label>
+            <input
+              className="admin-input"
+              value={event.address ?? ''}
+              onChange={(e) =>
+                onChange({ ...event, address: e.target.value })
+              }
+            />
+          </div>
+        </div>
+        <div className={styles.fieldGroup} style={{ marginTop: 12, maxWidth: 120 }}>
+          <label className={styles.fieldLabel}>Sort order</label>
           <input
             className="admin-input"
             type="number"
-            value={editing.sortOrder}
+            value={event.sortOrder}
             onChange={(e) =>
-              setEditing({ ...editing, sortOrder: Number(e.target.value) || 0 })
+              onChange({ ...event, sortOrder: Number(e.target.value) || 0 })
             }
           />
-          <label
-            className={styles.checkboxLabel}
-            style={{ marginTop: 12, display: 'flex' }}
-          >
+        </div>
+      </div>
+
+      <div className={styles.editFormSection}>
+        <div className={styles.sectionLabel}>Schedule</div>
+        <div className={styles.formGrid3}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Starts at</label>
             <input
-              type="checkbox"
-              checked={editing.requiresMealChoice}
+              className="admin-input"
+              type="datetime-local"
+              value={isoToLocalInput(event.startsAt)}
               onChange={(e) =>
-                setEditing({ ...editing, requiresMealChoice: e.target.checked })
+                onChange({ ...event, startsAt: localInputToIso(e.target.value) })
               }
             />
-            Requires meal choice
-          </label>
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Ends at</label>
+            <input
+              className="admin-input"
+              type="datetime-local"
+              value={isoToLocalInput(event.endsAt)}
+              onChange={(e) =>
+                onChange({ ...event, endsAt: localInputToIso(e.target.value) })
+              }
+            />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>RSVP deadline</label>
+            <input
+              className="admin-input"
+              type="datetime-local"
+              value={isoToLocalInput(event.rsvpDeadline)}
+              onChange={(e) =>
+                onChange({
+                  ...event,
+                  rsvpDeadline: localInputToIso(e.target.value),
+                })
+              }
+            />
+          </div>
+        </div>
+      </div>
 
-          {editing.requiresMealChoice && (
-            <>
-              <h4>Meal options</h4>
-              {editing.mealOptions.map((m, idx) => (
-                <div className={styles.row} key={idx} style={{ marginBottom: 8 }}>
-                  <input
-                    className="admin-input"
-                    placeholder="Label"
-                    value={m.label}
-                    onChange={(e) => {
-                      const next = [...editing.mealOptions]
-                      next[idx] = { ...m, label: e.target.value }
-                      setEditing({ ...editing, mealOptions: next })
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="admin-button ghost"
-                    onClick={() => {
-                      const next = editing.mealOptions.filter(
-                        (_, i) => i !== idx,
-                      )
-                      setEditing({ ...editing, mealOptions: next })
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                className="admin-button ghost"
-                onClick={() =>
-                  setEditing({
-                    ...editing,
-                    mealOptions: [
-                      ...editing.mealOptions,
-                      { label: '', description: '' },
-                    ],
-                  })
-                }
-              >
-                Add meal option
-              </button>
-            </>
-          )}
+      <div className={styles.editFormSection}>
+        <div className={styles.sectionLabel}>Meal options</div>
+        <label className={styles.checkboxLabel} style={{ marginBottom: 12 }}>
+          <input
+            type="checkbox"
+            checked={event.requiresMealChoice}
+            onChange={(e) =>
+              onChange({ ...event, requiresMealChoice: e.target.checked })
+            }
+          />
+          Requires meal choice
+        </label>
 
-          <div className={styles.row} style={{ marginTop: 18 }}>
-            <button
-              type="button"
-              className="admin-button"
-              onClick={onSave}
-              disabled={saving}
-            >
-              {saving ? 'Saving…' : 'Save event'}
-            </button>
+        {event.requiresMealChoice && (
+          <>
+            {event.mealOptions.map((m, idx) => (
+              <div className={styles.mealOptionRow} key={idx}>
+                <input
+                  className="admin-input"
+                  placeholder="Meal name"
+                  value={m.label}
+                  onChange={(e) => {
+                    const next = [...event.mealOptions]
+                    next[idx] = { ...m, label: e.target.value }
+                    onChange({ ...event, mealOptions: next })
+                  }}
+                />
+                <button
+                  type="button"
+                  className={styles.removeBtn}
+                  onClick={() => {
+                    const next = event.mealOptions.filter((_, i) => i !== idx)
+                    onChange({ ...event, mealOptions: next })
+                  }}
+                  title="Remove meal option"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
             <button
               type="button"
               className="admin-button ghost"
-              onClick={() => setEditing(null)}
+              onClick={() =>
+                onChange({
+                  ...event,
+                  mealOptions: [
+                    ...event.mealOptions,
+                    { label: '', description: '' },
+                  ],
+                })
+              }
             >
-              Cancel
+              + Add meal option
             </button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
+
+      <div className={styles.editFormActions}>
+        <button
+          type="button"
+          className="admin-button"
+          onClick={onSave}
+          disabled={saving}
+        >
+          {saving ? 'Saving…' : 'Save event'}
+        </button>
+        <button
+          type="button"
+          className="admin-button ghost"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   )
 }

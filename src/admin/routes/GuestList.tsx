@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   deleteGroup,
   getGroup,
@@ -35,6 +35,7 @@ const blankGroup = (): AdminGroupInput => ({
 })
 
 function GuestList() {
+  const navigate = useNavigate()
   const [groups, setGroups] = useState<AdminGroupListItem[]>([])
   const [events, setEvents] = useState<AdminEventRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -171,9 +172,13 @@ function GuestList() {
     <div>
       <div className={`${styles.row} ${styles.card}`}>
         <h2 style={{ margin: 0, flex: 1 }}>Guests</h2>
-        <Link to="/import" className="admin-button ghost" style={{ textDecoration: 'none' }}>
+        <button
+          type="button"
+          className="admin-button ghost"
+          onClick={() => navigate('/import')}
+        >
           Import CSV
-        </Link>
+        </button>
         <button
           type="button"
           className="admin-button ghost"

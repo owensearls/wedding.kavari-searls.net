@@ -225,6 +225,7 @@
 
 .editForm {
   max-width: 860px;
+  margin: 0 auto;
 }
 
 .editFormHeader {
@@ -234,7 +235,6 @@
   background: white;
   border: 1px solid #6e6b60;
   padding: 16px 20px;
-  margin-bottom: 2px;
 }
 
 .editFormTitle {
@@ -298,6 +298,28 @@
 
 .fieldHint {
   color: #b0aca0;
+}
+
+.formGrid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.formGrid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.mealOptionRow {
+  display: grid;
+  grid-template-columns: 1fr 32px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
 }
 
 .guestRowPrimary {

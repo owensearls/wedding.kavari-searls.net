@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Papa from 'papaparse'
 import { importRows, type ImportResult } from '../api'
 import styles from '../AdminApp.module.css'
@@ -11,6 +12,7 @@ Jordan & guest,Jordan,Lee,jordan@example.com,,"ceremony,reception"
 Jordan & guest,Plus,one,,,reception`
 
 function Import() {
+  const navigate = useNavigate()
   const [csv, setCsv] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,13 +46,23 @@ function Import() {
   }
 
   return (
-    <div>
-      <div className={styles.card}>
-        <h2 style={{ marginTop: 0 }}>Import guests</h2>
-        <p className={styles.muted}>
+    <div className={styles.editForm}>
+      <div className={styles.editFormHeader}>
+        <h2 className={styles.editFormTitle}>Import guests</h2>
+        <button
+          type="button"
+          className="admin-button ghost"
+          onClick={() => navigate('/groups')}
+        >
+          ← Back to list
+        </button>
+      </div>
+
+      <div className={styles.editFormSection}>
+        <p className={styles.muted} style={{ marginTop: 0 }}>
           Paste a CSV. Columns: <code>groupLabel</code>, <code>firstName</code>,{' '}
           <code>lastName</code>, <code>email</code>, <code>phone</code>,{' '}
-          <code>events</code> (comma-separated event slugs). Existing groups
+          <code>events</code> (comma-separated event slugs). Existing invites
           (matched by label) are skipped.
         </p>
         <textarea
@@ -81,8 +93,10 @@ function Import() {
       </div>
 
       {preview && preview.data.length > 0 && (
-        <div className={styles.card}>
-          <h3 style={{ marginTop: 0 }}>Preview ({preview.data.length} rows)</h3>
+        <div className={styles.editFormSection}>
+          <div className={styles.sectionLabel}>
+            Preview ({preview.data.length} rows)
+          </div>
           {preview.errors.length > 0 && (
             <p className={styles.error}>
               CSV parse errors: {preview.errors.map((e) => e.message).join('; ')}
@@ -112,9 +126,9 @@ function Import() {
       )}
 
       {result && (
-        <div className={styles.card}>
-          <h3 style={{ marginTop: 0 }}>Result</h3>
-          <p>Created {result.created.length} groups.</p>
+        <div className={styles.editFormSection}>
+          <div className={styles.sectionLabel}>Result</div>
+          <p>Created {result.created.length} invites.</p>
           {result.skipped.length > 0 && (
             <p>
               Skipped (label already existed): {result.skipped.join(', ')}
@@ -125,7 +139,7 @@ function Import() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Group</th>
+                    <th>Label</th>
                     <th>Guest</th>
                     <th>Invite code</th>
                   </tr>
