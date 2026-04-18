@@ -56,8 +56,6 @@ export interface MealOptionTable {
   event_id: string
   label: string
   description: string | null
-  is_child_meal: number
-  is_vegetarian: number
 }
 
 export interface RsvpTable {

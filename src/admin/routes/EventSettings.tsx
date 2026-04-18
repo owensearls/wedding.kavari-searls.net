@@ -246,30 +246,6 @@ function EventSettings() {
                       setEditing({ ...editing, mealOptions: next })
                     }}
                   />
-                  <label className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={m.isVegetarian}
-                      onChange={(e) => {
-                        const next = [...editing.mealOptions]
-                        next[idx] = { ...m, isVegetarian: e.target.checked }
-                        setEditing({ ...editing, mealOptions: next })
-                      }}
-                    />
-                    Vegetarian
-                  </label>
-                  <label className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={m.isChildMeal}
-                      onChange={(e) => {
-                        const next = [...editing.mealOptions]
-                        next[idx] = { ...m, isChildMeal: e.target.checked }
-                        setEditing({ ...editing, mealOptions: next })
-                      }}
-                    />
-                    Child
-                  </label>
                   <button
                     type="button"
                     className="admin-button ghost"
@@ -292,12 +268,7 @@ function EventSettings() {
                     ...editing,
                     mealOptions: [
                       ...editing.mealOptions,
-                      {
-                        label: '',
-                        description: '',
-                        isChildMeal: false,
-                        isVegetarian: false,
-                      },
+                      { label: '', description: '' },
                     ],
                   })
                 }

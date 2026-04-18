@@ -151,10 +151,24 @@ describe('adminEventInputSchema', () => {
     const parsed = adminEventInputSchema.parse({
       name: 'Reception',
       slug: 'reception',
-      mealOptions: [{ label: 'Chicken' }, { label: 'Veggie', isVegetarian: true }],
+      mealOptions: [
+        { label: 'Chicken' },
+        { label: 'Veggie', description: 'Roasted seasonal veg' },
+      ],
     })
     expect(parsed.mealOptions).toHaveLength(2)
-    expect(parsed.mealOptions[0].isVegetarian).toBe(false)
-    expect(parsed.mealOptions[1].isVegetarian).toBe(true)
+    expect(parsed.mealOptions[0].label).toBe('Chicken')
+    expect(parsed.mealOptions[0].description).toBeUndefined()
+    expect(parsed.mealOptions[1].description).toBe('Roasted seasonal veg')
+  })
+
+  it('rejects meal options without a label', () => {
+    expect(() =>
+      adminEventInputSchema.parse({
+        name: 'Reception',
+        slug: 'reception',
+        mealOptions: [{ label: '' }],
+      }),
+    ).toThrow()
   })
 })

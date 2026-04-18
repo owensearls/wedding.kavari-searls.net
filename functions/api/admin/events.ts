@@ -28,8 +28,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           id: m.id,
           label: m.label,
           description: m.description,
-          isChildMeal: !!m.is_child_meal,
-          isVegetarian: !!m.is_vegetarian,
         })),
     })),
   })
@@ -95,8 +93,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         event_id: id,
         label: m.label,
         description: m.description ?? null,
-        is_child_meal: m.isChildMeal ? 1 : 0,
-        is_vegetarian: m.isVegetarian ? 1 : 0,
       })
       .execute()
   }

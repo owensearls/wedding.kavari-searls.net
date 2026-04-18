@@ -67,8 +67,6 @@ export const mealOptionSchema = z.object({
   id: z.string(),
   label: z.string(),
   description: z.string().nullable(),
-  isChildMeal: z.boolean(),
-  isVegetarian: z.boolean(),
 })
 export type MealOption = z.infer<typeof mealOptionSchema>
 

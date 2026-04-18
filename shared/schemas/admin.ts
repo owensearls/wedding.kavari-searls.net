@@ -75,8 +75,6 @@ export const adminEventInputSchema = z.object({
           blankToNull,
           z.string().max(500).nullable().optional(),
         ),
-        isChildMeal: z.boolean().default(false),
-        isVegetarian: z.boolean().default(false),
       }),
     )
     .default([]),

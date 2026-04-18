@@ -104,8 +104,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           id: m.id,
           label: m.label,
           description: m.description,
-          isChildMeal: !!m.is_child_meal,
-          isVegetarian: !!m.is_vegetarian,
         })),
     }
   })
