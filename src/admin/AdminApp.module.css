@@ -86,10 +86,23 @@
 
 .guestRow {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 80px 80px auto;
+  grid-template-columns: 1fr 1fr 1fr 1fr 90px auto;
   gap: 8px;
   margin-bottom: 8px;
   align-items: center;
+}
+
+/* Add left padding on header cells so the header text lines up with the input
+   text inside the row below (input has 1px border + 10px horizontal padding). */
+.guestRowHeader {
+  font-weight: 600;
+  color: #6e6b60;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.guestRowHeader > span {
+  padding-left: 11px;
 }
 
 .checkboxLabel {

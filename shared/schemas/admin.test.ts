@@ -11,7 +11,6 @@ describe('adminGuestInputSchema', () => {
   it('fills in sensible defaults', () => {
     const parsed = adminGuestInputSchema.parse({ firstName: 'Alice' })
     expect(parsed.ageGroup).toBe('adult')
-    expect(parsed.isPlusOne).toBe(false)
   })
 
   it('coerces blank email/phone/dietary to null', () => {

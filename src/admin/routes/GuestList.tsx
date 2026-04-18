@@ -20,7 +20,6 @@ const blankGuest = (): AdminGuestInput => ({
   email: '',
   phone: '',
   ageGroup: 'adult',
-  isPlusOne: false,
   dietaryRestrictions: '',
   notes: '',
 })
@@ -176,13 +175,12 @@ function GuestList() {
           />
 
           <h4 style={{ marginTop: 18 }}>Guests</h4>
-          <div className={styles.guestRow} style={{ fontWeight: 600 }}>
+          <div className={`${styles.guestRow} ${styles.guestRowHeader}`}>
             <span>First</span>
             <span>Last</span>
             <span>Email</span>
             <span>Phone</span>
             <span>Age</span>
-            <span>+1?</span>
             <span></span>
           </div>
           {editing.guests.map((guest, idx) => (
@@ -239,17 +237,6 @@ function GuestList() {
                 <option value="child">Child</option>
                 <option value="infant">Infant</option>
               </select>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={guest.isPlusOne}
-                  onChange={(e) => {
-                    const next = [...editing.guests]
-                    next[idx] = { ...guest, isPlusOne: e.target.checked }
-                    setEditing({ ...editing, guests: next })
-                  }}
-                />
-              </label>
               <button
                 type="button"
                 className="admin-button ghost"

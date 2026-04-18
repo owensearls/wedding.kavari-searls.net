@@ -97,6 +97,7 @@
   background: rgba(255, 255, 255, 0.85);
   color: #6e6b60;
   border: none;
+  border-radius: 0;
   cursor: pointer;
   border-left: 1px solid #6e6b60;
 }
@@ -160,6 +161,7 @@
   color: white;
   background: #6e6b60;
   border: 1px solid #6e6b60;
+  border-radius: 0;
   cursor: pointer;
 }
 

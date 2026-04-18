@@ -21,7 +21,6 @@ export const adminGuestInputSchema = z.object({
   ),
   phone: z.preprocess(blankToNull, z.string().max(50).nullable().optional()),
   ageGroup: z.preprocess(blankToUndef, ageGroupSchema.default('adult')),
-  isPlusOne: z.boolean().default(false),
   dietaryRestrictions: z.preprocess(
     blankToNull,
     z.string().max(500).nullable().optional(),
