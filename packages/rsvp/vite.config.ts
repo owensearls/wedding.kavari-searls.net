@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import rsc from '@vitejs/plugin-rsc'
 import { defineConfig } from 'vite'
 import { rscSsgPlugin } from './src/framework/ssg-plugin'
+import { stubGeneratorPlugin } from './src/framework/stub-generator-plugin'
 
 export default defineConfig({
   plugins: [
@@ -21,6 +22,7 @@ export default defineConfig({
     }),
     react(),
     rscSsgPlugin(),
+    stubGeneratorPlugin(),
   ],
   resolve: {
     alias: {

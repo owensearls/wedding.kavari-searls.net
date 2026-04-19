@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
-    "./api/public": "./dist/client-api/public.js"
+    "./api/public": {
+      "types": "./src/client-api/public.d.ts",
+      "default": "./dist/client-api/public.js"
+    }
   },
   "scripts": {
     "dev": "vite",
