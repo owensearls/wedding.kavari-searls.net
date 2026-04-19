@@ -8,7 +8,7 @@ import {
   type ViteDevServer,
 } from 'vite'
 import { afterAll, beforeAll, expect, test } from 'vitest'
-import type { Database as DbSchema } from '../../src/server/lib/schema'
+import type { Database as DbSchema } from '../../src/server/shared/lib/schema'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 let server: ViteDevServer
@@ -81,8 +81,8 @@ beforeAll(async () => {
   // AsyncLocalStorage instance the server functions use. Loading
   // `src/server/context.ts` through Node's default loader would create a
   // second, unrelated ALS and the env wouldn't be visible in getEnv().
-  const ctx = await loadRscModule<typeof import('../../src/server/context')>(
-    '/src/server/context.ts'
+  const ctx = await loadRscModule<typeof import('../../src/server/shared/context')>(
+    '/src/server/shared/context.ts'
   )
   const runWithEnv = ctx.runWithEnv
 

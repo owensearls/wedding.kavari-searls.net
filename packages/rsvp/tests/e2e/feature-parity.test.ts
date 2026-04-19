@@ -7,7 +7,7 @@ import {
   type ViteDevServer,
 } from 'vite'
 import { afterAll, beforeAll, expect, test } from 'vitest'
-import type { Database as DbSchema } from '../../src/server/lib/schema'
+import type { Database as DbSchema } from '../../src/server/shared/lib/schema'
 
 // End-to-end feature-parity test for the RSC server functions. Each CRUD path
 // used by the public RSVP flow and the admin UI is exercised against a real
@@ -19,7 +19,7 @@ import type { Database as DbSchema } from '../../src/server/lib/schema'
 let server: ViteDevServer
 let sqliteDb: Database.Database
 let kyselyDb: Kysely<DbSchema>
-let runWithEnv: typeof import('../../src/server/context').runWithEnv
+let runWithEnv: typeof import('../../src/server/shared/context').runWithEnv
 
 // Modules (loaded via RSC env runner so "use server" + $$id work).
 let rsvpMod: typeof import('../../src/server/public/rsvp')
@@ -81,8 +81,8 @@ beforeAll(async () => {
 
   // IMPORTANT: load runWithEnv through the RSC env runner so the server
   // functions — also loaded through the runner — share the same ALS instance.
-  const ctx = await loadRscModule<typeof import('../../src/server/context')>(
-    '/src/server/context.ts'
+  const ctx = await loadRscModule<typeof import('../../src/server/shared/context')>(
+    '/src/server/shared/context.ts'
   )
   runWithEnv = ctx.runWithEnv
 

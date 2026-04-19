@@ -1,6 +1,6 @@
 import { createRscHandler } from './entry.rsc'
-import { verifyAccessJwt } from './server/auth'
-import { runWithEnv } from './server/context'
+import { verifyAccessJwt } from './server/shared/auth'
+import { runWithEnv } from './server/shared/context'
 
 // Re-export so the Node production server can reach the un-bundled helpers
 // via the built `dist/rsc/index.js` (which inlines virtual RSC modules).

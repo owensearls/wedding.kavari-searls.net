@@ -6,8 +6,8 @@ import {
   type AdminGroupListItem,
   type AdminGuestEventStatus,
 } from '@shared/schemas/admin'
-import { getEnv } from '../context'
-import { getDb, newId, newInviteCode, nowIso } from '../lib/db'
+import { getEnv } from '../shared/context'
+import { getDb, newId, newInviteCode, nowIso } from '../shared/lib/db'
 
 function getDbConn() {
   return getDb(getEnv().DB)

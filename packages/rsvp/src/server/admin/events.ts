@@ -4,8 +4,8 @@ import {
   adminEventInputSchema,
   type AdminEventInput,
 } from '@shared/schemas/admin'
-import { getEnv } from '../context'
-import { getDb, newId } from '../lib/db'
+import { getEnv } from '../shared/context'
+import { getDb, newId } from '../shared/lib/db'
 
 function getDbConn() {
   return getDb(getEnv().DB)

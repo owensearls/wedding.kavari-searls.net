@@ -9,9 +9,9 @@ import {
   type RsvpGroupResponse,
   type RsvpSubmission,
 } from '@shared/schemas/rsvp'
-import { getEnv } from '../context'
-import { getDb, newId, nowIso } from '../lib/db'
-import { aggregateLookupMatches } from '../lib/fuzzy'
+import { getEnv } from '../shared/context'
+import { getDb, newId, nowIso } from '../shared/lib/db'
+import { aggregateLookupMatches } from '../shared/lib/fuzzy'
 
 function getDbConn() {
   return getDb(getEnv().DB)

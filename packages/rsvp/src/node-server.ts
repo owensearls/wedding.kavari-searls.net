@@ -11,7 +11,7 @@ import { Kysely, SqliteDialect } from 'kysely'
 // Run `pnpm build` before `pnpm start`.
 // @ts-expect-error built artifact, no types
 import { createRscHandler, runWithEnv } from '../dist/rsc/index.js'
-import type { Database as DbSchema } from './server/lib/schema.ts'
+import type { Database as DbSchema } from './server/shared/lib/schema.ts'
 
 const CLIENT_DIR = resolve('dist/client')
 const PORT = Number(process.env.PORT ?? 3000)

@@ -1,7 +1,7 @@
 'use server'
 
-import { getEnv } from '../context'
-import { getDb } from '../lib/db'
+import { getEnv } from '../shared/context'
+import { getDb } from '../shared/lib/db'
 import type { AdminResponseRow } from '@shared/schemas/admin'
 
 function getDbConn() {
