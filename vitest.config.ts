@@ -13,6 +13,8 @@ export default defineConfig({
       'functions/**/*.test.ts',
       'shared/**/*.test.ts',
       'src/**/*.test.ts',
+      'tests/**/*.test.ts',
     ],
+    testTimeout: 60_000,
   },
 })
