@@ -9,7 +9,7 @@ interface SectionProps {
   contentPosition?: 'top' | 'bottom'
 }
 
-function Section({
+export function Section({
   id,
   anchor,
   children,
@@ -38,5 +38,3 @@ function Section({
     </section>
   )
 }
-
-export default Section

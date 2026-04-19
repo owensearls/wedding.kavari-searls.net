@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import ErrorMessage from '../../components/ui/ErrorMessage'
-import LoadingIndicator from '../../components/ui/LoadingIndicator'
-import Modal from '../../components/ui/Modal'
-import StatusBadge from '../../components/ui/StatusBadge'
+import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
+import { Modal } from '../../components/ui/Modal'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
-import Table from '../../components/ui/Table'
+import { Table } from '../../components/ui/Table'
 import { getGuest } from '../api'
 import styles from './GuestList.module.css'
 import type { AdminGuestDetail } from '@shared/schemas/admin'
@@ -17,7 +17,7 @@ interface GuestDetailModalProps {
 // Click-in submission detail for a single guest. Fetches its own data and
 // shows a spinner until it resolves; the caller should key={guestId} when
 // swapping targets so we get a clean re-mount and avoid flash of stale data.
-function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
+export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
   const [data, setData] = useState<AdminGuestDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -137,5 +137,3 @@ function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
     </Modal>
   )
 }
-
-export default GuestDetailModal

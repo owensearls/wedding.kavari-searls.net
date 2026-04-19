@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Button from '../../components/ui/Button'
-import EmptyState from '../../components/ui/EmptyState'
-import ErrorMessage from '../../components/ui/ErrorMessage'
-import LoadingIndicator from '../../components/ui/LoadingIndicator'
-import PageHeader from '../../components/ui/PageHeader'
-import Table from '../../components/ui/Table'
+import { Button } from '../../components/ui/Button'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { Table } from '../../components/ui/Table'
 import {
   deleteGroup,
   getGroup,
@@ -16,9 +16,9 @@ import {
   type AdminEventRecord,
 } from '../api'
 import { downloadCsv, responsesToCsv } from '../lib/rsvpCsv'
-import EditGroupForm from './EditGroupForm'
-import GroupBlock from './GroupBlock'
-import GuestDetailModal from './GuestDetailModal'
+import { EditGroupForm } from './EditGroupForm'
+import { GroupBlock } from './GroupBlock'
+import { GuestDetailModal } from './GuestDetailModal'
 import type {
   AdminGroupInput,
   AdminGroupListItem,
@@ -41,7 +41,7 @@ const blankGroup = (): AdminGroupInput => ({
   invitedEventIds: [],
 })
 
-function GuestList() {
+export function GuestList() {
   const navigate = useNavigate()
   const [groups, setGroups] = useState<AdminGroupListItem[]>([])
   const [events, setEvents] = useState<AdminEventRecord[]>([])
@@ -207,5 +207,3 @@ function GuestList() {
     </div>
   )
 }
-
-export default GuestList

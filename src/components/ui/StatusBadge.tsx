@@ -11,11 +11,9 @@ interface StatusBadgeProps {
   label?: string
 }
 
-function StatusBadge({ status, label }: StatusBadgeProps) {
+export function StatusBadge({ status, label }: StatusBadgeProps) {
   const text = label ?? (status ? DEFAULT_STATUS_LABELS[status] : '—')
   return (
     <span className={`${styles.badge} ${statusClassName(status)}`}>{text}</span>
   )
 }
-
-export default StatusBadge

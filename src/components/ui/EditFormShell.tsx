@@ -1,4 +1,4 @@
-import Button from './Button'
+import { Button } from './Button'
 import styles from './EditFormShell.module.css'
 import type { ReactNode } from 'react'
 
@@ -12,7 +12,7 @@ interface EditFormShellProps {
 
 // Wraps an edit-style form page: a header with the title + back button, then
 // the caller's sections / actions as children.
-function EditFormShell({
+export function EditFormShell({
   title,
   onBack,
   backLabel = '← Back to list',
@@ -30,5 +30,3 @@ function EditFormShell({
     </div>
   )
 }
-
-export default EditFormShell

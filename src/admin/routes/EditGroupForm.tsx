@@ -5,15 +5,15 @@ import {
   type AdminGuestInput,
 } from '@shared/schemas/admin'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
-import Button from '../../components/ui/Button'
-import EditFormActions from '../../components/ui/EditFormActions'
-import EditFormSection from '../../components/ui/EditFormSection'
-import EditFormShell from '../../components/ui/EditFormShell'
-import ErrorMessage from '../../components/ui/ErrorMessage'
-import FieldGroup from '../../components/ui/FieldGroup'
-import FormGrid from '../../components/ui/FormGrid'
-import RemoveButton from '../../components/ui/RemoveButton'
-import SectionLabel from '../../components/ui/SectionLabel'
+import { Button } from '../../components/ui/Button'
+import { EditFormActions } from '../../components/ui/EditFormActions'
+import { EditFormSection } from '../../components/ui/EditFormSection'
+import { EditFormShell } from '../../components/ui/EditFormShell'
+import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { FieldGroup } from '../../components/ui/FieldGroup'
+import { FormGrid } from '../../components/ui/FormGrid'
+import { RemoveButton } from '../../components/ui/RemoveButton'
+import { SectionLabel } from '../../components/ui/SectionLabel'
 import styles from './EditGroupForm.module.css'
 import type { AdminEventRecord } from '../api'
 
@@ -36,7 +36,7 @@ interface EditGroupFormProps {
   onCancel: () => void
 }
 
-function EditGroupForm({
+export function EditGroupForm({
   group,
   events,
   saving,
@@ -237,5 +237,3 @@ function EditGroupForm({
     </form>
   )
 }
-
-export default EditGroupForm

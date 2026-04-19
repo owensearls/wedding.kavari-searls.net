@@ -8,7 +8,7 @@ type RemoveButtonProps = Omit<
   label: string
 }
 
-function RemoveButton({ label, className, ...rest }: RemoveButtonProps) {
+export function RemoveButton({ label, className, ...rest }: RemoveButtonProps) {
   return (
     <button
       {...rest}
@@ -21,5 +21,3 @@ function RemoveButton({ label, className, ...rest }: RemoveButtonProps) {
     </button>
   )
 }
-
-export default RemoveButton

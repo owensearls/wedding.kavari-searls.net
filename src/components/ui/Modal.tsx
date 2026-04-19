@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
-import Button from './Button'
+import { Button } from './Button'
 import styles from './Modal.module.css'
 
 interface ModalProps {
@@ -8,7 +8,7 @@ interface ModalProps {
   children: ReactNode
 }
 
-function Modal({ title, onClose, children }: ModalProps) {
+export function Modal({ title, onClose, children }: ModalProps) {
   // Close on Escape.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -38,5 +38,3 @@ function Modal({ title, onClose, children }: ModalProps) {
     </div>
   )
 }
-
-export default Modal

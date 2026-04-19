@@ -1,12 +1,12 @@
-import Button from '../../components/ui/Button'
-import EditFormActions from '../../components/ui/EditFormActions'
-import EditFormSection from '../../components/ui/EditFormSection'
-import EditFormShell from '../../components/ui/EditFormShell'
-import ErrorMessage from '../../components/ui/ErrorMessage'
-import FieldGroup from '../../components/ui/FieldGroup'
-import FormGrid from '../../components/ui/FormGrid'
-import RemoveButton from '../../components/ui/RemoveButton'
-import SectionLabel from '../../components/ui/SectionLabel'
+import { Button } from '../../components/ui/Button'
+import { EditFormActions } from '../../components/ui/EditFormActions'
+import { EditFormSection } from '../../components/ui/EditFormSection'
+import { EditFormShell } from '../../components/ui/EditFormShell'
+import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { FieldGroup } from '../../components/ui/FieldGroup'
+import { FormGrid } from '../../components/ui/FormGrid'
+import { RemoveButton } from '../../components/ui/RemoveButton'
+import { SectionLabel } from '../../components/ui/SectionLabel'
 import { isoToLocalInput, localInputToIso } from '../lib/dateHelpers'
 import styles from './EditEventForm.module.css'
 import type { AdminEventInput } from '@shared/schemas/admin'
@@ -20,7 +20,7 @@ interface EditEventFormProps {
   onCancel: () => void
 }
 
-function EditEventForm({
+export function EditEventForm({
   event,
   saving,
   error,
@@ -190,5 +190,3 @@ function EditEventForm({
     </EditFormShell>
   )
 }
-
-export default EditEventForm

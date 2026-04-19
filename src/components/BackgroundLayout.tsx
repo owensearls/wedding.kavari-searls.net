@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
-import Section from './Section'
+import { Section } from './Section'
 import type { ReactNode } from 'react'
 
 interface BackgroundLayoutProps {
@@ -12,7 +12,7 @@ interface BackgroundLayoutProps {
   footer?: ReactNode
 }
 
-function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
+export function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -305,4 +305,3 @@ function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
 }
 
 export { type BackgroundLayoutProps }
-export default BackgroundLayout

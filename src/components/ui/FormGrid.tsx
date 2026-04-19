@@ -7,7 +7,7 @@ interface FormGridProps {
   style?: CSSProperties
 }
 
-function FormGrid({ cols, children, style }: FormGridProps) {
+export function FormGrid({ cols, children, style }: FormGridProps) {
   const colClass =
     cols === 4 ? styles.cols4 : cols === 3 ? styles.cols3 : styles.cols2
   return (
@@ -16,5 +16,3 @@ function FormGrid({ cols, children, style }: FormGridProps) {
     </div>
   )
 }
-
-export default FormGrid

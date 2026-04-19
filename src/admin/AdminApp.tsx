@@ -1,10 +1,10 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import styles from './AdminApp.module.css'
-import EventSettings from './routes/EventSettings'
-import GuestList from './routes/GuestList'
-import Import from './routes/Import'
+import { EventSettings } from './routes/EventSettings'
+import { GuestList } from './routes/GuestList'
+import { Import } from './routes/Import'
 
-function AdminApp() {
+export function AdminApp() {
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
@@ -39,5 +39,3 @@ function AdminApp() {
     </div>
   )
 }
-
-export default AdminApp

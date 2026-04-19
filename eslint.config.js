@@ -69,6 +69,7 @@ export default defineConfig([
         },
       ],
       'import-x/no-duplicates': 'error',
+      'import-x/no-default-export': 'error',
     },
   },
   // Test files — relaxed rules
@@ -76,6 +77,13 @@ export default defineConfig([
     files: ['**/*.test.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  // Files that require default exports
+  {
+    files: ['src/worker.ts', 'vite.config.ts', 'vite.config.node.ts', 'vitest.config.ts'],
+    rules: {
+      'import-x/no-default-export': 'off',
     },
   },
   eslintConfigPrettier,

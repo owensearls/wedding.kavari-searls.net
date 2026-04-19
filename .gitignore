@@ -5,8 +5,4 @@ node_modules
 dist
 .wrangler
 .dev.vars
-dist/
-.wrangler/
 *.tsbuildinfo
-original.tif
-*.tif

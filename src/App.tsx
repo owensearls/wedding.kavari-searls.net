@@ -1,10 +1,10 @@
 import styles from './App.module.css'
-import BackgroundLayout from './components/BackgroundLayout'
-import Section from './components/Section'
-import RsvpLookup from './routes/RsvpLookup'
+import { BackgroundLayout } from './components/BackgroundLayout'
+import { Section } from './components/Section'
+import { RsvpLookup } from './routes/RsvpLookup'
 import typography from './typography.module.css'
 
-function App() {
+export function App() {
   return (
     <div className={styles.container}>
       <BackgroundLayout
@@ -80,5 +80,3 @@ function App() {
     </div>
   )
 }
-
-export default App

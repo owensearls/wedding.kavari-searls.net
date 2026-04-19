@@ -1,4 +1,4 @@
-import StatusBadge from '../../components/ui/StatusBadge'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import styles from './GuestList.module.css'
 import type { AdminEventRecord } from '../api'
@@ -12,7 +12,7 @@ interface GroupBlockProps {
   onOpenGuest: (guestId: string) => void
 }
 
-function GroupBlock({
+export function GroupBlock({
   group,
   eventColumns,
   colCount,
@@ -100,5 +100,3 @@ function GroupBlock({
     </>
   )
 }
-
-export default GroupBlock

@@ -6,7 +6,7 @@ interface PageHeaderProps {
   actions?: ReactNode
 }
 
-function PageHeader({ title, actions }: PageHeaderProps) {
+export function PageHeader({ title, actions }: PageHeaderProps) {
   return (
     <header className={styles.pageHeader}>
       <h2 className={styles.title}>{title}</h2>
@@ -14,5 +14,3 @@ function PageHeader({ title, actions }: PageHeaderProps) {
     </header>
   )
 }
-
-export default PageHeader

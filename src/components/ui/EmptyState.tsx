@@ -5,8 +5,6 @@ interface EmptyStateProps {
   children: ReactNode
 }
 
-function EmptyState({ children }: EmptyStateProps) {
+export function EmptyState({ children }: EmptyStateProps) {
   return <div className={styles.empty}>{children}</div>
 }
-
-export default EmptyState

@@ -9,7 +9,7 @@ interface FieldGroupProps {
   style?: CSSProperties
 }
 
-function FieldGroup({ label, hint, error, children, style }: FieldGroupProps) {
+export function FieldGroup({ label, hint, error, children, style }: FieldGroupProps) {
   return (
     <div className={styles.fieldGroup} style={style}>
       <label className={styles.label}>
@@ -26,5 +26,3 @@ function FieldGroup({ label, hint, error, children, style }: FieldGroupProps) {
     </div>
   )
 }
-
-export default FieldGroup

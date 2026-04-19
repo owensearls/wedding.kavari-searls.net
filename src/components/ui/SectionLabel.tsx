@@ -8,7 +8,7 @@ interface SectionLabelProps {
   action?: ReactNode
 }
 
-function SectionLabel({ children, action }: SectionLabelProps) {
+export function SectionLabel({ children, action }: SectionLabelProps) {
   if (action) {
     return (
       <div className={styles.row}>
@@ -19,5 +19,3 @@ function SectionLabel({ children, action }: SectionLabelProps) {
   }
   return <div className={styles.sectionLabel}>{children}</div>
 }
-
-export default SectionLabel

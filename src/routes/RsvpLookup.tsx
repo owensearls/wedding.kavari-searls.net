@@ -4,7 +4,7 @@ import { lookupGuests } from '../server/public/rsvp'
 import styles from './RsvpLookup.module.css'
 import type { LookupMatch } from '@shared/schemas/rsvp'
 
-function RsvpLookup() {
+export function RsvpLookup() {
   const [query, setQuery] = useState('')
   const [matches, setMatches] = useState<LookupMatch[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -79,5 +79,3 @@ function RsvpLookup() {
     </div>
   )
 }
-
-export default RsvpLookup

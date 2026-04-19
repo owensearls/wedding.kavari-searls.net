@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import Button from '../../components/ui/Button'
-import EmptyState from '../../components/ui/EmptyState'
-import ErrorMessage from '../../components/ui/ErrorMessage'
-import LoadingIndicator from '../../components/ui/LoadingIndicator'
-import PageHeader from '../../components/ui/PageHeader'
-import Table from '../../components/ui/Table'
+import { Button } from '../../components/ui/Button'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { Table } from '../../components/ui/Table'
 import { listEvents, saveEvent, type AdminEventRecord } from '../api'
 import { formatForDisplay } from '../lib/dateHelpers'
-import EditEventForm from './EditEventForm'
+import { EditEventForm } from './EditEventForm'
 import type { AdminEventInput } from '@shared/schemas/admin'
 
 const blankEvent = (): AdminEventInput => ({
@@ -23,7 +23,7 @@ const blankEvent = (): AdminEventInput => ({
   mealOptions: [],
 })
 
-function EventSettings() {
+export function EventSettings() {
   const [events, setEvents] = useState<AdminEventRecord[]>([])
   const [editing, setEditing] = useState<AdminEventInput | null>(null)
   const [loading, setLoading] = useState(true)
@@ -126,5 +126,3 @@ function EventSettings() {
     </div>
   )
 }
-
-export default EventSettings

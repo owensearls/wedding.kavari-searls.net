@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import '../index.css'
 import './admin.css'
 import { setupServerCallback } from '../rsc-client'
-import AdminApp from './AdminApp'
+import { AdminApp } from './AdminApp'
 setupServerCallback()
 
 createRoot(document.getElementById('root')!).render(

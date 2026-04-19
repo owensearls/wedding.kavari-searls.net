@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import ErrorMessage from '../components/ui/ErrorMessage'
-import LoadingIndicator from '../components/ui/LoadingIndicator'
+import { ErrorMessage } from '../components/ui/ErrorMessage'
+import { LoadingIndicator } from '../components/ui/LoadingIndicator'
 import {
   buildInitialRsvpFormState,
   rsvpKey,
   type RsvpFormState,
 } from '../lib/rsvpFormState'
 import { getRsvpGroup, submitRsvp } from '../server/public/rsvp'
-import EventCardEditor from './EventCardEditor'
+import { EventCardEditor } from './EventCardEditor'
 import styles from './RsvpFull.module.css'
 import type {
   Guest,
@@ -17,7 +17,7 @@ import type {
   RsvpSubmission,
 } from '@shared/schemas/rsvp'
 
-function RsvpFull() {
+export function RsvpFull() {
   const { code = '' } = useParams<{ code: string }>()
   const [data, setData] = useState<RsvpGroupResponse | null>(null)
   const [state, setState] = useState<RsvpFormState | null>(null)
@@ -280,5 +280,3 @@ function RsvpFull() {
     </div>
   )
 }
-
-export default RsvpFull

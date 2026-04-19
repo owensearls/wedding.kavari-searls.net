@@ -15,7 +15,7 @@ interface EventCardEditorProps {
   onMealChange: (guestId: string, eventId: string, mealChoiceId: string) => void
 }
 
-function EventCardEditor({
+export function EventCardEditor({
   event,
   guestById,
   state,
@@ -150,5 +150,3 @@ function EventCardEditor({
     </div>
   )
 }
-
-export default EventCardEditor

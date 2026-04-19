@@ -1,12 +1,12 @@
 import Papa from 'papaparse'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Button from '../../components/ui/Button'
-import EditFormSection from '../../components/ui/EditFormSection'
-import EditFormShell from '../../components/ui/EditFormShell'
-import ErrorMessage from '../../components/ui/ErrorMessage'
-import SectionLabel from '../../components/ui/SectionLabel'
-import Table from '../../components/ui/Table'
+import { Button } from '../../components/ui/Button'
+import { EditFormSection } from '../../components/ui/EditFormSection'
+import { EditFormShell } from '../../components/ui/EditFormShell'
+import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { SectionLabel } from '../../components/ui/SectionLabel'
+import { Table } from '../../components/ui/Table'
 import { importRows, type ImportResult } from '../api'
 import styles from './Import.module.css'
 
@@ -17,7 +17,7 @@ The Smith family,Charlie,Smith,,,ceremony
 Jordan & guest,Jordan,Lee,jordan@example.com,,"ceremony,reception"
 Jordan & guest,Plus,one,,,reception`
 
-function Import() {
+export function Import() {
   const navigate = useNavigate()
   const [csv, setCsv] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -147,5 +147,3 @@ function Import() {
     </EditFormShell>
   )
 }
-
-export default Import

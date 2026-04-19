@@ -7,7 +7,7 @@ interface LoadingIndicatorProps {
   variant?: 'default' | 'inline'
 }
 
-function LoadingIndicator({
+export function LoadingIndicator({
   label = 'Loading…',
   variant = 'default',
 }: LoadingIndicatorProps) {
@@ -21,5 +21,3 @@ function LoadingIndicator({
     </div>
   )
 }
-
-export default LoadingIndicator
