@@ -6,6 +6,7 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "format:check": "pnpm -r format:check",
+    "dev": "pnpm --filter rsvp build && pnpm -r --parallel dev",
     "dev:rsvp": "pnpm --filter rsvp dev",
     "dev:frontend": "pnpm --filter frontend dev"
   },

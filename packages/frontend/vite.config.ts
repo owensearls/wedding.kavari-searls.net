@@ -27,6 +27,10 @@ export default defineConfig({
       '@shared': fileURLToPath(new URL('../../shared', import.meta.url)),
     },
   },
+  server: {
+    port: 5174,
+    strictPort: true,
+  },
   build: {
     outDir: 'dist',
   },
