@@ -1,6 +1,10 @@
-import { createRscHandler } from "./entry.rsc";
+import { createRscHandler } from "./entry.rsc.ts";
 import { runWithEnv } from "./server/context";
 import { verifyAccessJwt } from "./server/auth";
+
+// Re-export so the Node production server can reach the un-bundled helpers
+// via the built `dist/rsc/index.js` (which inlines virtual RSC modules).
+export { createRscHandler, runWithEnv };
 
 export interface Env {
   DB: D1Database;

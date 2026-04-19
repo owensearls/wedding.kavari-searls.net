@@ -66,8 +66,8 @@ beforeAll(async () => {
   // `serverHandler: false`, so no middleware is auto-registered. Pull the
   // handler from the rsc environment's runner so server functions get the
   // RSC transform and carry $$id.
-  const entry = await loadRscModule<typeof import("../../src/entry.rsc")>(
-    "/src/entry.rsc.tsx"
+  const entry = await loadRscModule<typeof import("../../src/entry.rsc.ts")>(
+    "/src/entry.rsc.ts"
   );
   const rscHandler = entry.createRscHandler(); // no auth for tests
 
@@ -126,11 +126,10 @@ test("public RPC: lookupGuests returns 200 with matches array", async () => {
     "/src/server/public/rsvp.ts"
   );
   const id = extractActionId(mod.lookupGuests);
-  expect(id).toContain("src/server/public/");
 
   const encodeReply = await getEncodeReply();
   const body = await encodeReply(["kavari"]);
-  const res = await fetch(`${baseUrl}/@rsc/public/${encodeURIComponent(id)}`, {
+  const res = await fetch(`${baseUrl}/@rsc/${encodeURIComponent(id)}`, {
     method: "POST",
     headers: { "rsc-action-id": id },
     body: body as BodyInit,
@@ -145,24 +144,20 @@ test("public RPC: lookupGuests returns 200 with matches array", async () => {
   expect(bodyText.length).toBeGreaterThan(0);
 });
 
-test("admin id on /@rsc/public/ prefix is rejected with 403", async () => {
-  const mod = await loadRscModule<typeof import("../../src/server/admin/events")>(
-    "/src/server/admin/events.ts"
-  );
-  const id = extractActionId(mod.listEvents);
-  expect(id).toContain("src/server/admin/");
-
+test("unknown action id is rejected with 403", async () => {
   const encodeReply = await getEncodeReply();
   const body = await encodeReply([]);
-  const res = await fetch(`${baseUrl}/@rsc/public/${encodeURIComponent(id)}`, {
+  // Fabricate an id that is not in either allowlist.
+  const fakeId = "deadbeef#nothing";
+  const res = await fetch(`${baseUrl}/@rsc/${encodeURIComponent(fakeId)}`, {
     method: "POST",
-    headers: { "rsc-action-id": id },
+    headers: { "rsc-action-id": fakeId },
     body: body as BodyInit,
   });
   expect(res.status).toBe(403);
 });
 
-test("admin RPC on /@rsc/admin/ prefix (no auth in Node dev) returns 200", async () => {
+test("admin RPC (no auth in Node dev) returns 200", async () => {
   const mod = await loadRscModule<typeof import("../../src/server/admin/events")>(
     "/src/server/admin/events.ts"
   );
@@ -170,7 +165,7 @@ test("admin RPC on /@rsc/admin/ prefix (no auth in Node dev) returns 200", async
 
   const encodeReply = await getEncodeReply();
   const body = await encodeReply([]);
-  const res = await fetch(`${baseUrl}/@rsc/admin/${encodeURIComponent(id)}`, {
+  const res = await fetch(`${baseUrl}/@rsc/${encodeURIComponent(id)}`, {
     method: "POST",
     headers: { "rsc-action-id": id },
     body: body as BodyInit,

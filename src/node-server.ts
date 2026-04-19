@@ -5,9 +5,13 @@ import { extname, join, resolve } from "node:path";
 import { createRequestListener } from "@remix-run/node-fetch-server";
 import Database from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
-import { createRscHandler } from "./entry.rsc";
-import { runWithEnv } from "./server/context";
-import type { Database as DbSchema } from "./server/lib/schema";
+// Import helpers from the BUILT rsc bundle. `entry.rsc.ts` pulls in
+// `@vitejs/plugin-rsc/rsc`, which imports virtual modules that only resolve
+// under Vite. The built bundle has those inlined, so it runs on plain Node.
+// Run `pnpm build` before `pnpm start`.
+// @ts-expect-error built artifact, no types
+import { createRscHandler, runWithEnv } from "../dist/rsc/index.js";
+import type { Database as DbSchema } from "./server/lib/schema.ts";
 
 const CLIENT_DIR = resolve("dist/client");
 const PORT = Number(process.env.PORT ?? 3000);
@@ -44,7 +48,8 @@ const MIME: Record<string, string> = {
   ".json": "application/json",
 };
 
-const rscHandler = createRscHandler(); // no auth: Node target is dev/on-prem behind firewall
+// No auth for the Node target: deployed behind a firewall / trusted network.
+const rscHandler = createRscHandler();
 
 async function serveStatic(pathname: string): Promise<Response | null> {
   const safe = pathname.replace(/\?.*$/, "").replace(/^\/+/, "");

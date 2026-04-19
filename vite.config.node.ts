@@ -7,7 +7,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     rsc({
-      entries: { rsc: "./src/entry.rsc.tsx" },
+      entries: { rsc: "./src/entry.rsc.ts" },
       serverHandler: false,
     }),
     react(),

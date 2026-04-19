@@ -1,5 +1,5 @@
 name = "wedding-kavari-searls-net"
-main = "./dist/worker/index.js"
+main = "./src/worker.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
@@ -7,7 +7,8 @@ compatibility_flags = ["nodejs_compat"]
 binding = "DB"
 database_name = "wedding"
 # database_id must be filled in per-environment; copy from existing wrangler config
-database_id = "REPLACE_ME_WITH_REAL_ID"
+# For local dev, miniflare accepts any UUID; for prod, replace with real id before deploy.
+database_id = "11111111-1111-1111-1111-111111111111"
 
 [assets]
 directory = "./dist/client"
