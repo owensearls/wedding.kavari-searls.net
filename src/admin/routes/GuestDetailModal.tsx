@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { AdminGuestDetail } from '@shared/schemas/admin'
 import ErrorMessage from '../../components/ui/ErrorMessage'
 import LoadingIndicator from '../../components/ui/LoadingIndicator'
 import Modal from '../../components/ui/Modal'
@@ -8,6 +7,7 @@ import { statusClassName } from '../../components/ui/statusHelpers'
 import Table from '../../components/ui/Table'
 import { getGuest } from '../api'
 import styles from './GuestList.module.css'
+import type { AdminGuestDetail } from '@shared/schemas/admin'
 
 interface GuestDetailModalProps {
   guestId: string

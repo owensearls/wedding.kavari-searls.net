@@ -1,10 +1,10 @@
-import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   adminGroupInputSchema,
   type AdminGroupInput,
   type AdminGuestInput,
 } from '@shared/schemas/admin'
+import { useForm, useFieldArray } from 'react-hook-form'
 import Button from '../../components/ui/Button'
 import EditFormActions from '../../components/ui/EditFormActions'
 import EditFormSection from '../../components/ui/EditFormSection'
@@ -14,8 +14,8 @@ import FieldGroup from '../../components/ui/FieldGroup'
 import FormGrid from '../../components/ui/FormGrid'
 import RemoveButton from '../../components/ui/RemoveButton'
 import SectionLabel from '../../components/ui/SectionLabel'
-import type { AdminEventRecord } from '../api'
 import styles from './EditGroupForm.module.css'
+import type { AdminEventRecord } from '../api'
 
 const blankGuest = (): AdminGuestInput => ({
   firstName: '',
@@ -84,7 +84,10 @@ function EditGroupForm({
         <EditFormSection>
           <SectionLabel>Guest</SectionLabel>
           <FormGrid cols={4}>
-            <FieldGroup label="First name" error={fieldError('guests.0.firstName')}>
+            <FieldGroup
+              label="First name"
+              error={fieldError('guests.0.firstName')}
+            >
               <input
                 className={`admin-input ${fieldError('guests.0.firstName') ? styles.inputError : ''}`}
                 {...register('guests.0.firstName')}
@@ -103,10 +106,7 @@ function EditGroupForm({
               />
             </FieldGroup>
             <FieldGroup label="Phone">
-              <input
-                className="admin-input"
-                {...register('guests.0.phone')}
-              />
+              <input className="admin-input" {...register('guests.0.phone')} />
             </FieldGroup>
           </FormGrid>
         </EditFormSection>

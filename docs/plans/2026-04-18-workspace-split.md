@@ -5,6 +5,7 @@
 **Goal:** Restructure the single-package repo into a pnpm workspace with four packages (`@wedding/shared`, `@wedding/public`, `@wedding/admin`, `@wedding/cloudflare`) so each domain lives in its own source tree, auth isolation moves from an in-app allowlist to a build-level separation of RSC graphs, and prod still ships as one Cloudflare Worker.
 
 **Architecture:**
+
 - **Leaves** (`shared`, `public`, `admin`) are pure-source packages — no `dist/`, no build scripts. They export `.ts` source via the `"exports"` field. Each workspace consumer imports via the package name; Vite transpiles on the fly.
 - **Host** (`@wedding/cloudflare`) owns all build orchestration, wrangler config, and the runtime dispatcher Worker. For prod: runs two independent `vite build`s (one per leaf) so each gets its own RSC graph, then builds a tiny dispatcher Worker that path-routes `/@rsc-admin/*` → admin bundle, `/@rsc-public/*` → public bundle, everything else → static assets. For dev: runs ONE Vite server whose RSC entry globs both leaves' server actions (auth bypass via hostname check), serving both `/` and `/admin/*` on a single port.
 - **Auth** becomes structural: the admin prod bundle only knows admin actions, so any request reaching it for auth-evasion is impossible — there are no public action IDs to target. Cloudflare Access gates `/admin*` + `/@rsc-admin*` at the edge (one dashboard field edit); the admin sub-worker retains `verifyAccessJwt` as defense-in-depth with a localhost bypass.
@@ -12,6 +13,7 @@
 **Tech Stack:** pnpm workspaces (`workspace:*`), Node 22, Vite 8, `@vitejs/plugin-rsc`, `@cloudflare/vite-plugin`, Wrangler 4, React 19, Kysely, D1, Vitest, TypeScript 5.9 with `moduleResolution: "bundler"`.
 
 **Execution guidance:**
+
 - This is a large restructure. Make one commit per task where possible. If a task's intermediate state leaves the build broken, that's acceptable — the end of each phase should leave tests passing. Phase boundaries are verification checkpoints.
 - Never rely on `git add -A` / `git add .`. Add explicit paths — the move-heavy nature of this work makes sweeping adds dangerous.
 - Run `pnpm test` after each phase. Full green before moving to the next.
@@ -143,13 +145,14 @@ git commit -m "Add workspace-split plan"
 ### Task 1.1: Create pnpm workspace declaration
 
 **Files:**
+
 - Create: `pnpm-workspace.yaml`
 
 - [ ] **Step 1: Write `pnpm-workspace.yaml`**
 
 ```yaml
 packages:
-  - "packages/*"
+  - 'packages/*'
 ```
 
 - [ ] **Step 2: Create empty package directories**
@@ -180,6 +183,7 @@ Note: the empty src dirs won't be tracked by git until files land in them. That'
 ### Task 1.2: Create skeleton `package.json` for each leaf
 
 **Files:**
+
 - Create: `packages/shared/package.json`
 - Create: `packages/public/package.json`
 - Create: `packages/admin/package.json`
@@ -329,6 +333,7 @@ git commit -m "Scaffold four workspace packages (empty)"
 ### Task 1.3: Create skeleton `tsconfig.json` per package
 
 **Files:**
+
 - Create: `packages/shared/tsconfig.json`
 - Create: `packages/public/tsconfig.json`
 - Create: `packages/admin/tsconfig.json`
@@ -436,6 +441,7 @@ git commit -m "Add tsconfig per workspace package"
 ### Task 2.1: Move zod schemas
 
 **Files:**
+
 - Move: `shared/schemas/admin.ts` → `packages/shared/src/schemas/admin.ts`
 - Move: `shared/schemas/rsvp.ts` → `packages/shared/src/schemas/rsvp.ts`
 - Move: `shared/schemas/admin.test.ts` → `packages/shared/src/schemas/admin.test.ts`
@@ -471,6 +477,7 @@ Replace pattern across `src/**`, `tests/**`:
 ```
 
 Known files that currently import these:
+
 - `src/server/admin/events.ts`
 - `src/server/admin/groups.ts`
 - `src/server/admin/guests.ts`
@@ -560,6 +567,7 @@ git commit -m "Move zod schemas to @wedding/shared"
 ### Task 2.2: Move server context + lib (db, fuzzy, schema)
 
 **Files:**
+
 - Move: `src/server/context.ts` → `packages/shared/src/server/context.ts`
 - Move: `src/server/lib/db.ts` → `packages/shared/src/server/lib/db.ts`
 - Move: `src/server/lib/schema.ts` → `packages/shared/src/server/lib/schema.ts`
@@ -596,6 +604,7 @@ Known callers of `../context`, `../../server/context`, `../lib/db`, `../lib/fuzz
 - `tests/e2e/rpc.roundtrip.test.ts`
 
 Replace patterns:
+
 ```
 from "../context"                       →  from "@wedding/shared/server/context"
 from "../lib/db"                        →  from "@wedding/shared/server/lib/db"
@@ -630,6 +639,7 @@ git commit -m "Move server context + lib to @wedding/shared"
 ### Task 2.3: Move shared UI primitives
 
 **Files:**
+
 - Move: `src/components/ui/*` → `packages/shared/src/components/ui/*`
 
 - [ ] **Step 1: Move the entire ui directory**
@@ -646,6 +656,7 @@ Every file under `src/admin/` that imports `../../components/ui/<Thing>` (or sim
 Enumerate with: `Grep pattern="components/ui"`
 
 Files expected to need updates:
+
 - `src/admin/AdminApp.tsx` (none — check anyway)
 - `src/admin/routes/*.tsx` (many)
 - `src/admin/api.ts`
@@ -656,6 +667,7 @@ Files expected to need updates:
 - `src/components/Section.tsx` / `src/components/BackgroundLayout.tsx` — check whether they import from ui
 
 Replace pattern (for each `<Thing>` import):
+
 ```
 from "../../components/ui/<Thing>"    →  from "@wedding/shared/components/ui/<Thing>"
 from "../components/ui/<Thing>"       →  from "@wedding/shared/components/ui/<Thing>"
@@ -663,6 +675,7 @@ from "./components/ui/<Thing>"        →  from "@wedding/shared/components/ui/<
 ```
 
 CSS module imports use the same convention:
+
 ```
 from "@wedding/shared/components/ui/<Thing>.module.css"
 ```
@@ -682,6 +695,7 @@ pnpm dev
 ```
 
 In another terminal:
+
 ```bash
 curl -s http://localhost:5173/ | head -5
 curl -s http://localhost:5173/admin/ | head -5
@@ -701,6 +715,7 @@ git commit -m "Move shared UI primitives to @wedding/shared"
 ### Task 2.4: Create the `@wedding/shared` barrel
 
 **Files:**
+
 - Modify: `packages/shared/src/index.ts`
 
 - [ ] **Step 1: Write the barrel**
@@ -708,17 +723,17 @@ git commit -m "Move shared UI primitives to @wedding/shared"
 Replace the placeholder `export {}` with re-exports that make the most common imports reachable via the bare `@wedding/shared` specifier:
 
 ```ts
-export * from "./schemas/admin";
-export * from "./schemas/rsvp";
-export { runWithEnv, getEnv } from "./server/context";
-export type { ServerEnv } from "./server/context";
-export { getDb, newId, newInviteCode, nowIso } from "./server/lib/db";
-export type { Db } from "./server/lib/db";
+export * from './schemas/admin'
+export * from './schemas/rsvp'
+export { runWithEnv, getEnv } from './server/context'
+export type { ServerEnv } from './server/context'
+export { getDb, newId, newInviteCode, nowIso } from './server/lib/db'
+export type { Db } from './server/lib/db'
 export type {
   Database,
   GuestTable,
   // add other tables as found in schema.ts
-} from "./server/lib/schema";
+} from './server/lib/schema'
 ```
 
 Confirm exact exports by reading `packages/shared/src/server/lib/schema.ts` and re-exporting every named table/interface it defines.
@@ -747,6 +762,7 @@ Expected: 78/78 pass. The old layout (src/routes, src/admin, src/server/admin, s
 ### Task 3.1: Move public source files
 
 **Files to move (as-is, no content changes):**
+
 - `index.html` → `packages/public/index.html`
 - `public/background.jpg` → `packages/public/public/background.jpg`
 - `public/favicon.svg` → `packages/public/public/favicon.svg`
@@ -812,9 +828,11 @@ rmdir src/server/public
 - [ ] **Step 2: Update the script tag in `packages/public/index.html`**
 
 Open `packages/public/index.html`. Change:
+
 ```html
 <script type="module" src="/src/main.tsx"></script>
 ```
+
 Keep it as-is. In a standalone package Vite treats `/src/main.tsx` as relative to the package root (where `index.html` lives), which is now `packages/public/`. Same resolution.
 
 - [ ] **Step 3: Update the `'../index.css'` import in `src/admin/main.tsx`**
@@ -837,10 +855,13 @@ Expected: the two e2e tests that load public rsvp through the RSC runner (`tests
 - [ ] **Step 5: Update e2e test module paths for public**
 
 In `tests/e2e/feature-parity.test.ts`:
+
 ```
 "/src/server/public/rsvp.ts"   →  "/packages/public/src/server/rsvp.ts"
 ```
+
 Adjust the type-level import at the top too:
+
 ```
 "../../src/server/public/rsvp"  →  "../../packages/public/src/server/rsvp"
 ```
@@ -871,6 +892,7 @@ git commit -m "Move public site source to @wedding/public"
 The public rsc-client currently lives at `src/rsc-client.ts` and is shared between admin and public with a hardcoded `/@rsc/` URL. We need to split this into per-package clients with distinct prefixes, and add a per-package RSC server entry that only globs its own server actions.
 
 **Files:**
+
 - Create: `packages/public/src/rsc-client.ts`
 - Create: `packages/public/src/server/rsc-entry.ts`
 - Modify: `packages/public/src/main.tsx`
@@ -882,44 +904,46 @@ import {
   createFromFetch,
   encodeReply,
   setServerCallback,
-} from "@vitejs/plugin-rsc/browser";
+} from '@vitejs/plugin-rsc/browser'
 
-const RSC_PREFIX = "/@rsc-public/";
+const RSC_PREFIX = '/@rsc-public/'
 
 export function setupServerCallback(): void {
   setServerCallback(async (id, args) => {
-    const body = await encodeReply(args);
+    const body = await encodeReply(args)
     const response = fetch(`${RSC_PREFIX}${encodeURIComponent(id)}`, {
-      method: "POST",
-      headers: { "rsc-action-id": id },
+      method: 'POST',
+      headers: { 'rsc-action-id': id },
       body,
     }).then(async (res) => {
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
+        const text = await res.text().catch(() => '')
         throw new Error(
-          `Server action ${id} failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ""}`,
-        );
+          `Server action ${id} failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`
+        )
       }
-      const ct = res.headers.get("content-type") ?? "";
-      if (!ct.includes("text/x-component")) {
-        const text = await res.text().catch(() => "");
+      const ct = res.headers.get('content-type') ?? ''
+      if (!ct.includes('text/x-component')) {
+        const text = await res.text().catch(() => '')
         throw new Error(
-          `Server action ${id} returned unexpected content-type "${ct || "<missing>"}": ${text.slice(0, 200)}`,
-        );
+          `Server action ${id} returned unexpected content-type "${ct || '<missing>'}": ${text.slice(0, 200)}`
+        )
       }
-      return res;
-    });
-    return createFromFetch(response);
-  });
+      return res
+    })
+    return createFromFetch(response)
+  })
 }
 ```
 
 - [ ] **Step 2: Update `packages/public/src/main.tsx` to import from the local rsc-client**
 
 Change:
+
 ```ts
 import { setupServerCallback } from './rsc-client'
 ```
+
 The import path is already `./rsc-client` (it was relative to `src/`); no change needed because we moved rsc-client alongside main.tsx. Verify the file is at `packages/public/src/rsc-client.ts` — confirm the relative path resolves.
 
 - [ ] **Step 3: Write `packages/public/src/server/rsc-entry.ts`**
@@ -931,62 +955,61 @@ import {
   decodeReply,
   loadServerAction,
   renderToReadableStream,
-} from "@vitejs/plugin-rsc/rsc";
+} from '@vitejs/plugin-rsc/rsc'
 
 // Auto-discover server-action modules in this package only. The glob result's
 // exports become server references at module-load time (plugin-rsc attaches
 // $$id to each "use server" export during graph walk).
-const publicModules = import.meta.glob<Record<string, unknown>>(
-  "./*.ts",
-  { eager: true }
-);
+const publicModules = import.meta.glob<Record<string, unknown>>('./*.ts', {
+  eager: true,
+})
 
 function collectActionIds(modules: Record<string, unknown>[]): Set<string> {
-  const ids = new Set<string>();
+  const ids = new Set<string>()
   for (const mod of modules) {
     for (const key of Object.keys(mod)) {
-      const value = (mod as Record<string, unknown>)[key];
-      if (typeof value !== "function") continue;
-      const $$id = (value as { $$id?: unknown }).$$id;
-      if (typeof $$id === "string") ids.add($$id);
+      const value = (mod as Record<string, unknown>)[key]
+      if (typeof value !== 'function') continue
+      const $$id = (value as { $$id?: unknown }).$$id
+      if (typeof $$id === 'string') ids.add($$id)
     }
   }
-  return ids;
+  return ids
 }
 
-const actionIds = collectActionIds(Object.values(publicModules));
-const RSC_PREFIX = "/@rsc-public/";
+const actionIds = collectActionIds(Object.values(publicModules))
+const RSC_PREFIX = '/@rsc-public/'
 
 export default {
   async fetch(request: Request): Promise<Response> {
-    const url = new URL(request.url);
+    const url = new URL(request.url)
     if (!url.pathname.startsWith(RSC_PREFIX)) {
-      return new Response("Not found", { status: 404 });
+      return new Response('Not found', { status: 404 })
     }
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
     }
 
-    const actionId = decodeURIComponent(url.pathname.slice(RSC_PREFIX.length));
+    const actionId = decodeURIComponent(url.pathname.slice(RSC_PREFIX.length))
     if (!actionIds.has(actionId)) {
-      return new Response("Forbidden", { status: 403 });
+      return new Response('Forbidden', { status: 403 })
     }
 
-    const contentType = request.headers.get("content-type") ?? "";
-    const body = contentType.includes("multipart/form-data")
+    const contentType = request.headers.get('content-type') ?? ''
+    const body = contentType.includes('multipart/form-data')
       ? await request.formData()
-      : await request.text();
+      : await request.text()
 
-    const args = await decodeReply(body);
-    const fn = await loadServerAction(actionId);
-    const result = await fn(...args);
+    const args = await decodeReply(body)
+    const fn = await loadServerAction(actionId)
+    const result = await fn(...args)
 
-    const stream = renderToReadableStream(result);
+    const stream = renderToReadableStream(result)
     return new Response(stream, {
-      headers: { "content-type": "text/x-component" },
-    });
+      headers: { 'content-type': 'text/x-component' },
+    })
   },
-} satisfies { fetch: (request: Request) => Promise<Response> };
+} satisfies { fetch: (request: Request) => Promise<Response> }
 ```
 
 The glob `"./*.ts"` picks up `rsvp.ts` (the only public server module). Exclude `rsc-entry.ts` itself — `import.meta.glob` with a literal pattern won't import the file doing the globbing, but verify by listing the glob result in dev.
@@ -994,12 +1017,12 @@ The glob `"./*.ts"` picks up `rsvp.ts` (the only public server module). Exclude 
 Actually wait: `"./*.ts"` WILL include `rsc-entry.ts`. Exclude it via a negative pattern or rename the server dir. Change the glob to be explicit:
 
 ```ts
-const publicModules = import.meta.glob<Record<string, unknown>>(
-  "./*.ts",
-  { eager: true, import: undefined }
-);
+const publicModules = import.meta.glob<Record<string, unknown>>('./*.ts', {
+  eager: true,
+  import: undefined,
+})
 // Filter out self-reference — the glob includes this file too.
-delete (publicModules as Record<string, unknown>)["./rsc-entry.ts"];
+delete (publicModules as Record<string, unknown>)['./rsc-entry.ts']
 ```
 
 Actually cleaner: make a subdirectory `./actions/` for server actions and glob that. Skip this reorg for MVP — just do the `delete` above.
@@ -1018,6 +1041,7 @@ git commit -m "Add per-package RSC client + entry for public"
 ### Task 4.1: Move admin source files
 
 **Files to move:**
+
 - `admin/index.html` → `packages/admin/index.html`
 - `src/admin/main.tsx` → `packages/admin/src/main.tsx`
 - `src/admin/AdminApp.tsx` → `packages/admin/src/AdminApp.tsx`
@@ -1078,11 +1102,13 @@ rmdir src/server 2>/dev/null || true
 - [ ] **Step 2: Update the admin script tag in `packages/admin/index.html`**
 
 Currently:
+
 ```html
 <script type="module" src="/src/admin/main.tsx"></script>
 ```
 
 Change to:
+
 ```html
 <script type="module" src="/src/main.tsx"></script>
 ```
@@ -1102,6 +1128,7 @@ import { setupServerCallback } from './rsc-client'
 - [ ] **Step 4: Update e2e test paths**
 
 `tests/e2e/feature-parity.test.ts` loads modules like:
+
 ```
 "/src/server/admin/events.ts"  →  "/packages/admin/src/server/events.ts"
 "/src/server/admin/groups.ts"  →  "/packages/admin/src/server/groups.ts"
@@ -1130,18 +1157,27 @@ Check `packages/admin/src/api.ts` — it re-exports from `../server/admin/*`. Af
 
 ```ts
 // Before:
-import { listEvents, saveEvent, type AdminEventRecord } from "../server/admin/events";
-import { listGroups, saveGroup, deleteGroup, getGroup } from "../server/admin/groups";
-import { getGuest } from "../server/admin/guests";
-import { listResponses } from "../server/admin/responses";
-import { importRows, type ImportResult } from "../server/admin/import";
+import {
+  listEvents,
+  saveEvent,
+  type AdminEventRecord,
+} from '../server/admin/events'
+import {
+  listGroups,
+  saveGroup,
+  deleteGroup,
+  getGroup,
+} from '../server/admin/groups'
+import { getGuest } from '../server/admin/guests'
+import { listResponses } from '../server/admin/responses'
+import { importRows, type ImportResult } from '../server/admin/import'
 
 // After:
-import { listEvents, saveEvent, type AdminEventRecord } from "./server/events";
-import { listGroups, saveGroup, deleteGroup, getGroup } from "./server/groups";
-import { getGuest } from "./server/guests";
-import { listResponses } from "./server/responses";
-import { importRows, type ImportResult } from "./server/import";
+import { listEvents, saveEvent, type AdminEventRecord } from './server/events'
+import { listGroups, saveGroup, deleteGroup, getGroup } from './server/groups'
+import { getGuest } from './server/guests'
+import { listResponses } from './server/responses'
+import { importRows, type ImportResult } from './server/import'
 ```
 
 - [ ] **Step 6: Run tests**
@@ -1166,6 +1202,7 @@ git commit -m "Move admin app source to @wedding/admin"
 ### Task 4.2: Create the admin-side RSC entry + client prefix
 
 **Files:**
+
 - Create: `packages/admin/src/rsc-client.ts`
 - Create: `packages/admin/src/server/rsc-entry.ts`
 
@@ -1178,35 +1215,35 @@ import {
   createFromFetch,
   encodeReply,
   setServerCallback,
-} from "@vitejs/plugin-rsc/browser";
+} from '@vitejs/plugin-rsc/browser'
 
-const RSC_PREFIX = "/@rsc-admin/";
+const RSC_PREFIX = '/@rsc-admin/'
 
 export function setupServerCallback(): void {
   setServerCallback(async (id, args) => {
-    const body = await encodeReply(args);
+    const body = await encodeReply(args)
     const response = fetch(`${RSC_PREFIX}${encodeURIComponent(id)}`, {
-      method: "POST",
-      headers: { "rsc-action-id": id },
+      method: 'POST',
+      headers: { 'rsc-action-id': id },
       body,
     }).then(async (res) => {
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
+        const text = await res.text().catch(() => '')
         throw new Error(
-          `Server action ${id} failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ""}`,
-        );
+          `Server action ${id} failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`
+        )
       }
-      const ct = res.headers.get("content-type") ?? "";
-      if (!ct.includes("text/x-component")) {
-        const text = await res.text().catch(() => "");
+      const ct = res.headers.get('content-type') ?? ''
+      if (!ct.includes('text/x-component')) {
+        const text = await res.text().catch(() => '')
         throw new Error(
-          `Server action ${id} returned unexpected content-type "${ct || "<missing>"}": ${text.slice(0, 200)}`,
-        );
+          `Server action ${id} returned unexpected content-type "${ct || '<missing>'}": ${text.slice(0, 200)}`
+        )
       }
-      return res;
-    });
-    return createFromFetch(response);
-  });
+      return res
+    })
+    return createFromFetch(response)
+  })
 }
 ```
 
@@ -1219,51 +1256,50 @@ import {
   decodeReply,
   loadServerAction,
   renderToReadableStream,
-} from "@vitejs/plugin-rsc/rsc";
-import { verifyAccessJwt } from "./auth";
+} from '@vitejs/plugin-rsc/rsc'
+import { verifyAccessJwt } from './auth'
 
-const adminModules = import.meta.glob<Record<string, unknown>>(
-  "./*.ts",
-  { eager: true }
-);
+const adminModules = import.meta.glob<Record<string, unknown>>('./*.ts', {
+  eager: true,
+})
 // The glob includes rsc-entry.ts and auth.ts; filter them out so we don't
 // register stray exports as action IDs.
-delete (adminModules as Record<string, unknown>)["./rsc-entry.ts"];
-delete (adminModules as Record<string, unknown>)["./auth.ts"];
+delete (adminModules as Record<string, unknown>)['./rsc-entry.ts']
+delete (adminModules as Record<string, unknown>)['./auth.ts']
 
 function collectActionIds(modules: Record<string, unknown>[]): Set<string> {
-  const ids = new Set<string>();
+  const ids = new Set<string>()
   for (const mod of modules) {
     for (const key of Object.keys(mod)) {
-      const value = (mod as Record<string, unknown>)[key];
-      if (typeof value !== "function") continue;
-      const $$id = (value as { $$id?: unknown }).$$id;
-      if (typeof $$id === "string") ids.add($$id);
+      const value = (mod as Record<string, unknown>)[key]
+      if (typeof value !== 'function') continue
+      const $$id = (value as { $$id?: unknown }).$$id
+      if (typeof $$id === 'string') ids.add($$id)
     }
   }
-  return ids;
+  return ids
 }
 
-const actionIds = collectActionIds(Object.values(adminModules));
-const RSC_PREFIX = "/@rsc-admin/";
+const actionIds = collectActionIds(Object.values(adminModules))
+const RSC_PREFIX = '/@rsc-admin/'
 
 // Loopback hostnames can't be reached on a deployed Cloudflare Worker, so
 // this is a safe trusted-dev signal without new env vars.
-const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
 
 interface AdminEnv {
-  ACCESS_AUD?: string;
-  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string
+  ACCESS_TEAM_DOMAIN?: string
 }
 
 export default {
   async fetch(request: Request, env: AdminEnv): Promise<Response> {
-    const url = new URL(request.url);
+    const url = new URL(request.url)
     if (!url.pathname.startsWith(RSC_PREFIX)) {
-      return new Response("Not found", { status: 404 });
+      return new Response('Not found', { status: 404 })
     }
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
     }
 
     // Defense-in-depth: Cloudflare Access should gate /@rsc-admin/* at the
@@ -1276,30 +1312,30 @@ export default {
               aud: env.ACCESS_AUD,
               teamDomain: env.ACCESS_TEAM_DOMAIN,
             })
-          : false;
-      if (!ok) return new Response("Unauthorized", { status: 401 });
+          : false
+      if (!ok) return new Response('Unauthorized', { status: 401 })
     }
 
-    const actionId = decodeURIComponent(url.pathname.slice(RSC_PREFIX.length));
+    const actionId = decodeURIComponent(url.pathname.slice(RSC_PREFIX.length))
     if (!actionIds.has(actionId)) {
-      return new Response("Forbidden", { status: 403 });
+      return new Response('Forbidden', { status: 403 })
     }
 
-    const contentType = request.headers.get("content-type") ?? "";
-    const body = contentType.includes("multipart/form-data")
+    const contentType = request.headers.get('content-type') ?? ''
+    const body = contentType.includes('multipart/form-data')
       ? await request.formData()
-      : await request.text();
+      : await request.text()
 
-    const args = await decodeReply(body);
-    const fn = await loadServerAction(actionId);
-    const result = await fn(...args);
+    const args = await decodeReply(body)
+    const fn = await loadServerAction(actionId)
+    const result = await fn(...args)
 
-    const stream = renderToReadableStream(result);
+    const stream = renderToReadableStream(result)
     return new Response(stream, {
-      headers: { "content-type": "text/x-component" },
-    });
+      headers: { 'content-type': 'text/x-component' },
+    })
   },
-} satisfies { fetch: (request: Request, env: AdminEnv) => Promise<Response> };
+} satisfies { fetch: (request: Request, env: AdminEnv) => Promise<Response> }
 ```
 
 Note the env change: `verifyAccessJwt` now reads config from `env.ACCESS_AUD` / `env.ACCESS_TEAM_DOMAIN`, not globals. This removes the `globalThis` shim the old code used (and the TODO comment noting it was tech debt). The env is threaded from the dispatcher Worker.
@@ -1318,6 +1354,7 @@ git commit -m "Add per-package RSC client + entry for admin"
 ### Task 5.1: Move Wrangler config + Node server + SPA fallback
 
 **Files:**
+
 - Move: `wrangler.toml` → `packages/cloudflare/wrangler.toml`
 - Move: `src/node-server.ts` → `packages/cloudflare/src/node-server.ts`
 - Move: `src/vite/admin-spa-fallback.ts` → `packages/cloudflare/src/vite/admin-spa-fallback.ts`
@@ -1336,6 +1373,7 @@ rmdir src/vite
 - [ ] **Step 2: Update `packages/cloudflare/wrangler.toml` paths**
 
 Original had:
+
 ```toml
 main = "./src/worker.ts"
 
@@ -1367,19 +1405,20 @@ Keep the comment block about the placeholder ID intact.
 - [ ] **Step 3: Update `packages/cloudflare/src/node-server.ts` imports**
 
 Current imports:
+
 ```ts
-import { createRscHandler, runWithEnv } from "../dist/rsc/index.js";
-import type { Database as DbSchema } from "./server/lib/schema.ts";
+import { createRscHandler, runWithEnv } from '../dist/rsc/index.js'
+import type { Database as DbSchema } from './server/lib/schema.ts'
 ```
 
 Update to point at the new locations (the Node server will be rewritten in Task 5.5 to dispatch between admin and public handlers — for now just fix the imports so it still compiles):
 
 ```ts
-import { runWithEnv } from "@wedding/shared/server/context";
-import type { Database as DbSchema } from "@wedding/shared/server/lib/schema";
+import { runWithEnv } from '@wedding/shared/server/context'
+import type { Database as DbSchema } from '@wedding/shared/server/lib/schema'
 // dispatcher handler comes from the built output at "../dist/worker.js"
 // @ts-expect-error built artifact, no types
-import dispatcher from "../dist/worker.js";
+import dispatcher from '../dist/worker.js'
 ```
 
 We'll rewrite the handler body in Task 5.5 to use the dispatcher. Skip running node-server.ts right now — it requires a built dist that doesn't exist yet.
@@ -1427,47 +1466,49 @@ Note: tests will fail after this commit because `tests/e2e/rpc.roundtrip.test.ts
 ### Task 5.3: Write the dispatcher Worker
 
 **Files:**
+
 - Create: `packages/cloudflare/src/worker.ts`
 
 - [ ] **Step 1: Write it**
 
 ```ts
-import adminHandler from "@wedding/admin/rsc-entry";
-import publicHandler from "@wedding/public/rsc-entry";
-import { runWithEnv } from "@wedding/shared/server/context";
+import adminHandler from '@wedding/admin/rsc-entry'
+import publicHandler from '@wedding/public/rsc-entry'
+import { runWithEnv } from '@wedding/shared/server/context'
 
 export interface Env {
-  DB: D1Database;
-  ASSETS: Fetcher;
-  ACCESS_AUD?: string;
-  ACCESS_TEAM_DOMAIN?: string;
+  DB: D1Database
+  ASSETS: Fetcher
+  ACCESS_AUD?: string
+  ACCESS_TEAM_DOMAIN?: string
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     return runWithEnv(env, async () => {
-      const url = new URL(request.url);
+      const url = new URL(request.url)
 
-      if (url.pathname.startsWith("/@rsc-admin/")) {
-        return adminHandler.fetch(request, env);
+      if (url.pathname.startsWith('/@rsc-admin/')) {
+        return adminHandler.fetch(request, env)
       }
-      if (url.pathname.startsWith("/@rsc-public/")) {
-        return publicHandler.fetch(request);
+      if (url.pathname.startsWith('/@rsc-public/')) {
+        return publicHandler.fetch(request)
       }
 
       // Static assets with SPA fallback between the two shells.
-      const assetResponse = await env.ASSETS.fetch(request);
-      if (assetResponse.status !== 404) return assetResponse;
+      const assetResponse = await env.ASSETS.fetch(request)
+      if (assetResponse.status !== 404) return assetResponse
 
-      const shellPath = url.pathname.startsWith("/admin/") ? "/admin/" : "/";
-      const shellUrl = new URL(shellPath, url);
-      return env.ASSETS.fetch(new Request(shellUrl, request));
-    });
+      const shellPath = url.pathname.startsWith('/admin/') ? '/admin/' : '/'
+      const shellUrl = new URL(shellPath, url)
+      return env.ASSETS.fetch(new Request(shellUrl, request))
+    })
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<Env>
 ```
 
 Notes:
+
 - No action allowlist — each sub-handler enforces its own.
 - No auth wrapper — the admin sub-handler does its own Access-JWT verification (with hostname bypass).
 - `runWithEnv` wraps both so `getEnv()` works inside server actions regardless of which handler answers.
@@ -1487,6 +1528,7 @@ git commit -m "Add dispatcher Worker for @wedding/cloudflare"
 Dev mode serves both apps on one port with a union RSC graph (auth bypassed via hostname). This is what `pnpm dev` at the root will run.
 
 **Files:**
+
 - Create: `packages/cloudflare/vite.dev.ts`
 - Create: `packages/cloudflare/src/worker-dev.ts`
 
@@ -1506,84 +1548,101 @@ import {
   decodeReply,
   loadServerAction,
   renderToReadableStream,
-} from "@vitejs/plugin-rsc/rsc";
-import { runWithEnv } from "@wedding/shared/server/context";
+} from '@vitejs/plugin-rsc/rsc'
+import { runWithEnv } from '@wedding/shared/server/context'
 
 // Glob BOTH leaves' server actions into one RSC graph for dev convenience.
 // Auth concerns are handled below via hostname bypass.
 const adminModules = import.meta.glob<Record<string, unknown>>(
-  "/packages/admin/src/server/*.ts",
+  '/packages/admin/src/server/*.ts',
   { eager: true }
-);
-delete (adminModules as Record<string, unknown>)["/packages/admin/src/server/rsc-entry.ts"];
-delete (adminModules as Record<string, unknown>)["/packages/admin/src/server/auth.ts"];
+)
+delete (adminModules as Record<string, unknown>)[
+  '/packages/admin/src/server/rsc-entry.ts'
+]
+delete (adminModules as Record<string, unknown>)[
+  '/packages/admin/src/server/auth.ts'
+]
 
 const publicModules = import.meta.glob<Record<string, unknown>>(
-  "/packages/public/src/server/*.ts",
+  '/packages/public/src/server/*.ts',
   { eager: true }
-);
-delete (publicModules as Record<string, unknown>)["/packages/public/src/server/rsc-entry.ts"];
+)
+delete (publicModules as Record<string, unknown>)[
+  '/packages/public/src/server/rsc-entry.ts'
+]
 
 function collectActionIds(modules: Record<string, unknown>[]): Set<string> {
-  const ids = new Set<string>();
+  const ids = new Set<string>()
   for (const mod of modules) {
     for (const key of Object.keys(mod)) {
-      const value = (mod as Record<string, unknown>)[key];
-      if (typeof value !== "function") continue;
-      const $$id = (value as { $$id?: unknown }).$$id;
-      if (typeof $$id === "string") ids.add($$id);
+      const value = (mod as Record<string, unknown>)[key]
+      if (typeof value !== 'function') continue
+      const $$id = (value as { $$id?: unknown }).$$id
+      if (typeof $$id === 'string') ids.add($$id)
     }
   }
-  return ids;
+  return ids
 }
 
-const adminIds = collectActionIds(Object.values(adminModules));
-const publicIds = collectActionIds(Object.values(publicModules));
+const adminIds = collectActionIds(Object.values(adminModules))
+const publicIds = collectActionIds(Object.values(publicModules))
 
 export interface DevEnv {
-  DB: D1Database;
-  ASSETS: Fetcher;
-  ACCESS_AUD?: string;
-  ACCESS_TEAM_DOMAIN?: string;
+  DB: D1Database
+  ASSETS: Fetcher
+  ACCESS_AUD?: string
+  ACCESS_TEAM_DOMAIN?: string
 }
 
-async function runAction(actionId: string, request: Request): Promise<Response> {
-  const contentType = request.headers.get("content-type") ?? "";
-  const body = contentType.includes("multipart/form-data")
+async function runAction(
+  actionId: string,
+  request: Request
+): Promise<Response> {
+  const contentType = request.headers.get('content-type') ?? ''
+  const body = contentType.includes('multipart/form-data')
     ? await request.formData()
-    : await request.text();
-  const args = await decodeReply(body);
-  const fn = await loadServerAction(actionId);
-  const result = await fn(...args);
-  const stream = renderToReadableStream(result);
-  return new Response(stream, { headers: { "content-type": "text/x-component" } });
+    : await request.text()
+  const args = await decodeReply(body)
+  const fn = await loadServerAction(actionId)
+  const result = await fn(...args)
+  const stream = renderToReadableStream(result)
+  return new Response(stream, {
+    headers: { 'content-type': 'text/x-component' },
+  })
 }
 
 export default {
   async fetch(request: Request, env: DevEnv): Promise<Response> {
     return runWithEnv(env, async () => {
-      const url = new URL(request.url);
+      const url = new URL(request.url)
 
-      if (url.pathname.startsWith("/@rsc-admin/")) {
-        const actionId = decodeURIComponent(url.pathname.slice("/@rsc-admin/".length));
-        if (!adminIds.has(actionId)) return new Response("Forbidden", { status: 403 });
-        return runAction(actionId, request);
+      if (url.pathname.startsWith('/@rsc-admin/')) {
+        const actionId = decodeURIComponent(
+          url.pathname.slice('/@rsc-admin/'.length)
+        )
+        if (!adminIds.has(actionId))
+          return new Response('Forbidden', { status: 403 })
+        return runAction(actionId, request)
       }
 
-      if (url.pathname.startsWith("/@rsc-public/")) {
-        const actionId = decodeURIComponent(url.pathname.slice("/@rsc-public/".length));
-        if (!publicIds.has(actionId)) return new Response("Forbidden", { status: 403 });
-        return runAction(actionId, request);
+      if (url.pathname.startsWith('/@rsc-public/')) {
+        const actionId = decodeURIComponent(
+          url.pathname.slice('/@rsc-public/'.length)
+        )
+        if (!publicIds.has(actionId))
+          return new Response('Forbidden', { status: 403 })
+        return runAction(actionId, request)
       }
 
-      const assetResponse = await env.ASSETS.fetch(request);
-      if (assetResponse.status !== 404) return assetResponse;
-      const shellPath = url.pathname.startsWith("/admin/") ? "/admin/" : "/";
-      const shellUrl = new URL(shellPath, url);
-      return env.ASSETS.fetch(new Request(shellUrl, request));
-    });
+      const assetResponse = await env.ASSETS.fetch(request)
+      if (assetResponse.status !== 404) return assetResponse
+      const shellPath = url.pathname.startsWith('/admin/') ? '/admin/' : '/'
+      const shellUrl = new URL(shellPath, url)
+      return env.ASSETS.fetch(new Request(shellUrl, request))
+    })
   },
-} satisfies ExportedHandler<DevEnv>;
+} satisfies ExportedHandler<DevEnv>
 ```
 
 No auth check — dev only runs on localhost (cloudflare plugin binds to loopback). In prod, the real dispatcher (`worker.ts`) is used and the admin sub-handler enforces Access-JWT verification.
@@ -1593,25 +1652,25 @@ No auth check — dev only runs on localhost (cloudflare plugin binds to loopbac
 This drives `pnpm dev`. Two HTML entries, one cloudflare worker (the dev dispatcher), admin SPA fallback plugin, React plugin, plugin-rsc.
 
 ```ts
-import { cloudflare } from "@cloudflare/vite-plugin";
-import rsc from "@vitejs/plugin-rsc";
-import react from "@vitejs/plugin-react";
-import { fileURLToPath, URL } from "node:url";
-import { resolve } from "node:path";
-import { defineConfig } from "vite";
-import { adminSpaFallback } from "./src/vite/admin-spa-fallback";
+import { cloudflare } from '@cloudflare/vite-plugin'
+import rsc from '@vitejs/plugin-rsc'
+import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
+import { adminSpaFallback } from './src/vite/admin-spa-fallback'
 
-const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+const repoRoot = fileURLToPath(new URL('../../', import.meta.url))
 
 export default defineConfig({
   root: repoRoot,
   plugins: [
     cloudflare({
-      viteEnvironment: { name: "rsc" },
-      configPath: "./packages/cloudflare/wrangler.toml",
+      viteEnvironment: { name: 'rsc' },
+      configPath: './packages/cloudflare/wrangler.toml',
     }),
     rsc({
-      entries: { rsc: "./packages/cloudflare/src/worker-dev.ts" },
+      entries: { rsc: './packages/cloudflare/src/worker-dev.ts' },
       serverHandler: false,
     }),
     adminSpaFallback(),
@@ -1622,8 +1681,8 @@ export default defineConfig({
       build: {
         rollupOptions: {
           input: {
-            index: resolve(repoRoot, "packages/public/index.html"),
-            admin: resolve(repoRoot, "packages/admin/index.html"),
+            index: resolve(repoRoot, 'packages/public/index.html'),
+            admin: resolve(repoRoot, 'packages/admin/index.html'),
           },
         },
       },
@@ -1633,10 +1692,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
   },
-});
+})
 ```
 
 Notes:
+
 - `root: repoRoot` so the dev server serves both package HTML shells. Vite's default is to derive root from the config file location, which would lock us into `packages/cloudflare/`.
 - `adminSpaFallback` still works — it rewrites `/admin/<anything>` to `/admin/` before Vite resolves the HTML.
 
@@ -1666,6 +1726,7 @@ git commit -m "Add dev Vite config + dev dispatcher for @wedding/cloudflare"
 ### Task 5.5: Write the two prod Vite configs
 
 **Files:**
+
 - Create: `packages/cloudflare/vite.admin.ts`
 - Create: `packages/cloudflare/vite.public.ts`
 
@@ -1674,25 +1735,25 @@ Each builds ONE leaf's RSC bundle + its client bundle into a subdirectory of `pa
 - [ ] **Step 1: Write `packages/cloudflare/vite.admin.ts`**
 
 ```ts
-import rsc from "@vitejs/plugin-rsc";
-import react from "@vitejs/plugin-react";
-import { fileURLToPath, URL } from "node:url";
-import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import rsc from '@vitejs/plugin-rsc'
+import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-const pkgAdmin = fileURLToPath(new URL("../admin/", import.meta.url));
+const pkgAdmin = fileURLToPath(new URL('../admin/', import.meta.url))
 
 export default defineConfig({
   root: pkgAdmin,
   plugins: [
     rsc({
-      entries: { rsc: resolve(pkgAdmin, "src/server/rsc-entry.ts") },
+      entries: { rsc: resolve(pkgAdmin, 'src/server/rsc-entry.ts') },
       serverHandler: false,
     }),
     react(),
   ],
   build: {
-    outDir: fileURLToPath(new URL("./dist/admin", import.meta.url)),
+    outDir: fileURLToPath(new URL('./dist/admin', import.meta.url)),
     emptyOutDir: true,
   },
   environments: {
@@ -1700,37 +1761,37 @@ export default defineConfig({
       build: {
         rollupOptions: {
           input: {
-            admin: resolve(pkgAdmin, "index.html"),
+            admin: resolve(pkgAdmin, 'index.html'),
           },
         },
       },
     },
   },
-});
+})
 ```
 
 - [ ] **Step 2: Write `packages/cloudflare/vite.public.ts`**
 
 ```ts
-import rsc from "@vitejs/plugin-rsc";
-import react from "@vitejs/plugin-react";
-import { fileURLToPath, URL } from "node:url";
-import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import rsc from '@vitejs/plugin-rsc'
+import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-const pkgPublic = fileURLToPath(new URL("../public/", import.meta.url));
+const pkgPublic = fileURLToPath(new URL('../public/', import.meta.url))
 
 export default defineConfig({
   root: pkgPublic,
   plugins: [
     rsc({
-      entries: { rsc: resolve(pkgPublic, "src/server/rsc-entry.ts") },
+      entries: { rsc: resolve(pkgPublic, 'src/server/rsc-entry.ts') },
       serverHandler: false,
     }),
     react(),
   ],
   build: {
-    outDir: fileURLToPath(new URL("./dist/public", import.meta.url)),
+    outDir: fileURLToPath(new URL('./dist/public', import.meta.url)),
     emptyOutDir: true,
   },
   environments: {
@@ -1738,13 +1799,13 @@ export default defineConfig({
       build: {
         rollupOptions: {
           input: {
-            index: resolve(pkgPublic, "index.html"),
+            index: resolve(pkgPublic, 'index.html'),
           },
         },
       },
     },
   },
-});
+})
 ```
 
 - [ ] **Step 3: Run each build once to shake out path issues**
@@ -1770,57 +1831,60 @@ git commit -m "Add prod Vite configs for admin and public builds"
 ### Task 5.6: Write `build.ts` orchestrator
 
 **Files:**
+
 - Create: `packages/cloudflare/build.ts`
 
 - [ ] **Step 1: Write the orchestrator**
 
 ```ts
-import { cp, mkdir, rm } from "node:fs/promises";
-import { execSync } from "node:child_process";
-import { fileURLToPath, URL } from "node:url";
-import { resolve } from "node:path";
+import { cp, mkdir, rm } from 'node:fs/promises'
+import { execSync } from 'node:child_process'
+import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
 
-const pkgDir = fileURLToPath(new URL("./", import.meta.url));
-const distDir = resolve(pkgDir, "dist");
-const distAdmin = resolve(distDir, "admin");
-const distPublic = resolve(distDir, "public");
-const distClient = resolve(distDir, "client");
+const pkgDir = fileURLToPath(new URL('./', import.meta.url))
+const distDir = resolve(pkgDir, 'dist')
+const distAdmin = resolve(distDir, 'admin')
+const distPublic = resolve(distDir, 'public')
+const distClient = resolve(distDir, 'client')
 
 function run(cmd: string) {
-  execSync(cmd, { stdio: "inherit", cwd: pkgDir });
+  execSync(cmd, { stdio: 'inherit', cwd: pkgDir })
 }
 
 async function main() {
-  console.log("[build] cleaning dist/");
-  await rm(distDir, { recursive: true, force: true });
+  console.log('[build] cleaning dist/')
+  await rm(distDir, { recursive: true, force: true })
 
-  console.log("[build] building public (vite.public.ts)");
-  run("pnpm exec vite build --config vite.public.ts");
+  console.log('[build] building public (vite.public.ts)')
+  run('pnpm exec vite build --config vite.public.ts')
 
-  console.log("[build] building admin (vite.admin.ts)");
-  run("pnpm exec vite build --config vite.admin.ts");
+  console.log('[build] building admin (vite.admin.ts)')
+  run('pnpm exec vite build --config vite.admin.ts')
 
-  console.log("[build] stitching client assets into dist/client/");
-  await mkdir(distClient, { recursive: true });
+  console.log('[build] stitching client assets into dist/client/')
+  await mkdir(distClient, { recursive: true })
   // Public client → dist/client/ (root)
-  await cp(resolve(distPublic, "client"), distClient, { recursive: true });
+  await cp(resolve(distPublic, 'client'), distClient, { recursive: true })
   // Admin client → dist/client/admin/
-  await cp(resolve(distAdmin, "client"), resolve(distClient, "admin"), {
+  await cp(resolve(distAdmin, 'client'), resolve(distClient, 'admin'), {
     recursive: true,
-  });
+  })
 
-  console.log("[build] building dispatcher Worker (wrangler will pick up src/worker.ts)");
+  console.log(
+    '[build] building dispatcher Worker (wrangler will pick up src/worker.ts)'
+  )
   // The dispatcher Worker imports pre-built RSC bundles via workspace imports
   // (@wedding/admin/rsc-entry, @wedding/public/rsc-entry). Wrangler bundles
   // the Worker itself during `wrangler deploy`. No extra build step needed.
 
-  console.log("[build] done");
+  console.log('[build] done')
 }
 
 main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+  console.error(err)
+  process.exit(1)
+})
 ```
 
 Wait — there's a problem. The dispatcher imports `@wedding/admin/rsc-entry` and `@wedding/public/rsc-entry`, which resolve to each leaf's `src/server/rsc-entry.ts`. When wrangler bundles the dispatcher, it'll pull those in and plugin-rsc needs to have run on them to attach `$$id`. Wrangler doesn't run Vite plugins.
@@ -1835,9 +1899,9 @@ Option (a) is simpler. Update `packages/cloudflare/src/worker.ts` to import the 
 
 ```ts
 // @ts-expect-error - built at dist/admin/rsc/index.js by vite.admin.ts
-import adminHandler from "../dist/admin/rsc/index.js";
+import adminHandler from '../dist/admin/rsc/index.js'
 // @ts-expect-error - built at dist/public/rsc/index.js by vite.public.ts
-import publicHandler from "../dist/public/rsc/index.js";
+import publicHandler from '../dist/public/rsc/index.js'
 ```
 
 That reverts my "no dist imports" claim slightly — but the imports are inside the host package's OWN output path, not a cross-package pokes-into-dist. Conceptually this is the host consuming its own intermediate artifacts.
@@ -1848,10 +1912,10 @@ Replace the workspace imports with dist-relative imports:
 
 ```ts
 // @ts-expect-error - built artifact at dist/admin/rsc/index.js (see vite.admin.ts)
-import adminHandler from "../dist/admin/rsc/index.js";
+import adminHandler from '../dist/admin/rsc/index.js'
 // @ts-expect-error - built artifact at dist/public/rsc/index.js (see vite.public.ts)
-import publicHandler from "../dist/public/rsc/index.js";
-import { runWithEnv } from "@wedding/shared/server/context";
+import publicHandler from '../dist/public/rsc/index.js'
+import { runWithEnv } from '@wedding/shared/server/context'
 
 // ... rest unchanged
 ```
@@ -1865,6 +1929,7 @@ ls -la dist/client dist/admin/rsc dist/public/rsc
 ```
 
 Expected:
+
 - `dist/client/` has the public site's client bundle at root + admin's under `admin/`.
 - `dist/admin/rsc/index.js` and `dist/public/rsc/index.js` exist.
 
@@ -1890,70 +1955,76 @@ git commit -m "Add build orchestrator and wire dispatcher to prod RSC bundles"
 The Node deploy path currently imports `createRscHandler` + `runWithEnv` from `../dist/rsc/index.js` and mounts a single `/@rsc/` handler. The new dispatcher has two prefixes. Update node-server to call the dispatcher directly:
 
 **Files:**
+
 - Modify: `packages/cloudflare/src/node-server.ts`
 
 - [ ] **Step 1: Rewrite**
 
 ```ts
-import { createServer } from "node:http";
-import { readFile, stat } from "node:fs/promises";
-import { readdirSync } from "node:fs";
-import { extname, join, resolve } from "node:path";
-import { createRequestListener } from "@remix-run/node-fetch-server";
-import Database from "better-sqlite3";
-import { Kysely, SqliteDialect } from "kysely";
-import type { Database as DbSchema } from "@wedding/shared/server/lib/schema";
+import { createServer } from 'node:http'
+import { readFile, stat } from 'node:fs/promises'
+import { readdirSync } from 'node:fs'
+import { extname, join, resolve } from 'node:path'
+import { createRequestListener } from '@remix-run/node-fetch-server'
+import Database from 'better-sqlite3'
+import { Kysely, SqliteDialect } from 'kysely'
+import type { Database as DbSchema } from '@wedding/shared/server/lib/schema'
 // @ts-expect-error built artifact, no types
-import dispatcher from "../dist/worker.js";
+import dispatcher from '../dist/worker.js'
 
-const CLIENT_DIR = resolve(import.meta.dirname, "..", "dist/client");
-const PORT = Number(process.env.PORT ?? 3000);
+const CLIENT_DIR = resolve(import.meta.dirname, '..', 'dist/client')
+const PORT = Number(process.env.PORT ?? 3000)
 
 function resolveSqlitePath(): string {
-  if (process.env.SQLITE_PATH) return process.env.SQLITE_PATH;
-  const dir = ".wrangler/state/v3/d1/miniflare-D1DatabaseObject";
+  if (process.env.SQLITE_PATH) return process.env.SQLITE_PATH
+  const dir = '.wrangler/state/v3/d1/miniflare-D1DatabaseObject'
   try {
-    const entries = readdirSync(dir);
-    const match = entries.find((e) => e.endsWith(".sqlite") && e !== "metadata.sqlite");
-    if (match) return `${dir}/${match}`;
+    const entries = readdirSync(dir)
+    const match = entries.find(
+      (e) => e.endsWith('.sqlite') && e !== 'metadata.sqlite'
+    )
+    if (match) return `${dir}/${match}`
   } catch {
     /* fall through */
   }
   throw new Error(
-    "No local D1 SQLite file found. Run `pnpm db:migrate:local` first, or set SQLITE_PATH."
-  );
+    'No local D1 SQLite file found. Run `pnpm db:migrate:local` first, or set SQLITE_PATH.'
+  )
 }
 
-const sqlitePath = resolveSqlitePath();
-const sqliteDb = new Database(sqlitePath);
+const sqlitePath = resolveSqlitePath()
+const sqliteDb = new Database(sqlitePath)
 const localKyselyDb = new Kysely<DbSchema>({
   dialect: new SqliteDialect({ database: sqliteDb }),
-});
+})
 
 const MIME: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".ico": "image/x-icon",
-  ".json": "application/json",
-};
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.ico': 'image/x-icon',
+  '.json': 'application/json',
+}
 
 async function serveStatic(pathname: string): Promise<Response | null> {
-  const safe = pathname.replace(/\?.*$/, "").replace(/^\/+/, "");
-  const filePath = join(CLIENT_DIR, safe || "index.html");
-  if (filePath !== CLIENT_DIR && !filePath.startsWith(CLIENT_DIR + "/")) return null;
+  const safe = pathname.replace(/\?.*$/, '').replace(/^\/+/, '')
+  const filePath = join(CLIENT_DIR, safe || 'index.html')
+  if (filePath !== CLIENT_DIR && !filePath.startsWith(CLIENT_DIR + '/'))
+    return null
   try {
-    const info = await stat(filePath);
-    if (!info.isFile()) return null;
-    const buf = await readFile(filePath);
+    const info = await stat(filePath)
+    if (!info.isFile()) return null
+    const buf = await readFile(filePath)
     return new Response(buf, {
-      headers: { "content-type": MIME[extname(filePath)] ?? "application/octet-stream" },
-    });
+      headers: {
+        'content-type': MIME[extname(filePath)] ?? 'application/octet-stream',
+      },
+    })
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -1963,21 +2034,21 @@ const env = {
   DB: localKyselyDb,
   ASSETS: {
     async fetch(request: Request | string): Promise<Response> {
-      const url = new URL(typeof request === "string" ? request : request.url);
-      const file = await serveStatic(url.pathname);
-      if (file) return file;
-      return new Response("not found", { status: 404 });
+      const url = new URL(typeof request === 'string' ? request : request.url)
+      const file = await serveStatic(url.pathname)
+      if (file) return file
+      return new Response('not found', { status: 404 })
     },
   },
-};
+}
 
 const listener = createRequestListener(async (request) =>
-  dispatcher.fetch(request, env),
-);
+  dispatcher.fetch(request, env)
+)
 
 createServer(listener).listen(PORT, () => {
-  console.log(`Serving on http://localhost:${PORT}`);
-});
+  console.log(`Serving on http://localhost:${PORT}`)
+})
 ```
 
 - [ ] **Step 2: Commit**
@@ -1994,6 +2065,7 @@ git commit -m "Update node-server to call the dispatcher"
 ### Task 6.1: Update `vitest.config.ts` includes
 
 **Files:**
+
 - Modify: `vitest.config.ts`
 
 - [ ] **Step 1: Update to include the new package paths**
@@ -2004,16 +2076,14 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     environment: 'node',
-    include: [
-      'packages/**/*.test.ts',
-      'tests/**/*.test.ts',
-    ],
+    include: ['packages/**/*.test.ts', 'tests/**/*.test.ts'],
     testTimeout: 60_000,
   },
 })
 ```
 
 Removed:
+
 - The `@shared` alias (gone since Phase 2).
 - `functions/**`, `shared/**`, `src/**` include patterns (those dirs no longer exist).
 
@@ -2031,97 +2101,111 @@ git commit -m "Update vitest include paths for workspace layout"
 The old test exercised the allowlist-based `createRscHandler(authorize)` pattern. After the restructure there's no allowlist; auth is baked into `packages/admin/src/server/rsc-entry.ts`. Rewrite the test to verify the admin entry rejects unauth prod-like requests and accepts localhost ones.
 
 **Files:**
+
 - Modify: `tests/e2e/admin-auth.test.ts`
 
 - [ ] **Step 1: Rewrite**
 
 ```ts
-import { afterAll, beforeAll, expect, test } from "vitest";
-import { createServer, isRunnableDevEnvironment, type ViteDevServer } from "vite";
+import { afterAll, beforeAll, expect, test } from 'vitest'
+import {
+  createServer,
+  isRunnableDevEnvironment,
+  type ViteDevServer,
+} from 'vite'
 
-let server: ViteDevServer;
-let adminEntry: { fetch: (req: Request, env: unknown) => Promise<Response> };
-let adminActionId: string;
+let server: ViteDevServer
+let adminEntry: { fetch: (req: Request, env: unknown) => Promise<Response> }
+let adminActionId: string
 
 async function loadRscModule<T = unknown>(id: string): Promise<T> {
-  const env = server.environments.rsc;
+  const env = server.environments.rsc
   if (!isRunnableDevEnvironment(env)) {
-    throw new Error("rsc environment is not runnable");
+    throw new Error('rsc environment is not runnable')
   }
-  return (await env.runner.import(id)) as T;
+  return (await env.runner.import(id)) as T
 }
 
 function extractActionId(fn: unknown): string {
-  if (typeof fn !== "function") throw new Error("not a function");
-  const id = (fn as { $$id?: unknown }).$$id;
-  if (typeof id !== "string" || !id.includes("#")) {
-    throw new Error(`server function missing $$id; got ${String(id)}`);
+  if (typeof fn !== 'function') throw new Error('not a function')
+  const id = (fn as { $$id?: unknown }).$$id
+  if (typeof id !== 'string' || !id.includes('#')) {
+    throw new Error(`server function missing $$id; got ${String(id)}`)
   }
-  return id;
+  return id
 }
 
 beforeAll(async () => {
-  const port = 20000 + Math.floor(Math.random() * 20000);
+  const port = 20000 + Math.floor(Math.random() * 20000)
   server = await createServer({
-    configFile: "./packages/cloudflare/vite.dev.ts",
-    server: { port, strictPort: false, host: "127.0.0.1" },
-    appType: "custom",
-  });
-  await server.listen();
+    configFile: './packages/cloudflare/vite.dev.ts',
+    server: { port, strictPort: false, host: '127.0.0.1' },
+    appType: 'custom',
+  })
+  await server.listen()
 
   const mod = await loadRscModule<{ default: typeof adminEntry }>(
-    "/packages/admin/src/server/rsc-entry.ts",
-  );
-  adminEntry = mod.default;
+    '/packages/admin/src/server/rsc-entry.ts'
+  )
+  adminEntry = mod.default
 
-  const eventsMod = await loadRscModule<typeof import("../../packages/admin/src/server/events")>(
-    "/packages/admin/src/server/events.ts",
-  );
-  adminActionId = extractActionId(eventsMod.listEvents);
-}, 60_000);
+  const eventsMod = await loadRscModule<
+    typeof import('../../packages/admin/src/server/events')
+  >('/packages/admin/src/server/events.ts')
+  adminActionId = extractActionId(eventsMod.listEvents)
+}, 60_000)
 
 afterAll(async () => {
-  await server?.close();
-});
+  await server?.close()
+})
 
-test("admin RSC entry rejects non-local request without Access JWT (401)", async () => {
+test('admin RSC entry rejects non-local request without Access JWT (401)', async () => {
   const res = await adminEntry.fetch(
-    new Request(`https://wedding.example.com/@rsc-admin/${encodeURIComponent(adminActionId)}`, {
-      method: "POST",
-    }),
-    { ACCESS_AUD: "unset", ACCESS_TEAM_DOMAIN: "unset" },
-  );
-  expect(res.status).toBe(401);
-});
+    new Request(
+      `https://wedding.example.com/@rsc-admin/${encodeURIComponent(adminActionId)}`,
+      {
+        method: 'POST',
+      }
+    ),
+    { ACCESS_AUD: 'unset', ACCESS_TEAM_DOMAIN: 'unset' }
+  )
+  expect(res.status).toBe(401)
+})
 
-test("admin RSC entry allows localhost request without Access JWT", async () => {
+test('admin RSC entry allows localhost request without Access JWT', async () => {
   // No auth required on localhost (dev bypass). Missing body will fail the
   // decodeReply call, but that's past the auth gate — any status other than
   // 401 proves the auth gate was bypassed.
-  let status: number | null = null;
+  let status: number | null = null
   try {
     const res = await adminEntry.fetch(
-      new Request(`http://localhost/@rsc-admin/${encodeURIComponent(adminActionId)}`, {
-        method: "POST",
-      }),
-      {},
-    );
-    status = res.status;
+      new Request(
+        `http://localhost/@rsc-admin/${encodeURIComponent(adminActionId)}`,
+        {
+          method: 'POST',
+        }
+      ),
+      {}
+    )
+    status = res.status
   } catch {
-    status = null;
+    status = null
   }
-  expect(status).not.toBe(401);
-});
+  expect(status).not.toBe(401)
+})
 
-test("admin RSC entry rejects unknown action id with 403", async () => {
+test('admin RSC entry rejects unknown action id with 403', async () => {
   const res = await adminEntry.fetch(
-    new Request(`http://localhost/@rsc-admin/${encodeURIComponent("fake#id")}`, {
-      method: "POST",
-    }),
-    {},
-  );
-  expect(res.status).toBe(403);
-});
+    new Request(
+      `http://localhost/@rsc-admin/${encodeURIComponent('fake#id')}`,
+      {
+        method: 'POST',
+      }
+    ),
+    {}
+  )
+  expect(res.status).toBe(403)
+})
 ```
 
 - [ ] **Step 2: Run just this test**
@@ -2144,11 +2228,13 @@ git commit -m "Rewrite admin-auth test for per-package RSC entry"
 ### Task 6.3: Update `rpc.roundtrip.test.ts` for new layout
 
 **Files:**
+
 - Modify: `tests/e2e/rpc.roundtrip.test.ts`
 
 - [ ] **Step 1: Update config path and RSC handler loader**
 
 Two key changes:
+
 1. `configFile: "./vite.config.node.ts"` → `configFile: "./packages/cloudflare/vite.dev.ts"`. The dev config is the unified one we control.
 2. The handler used to come from `createRscHandler()` (returning a single /@rsc/ handler). Now each leaf has its own default-exported `{ fetch }`. The test should load the admin entry to test admin RPC and the public entry to test public RPC, OR load the dev dispatcher directly.
 
@@ -2157,155 +2243,171 @@ Use the dev dispatcher (`/packages/cloudflare/src/worker-dev.ts`) so the test mi
 Full rewrite:
 
 ```ts
-import { afterAll, beforeAll, expect, test } from "vitest";
-import { readdirSync } from "node:fs";
-import { createServer, isRunnableDevEnvironment, type ViteDevServer } from "vite";
-import Database from "better-sqlite3";
-import { Kysely, SqliteDialect } from "kysely";
-import { createRequestListener } from "@remix-run/node-fetch-server";
-import type { IncomingMessage, ServerResponse } from "node:http";
-import type { Database as DbSchema } from "@wedding/shared/server/lib/schema";
+import { afterAll, beforeAll, expect, test } from 'vitest'
+import { readdirSync } from 'node:fs'
+import {
+  createServer,
+  isRunnableDevEnvironment,
+  type ViteDevServer,
+} from 'vite'
+import Database from 'better-sqlite3'
+import { Kysely, SqliteDialect } from 'kysely'
+import { createRequestListener } from '@remix-run/node-fetch-server'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { Database as DbSchema } from '@wedding/shared/server/lib/schema'
 
-let server: ViteDevServer;
-let baseUrl: string;
-let sqliteDb: Database.Database;
-let localKyselyDb: Kysely<DbSchema>;
+let server: ViteDevServer
+let baseUrl: string
+let sqliteDb: Database.Database
+let localKyselyDb: Kysely<DbSchema>
 
-async function getEncodeReply(): Promise<(args: unknown[]) => Promise<BodyInit>> {
+async function getEncodeReply(): Promise<
+  (args: unknown[]) => Promise<BodyInit>
+> {
   const mod: { encodeReply: (args: unknown[]) => Promise<BodyInit> } =
-    await import("@vitejs/plugin-rsc/vendor/react-server-dom/client.edge");
-  return mod.encodeReply;
+    await import('@vitejs/plugin-rsc/vendor/react-server-dom/client.edge')
+  return mod.encodeReply
 }
 
 function resolveSqlitePath(): string {
-  if (process.env.SQLITE_PATH) return process.env.SQLITE_PATH;
-  const dir = ".wrangler/state/v3/d1/miniflare-D1DatabaseObject";
-  const entries = readdirSync(dir);
-  const match = entries.find((e) => e.endsWith(".sqlite") && e !== "metadata.sqlite");
-  if (!match) throw new Error("no local D1 sqlite file; run pnpm db:migrate:local");
-  return `${dir}/${match}`;
+  if (process.env.SQLITE_PATH) return process.env.SQLITE_PATH
+  const dir = '.wrangler/state/v3/d1/miniflare-D1DatabaseObject'
+  const entries = readdirSync(dir)
+  const match = entries.find(
+    (e) => e.endsWith('.sqlite') && e !== 'metadata.sqlite'
+  )
+  if (!match)
+    throw new Error('no local D1 sqlite file; run pnpm db:migrate:local')
+  return `${dir}/${match}`
 }
 
 async function loadRscModule<T = unknown>(id: string): Promise<T> {
-  const env = server.environments.rsc;
-  if (!isRunnableDevEnvironment(env)) throw new Error("rsc environment is not runnable");
-  return (await env.runner.import(id)) as T;
+  const env = server.environments.rsc
+  if (!isRunnableDevEnvironment(env))
+    throw new Error('rsc environment is not runnable')
+  return (await env.runner.import(id)) as T
 }
 
 beforeAll(async () => {
-  sqliteDb = new Database(resolveSqlitePath());
+  sqliteDb = new Database(resolveSqlitePath())
   localKyselyDb = new Kysely<DbSchema>({
     dialect: new SqliteDialect({ database: sqliteDb }),
-  });
+  })
 
-  const port = 20000 + Math.floor(Math.random() * 20000);
+  const port = 20000 + Math.floor(Math.random() * 20000)
   server = await createServer({
-    configFile: "./packages/cloudflare/vite.dev.ts",
-    server: { port, strictPort: false, host: "127.0.0.1" },
-    appType: "custom",
-  });
-  await server.listen();
-  const addr = server.httpServer!.address();
-  if (!addr || typeof addr === "string") throw new Error("no address");
-  baseUrl = `http://127.0.0.1:${addr.port}`;
+    configFile: './packages/cloudflare/vite.dev.ts',
+    server: { port, strictPort: false, host: '127.0.0.1' },
+    appType: 'custom',
+  })
+  await server.listen()
+  const addr = server.httpServer!.address()
+  if (!addr || typeof addr === 'string') throw new Error('no address')
+  baseUrl = `http://127.0.0.1:${addr.port}`
 
   const devMod = await loadRscModule<{
-    default: { fetch: (req: Request, env: unknown) => Promise<Response> };
-  }>("/packages/cloudflare/src/worker-dev.ts");
-  const dispatcher = devMod.default;
+    default: { fetch: (req: Request, env: unknown) => Promise<Response> }
+  }>('/packages/cloudflare/src/worker-dev.ts')
+  const dispatcher = devMod.default
 
   const fakeEnv = {
     DB: localKyselyDb,
-    ASSETS: { fetch: async () => new Response("not found", { status: 404 }) },
-  };
+    ASSETS: { fetch: async () => new Response('not found', { status: 404 }) },
+  }
 
   const listener = createRequestListener(async (request) => {
     try {
-      return await dispatcher.fetch(request, fakeEnv);
+      return await dispatcher.fetch(request, fakeEnv)
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("[test dev dispatcher error]", e);
-      const msg = e instanceof Error ? `${e.message}\n${e.stack}` : String(e);
-      return new Response(msg, { status: 500 });
+      console.error('[test dev dispatcher error]', e)
+      const msg = e instanceof Error ? `${e.message}\n${e.stack}` : String(e)
+      return new Response(msg, { status: 500 })
     }
-  });
+  })
 
-  server.middlewares.use(
-    (req: IncomingMessage, res: ServerResponse, next) => {
-      if (!(req.url?.startsWith("/@rsc-admin/") || req.url?.startsWith("/@rsc-public/"))) {
-        return next();
-      }
-      Promise.resolve(listener(req, res)).catch(next);
-    },
-  );
-}, 60_000);
+  server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
+    if (
+      !(
+        req.url?.startsWith('/@rsc-admin/') ||
+        req.url?.startsWith('/@rsc-public/')
+      )
+    ) {
+      return next()
+    }
+    Promise.resolve(listener(req, res)).catch(next)
+  })
+}, 60_000)
 
 afterAll(async () => {
-  await server?.close();
-  sqliteDb?.close();
-});
+  await server?.close()
+  sqliteDb?.close()
+})
 
 function extractActionId(fn: unknown): string {
-  if (!fn || typeof fn !== "function") throw new Error("not a function");
-  const id = (fn as { $$id?: unknown }).$$id;
-  if (typeof id !== "string" || !id.includes("#")) {
-    throw new Error(`server function missing $$id; got ${String(id)}`);
+  if (!fn || typeof fn !== 'function') throw new Error('not a function')
+  const id = (fn as { $$id?: unknown }).$$id
+  if (typeof id !== 'string' || !id.includes('#')) {
+    throw new Error(`server function missing $$id; got ${String(id)}`)
   }
-  return id;
+  return id
 }
 
-test("public RPC: lookupGuests returns 200 with non-empty body", async () => {
-  const mod = await loadRscModule<typeof import("../../packages/public/src/server/rsvp")>(
-    "/packages/public/src/server/rsvp.ts",
-  );
-  const id = extractActionId(mod.lookupGuests);
+test('public RPC: lookupGuests returns 200 with non-empty body', async () => {
+  const mod = await loadRscModule<
+    typeof import('../../packages/public/src/server/rsvp')
+  >('/packages/public/src/server/rsvp.ts')
+  const id = extractActionId(mod.lookupGuests)
 
-  const encodeReply = await getEncodeReply();
-  const body = await encodeReply(["kavari"]);
+  const encodeReply = await getEncodeReply()
+  const body = await encodeReply(['kavari'])
   const res = await fetch(`${baseUrl}/@rsc-public/${encodeURIComponent(id)}`, {
-    method: "POST",
-    headers: { "rsc-action-id": id },
+    method: 'POST',
+    headers: { 'rsc-action-id': id },
     body: body as BodyInit,
-  });
+  })
   if (res.status !== 200) {
-    const text = await res.text();
-    throw new Error(`expected 200, got ${res.status}: ${text}`);
+    const text = await res.text()
+    throw new Error(`expected 200, got ${res.status}: ${text}`)
   }
-  expect(res.status).toBe(200);
-  expect((await res.text()).length).toBeGreaterThan(0);
-});
+  expect(res.status).toBe(200)
+  expect((await res.text()).length).toBeGreaterThan(0)
+})
 
-test("unknown public action id returns 403", async () => {
-  const encodeReply = await getEncodeReply();
-  const body = await encodeReply([]);
-  const fakeId = "deadbeef#nothing";
-  const res = await fetch(`${baseUrl}/@rsc-public/${encodeURIComponent(fakeId)}`, {
-    method: "POST",
-    headers: { "rsc-action-id": fakeId },
-    body: body as BodyInit,
-  });
-  expect(res.status).toBe(403);
-});
+test('unknown public action id returns 403', async () => {
+  const encodeReply = await getEncodeReply()
+  const body = await encodeReply([])
+  const fakeId = 'deadbeef#nothing'
+  const res = await fetch(
+    `${baseUrl}/@rsc-public/${encodeURIComponent(fakeId)}`,
+    {
+      method: 'POST',
+      headers: { 'rsc-action-id': fakeId },
+      body: body as BodyInit,
+    }
+  )
+  expect(res.status).toBe(403)
+})
 
-test("admin RPC on localhost returns 200 (no Access header needed)", async () => {
-  const mod = await loadRscModule<typeof import("../../packages/admin/src/server/events")>(
-    "/packages/admin/src/server/events.ts",
-  );
-  const id = extractActionId(mod.listEvents);
+test('admin RPC on localhost returns 200 (no Access header needed)', async () => {
+  const mod = await loadRscModule<
+    typeof import('../../packages/admin/src/server/events')
+  >('/packages/admin/src/server/events.ts')
+  const id = extractActionId(mod.listEvents)
 
-  const encodeReply = await getEncodeReply();
-  const body = await encodeReply([]);
+  const encodeReply = await getEncodeReply()
+  const body = await encodeReply([])
   const res = await fetch(`${baseUrl}/@rsc-admin/${encodeURIComponent(id)}`, {
-    method: "POST",
-    headers: { "rsc-action-id": id },
+    method: 'POST',
+    headers: { 'rsc-action-id': id },
     body: body as BodyInit,
-  });
+  })
   if (res.status !== 200) {
-    const text = await res.text();
-    throw new Error(`expected 200, got ${res.status}: ${text}`);
+    const text = await res.text()
+    throw new Error(`expected 200, got ${res.status}: ${text}`)
   }
-  expect(res.status).toBe(200);
-});
+  expect(res.status).toBe(200)
+})
 ```
 
 - [ ] **Step 2: Run this test**
@@ -2328,11 +2430,13 @@ git commit -m "Update rpc roundtrip test to dev dispatcher + split prefixes"
 ### Task 6.4: Update `feature-parity.test.ts` paths
 
 **Files:**
+
 - Modify: `tests/e2e/feature-parity.test.ts`
 
 - [ ] **Step 1: Update config path + module specifiers**
 
 Replace:
+
 ```
 "./vite.config.node.ts"             →  "./packages/cloudflare/vite.dev.ts"
 "/src/server/context.ts"            →  "@wedding/shared/server/context" (type only) — DON'T change the runner import; it still loads by path. Use "/packages/shared/src/server/context.ts"
@@ -2345,6 +2449,7 @@ Replace:
 ```
 
 Type-only imports at the top of the file similarly shift:
+
 ```
 "../../src/server/context"              →  "../../packages/shared/src/server/context"
 "../../src/server/public/rsvp"          →  "../../packages/public/src/server/rsvp"
@@ -2376,6 +2481,7 @@ git commit -m "Update feature-parity test paths to workspace layout"
 ### Task 6.5: Root `package.json` — slim to workspace root + proxy scripts
 
 **Files:**
+
 - Modify: `package.json`
 
 - [ ] **Step 1: Rewrite**
@@ -2429,6 +2535,7 @@ Move runtime deps to leaf packages (already declared there); keep only root-wide
 ```
 
 Notes:
+
 - `db:*` scripts explicitly pass `--config packages/cloudflare/wrangler.toml` because wrangler.toml moved.
 - `start` points at the moved node-server.ts.
 - `preview` and `deploy` must run from the cloudflare package (the filter handles cwd).
@@ -2463,6 +2570,7 @@ git commit -m "Slim root package.json to workspace root + proxy scripts"
 ### Task 6.6: Update `tsconfig.json` to use project references
 
 **Files:**
+
 - Modify: `tsconfig.json`
 - Delete: `tsconfig.app.json`, `tsconfig.node.json`
 
@@ -2497,7 +2605,7 @@ Expected: clean. If a package reports errors, fix them inline (most commonly a s
 ```json
 {
   "compilerOptions": {
-    "composite": true,
+    "composite": true
     // ...existing options
   }
 }
@@ -2517,11 +2625,13 @@ git commit -m "Use TS project references for workspace packages"
 ### Task 6.7: Update GitHub Actions workflow
 
 **Files:**
+
 - Modify: `.github/workflows/deploy.yml`
 
 - [ ] **Step 1: Update paths**
 
 Key changes:
+
 - D1 migration: pass `--config packages/cloudflare/wrangler.toml`.
 - Build: now `pnpm build` (proxies to `@wedding/cloudflare`).
 - Deploy: `pnpm --filter @wedding/cloudflare deploy`.
@@ -2588,6 +2698,7 @@ git commit -m "Update CI workflow for workspace layout"
 ### Task 6.8: Update migrations path reference (docs only)
 
 **Files:**
+
 - Check: `README.md`
 
 - [ ] **Step 1: Read `README.md`**
@@ -2665,6 +2776,7 @@ URL=http://localhost:5173/ node probe.mjs | tee /tmp/pw-public.log
 You may need to update `probe.mjs` to read the URL from an env var — a 2-line change.
 
 Expected:
+
 - Admin probe: body text includes "Wedding Admin" + at least one guest row; no 401s; no "Connection closed."
 - Public probe: body includes "Sanam Louise Kavari" + "will be married"; no errors.
 
@@ -2685,6 +2797,7 @@ pnpm build
 ```
 
 Expected:
+
 - `packages/cloudflare/dist/client/index.html` (public shell)
 - `packages/cloudflare/dist/client/admin/index.html` (admin shell)
 - `packages/cloudflare/dist/client/assets/*` (bundled JS/CSS)

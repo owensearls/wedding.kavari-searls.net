@@ -1,8 +1,5 @@
-"use server";
+'use server'
 
-import { getDb, newId, nowIso } from "../lib/db";
-import { aggregateLookupMatches } from "../lib/fuzzy";
-import { getEnv } from "../context";
 import {
   lookupQuerySchema,
   rsvpSubmissionSchema,
@@ -11,36 +8,37 @@ import {
   type Guest,
   type RsvpGroupResponse,
   type RsvpSubmission,
-} from "@shared/schemas/rsvp";
+} from '@shared/schemas/rsvp'
+import { getEnv } from '../context'
+import { getDb, newId, nowIso } from '../lib/db'
+import { aggregateLookupMatches } from '../lib/fuzzy'
 
 function getDbConn() {
-  return getDb(getEnv().DB);
+  return getDb(getEnv().DB)
 }
 
-export async function lookupGuests(
-  query: string
-): Promise<LookupResponse> {
-  const parsed = lookupQuerySchema.safeParse({ query });
+export async function lookupGuests(query: string): Promise<LookupResponse> {
+  const parsed = lookupQuerySchema.safeParse({ query })
   if (!parsed.success) {
-    throw new Error("Missing or invalid query parameter");
+    throw new Error('Missing or invalid query parameter')
   }
-  const { query: q } = parsed.data;
+  const { query: q } = parsed.data
 
-  const db = getDbConn();
+  const db = getDbConn()
 
   const rows = await db
-    .selectFrom("guest")
+    .selectFrom('guest')
     .select([
-      "guest.id as guestId",
-      "guest.display_name as displayName",
-      "guest.email as email",
-      "guest.first_name as firstName",
-      "guest.last_name as lastName",
-      "guest.invite_code as inviteCode",
-      "guest.party_leader_id as partyLeaderId",
-      "guest.group_label as groupLabel",
+      'guest.id as guestId',
+      'guest.display_name as displayName',
+      'guest.email as email',
+      'guest.first_name as firstName',
+      'guest.last_name as lastName',
+      'guest.invite_code as inviteCode',
+      'guest.party_leader_id as partyLeaderId',
+      'guest.group_label as groupLabel',
     ])
-    .execute();
+    .execute()
 
   const candidates = rows.map((r) => ({
     guestId: r.guestId,
@@ -50,75 +48,73 @@ export async function lookupGuests(
     email: r.email,
     inviteCode: r.inviteCode,
     partyLeaderId: r.partyLeaderId ?? r.guestId,
-    groupLabel: r.groupLabel ?? "",
-  }));
+    groupLabel: r.groupLabel ?? '',
+  }))
 
   return {
     matches: aggregateLookupMatches(candidates, q),
-  };
+  }
 }
 
-export async function getRsvpGroup(
-  code: string
-): Promise<RsvpGroupResponse> {
-  if (!code) throw new Error("Missing invite code");
-  const db = getDbConn();
+export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
+  if (!code) throw new Error('Missing invite code')
+  const db = getDbConn()
 
   const actingGuest = await db
-    .selectFrom("guest")
-    .select(["id", "party_leader_id"])
-    .where("invite_code", "=", code)
-    .executeTakeFirst();
-  if (!actingGuest) throw new Error("Invite code not found");
+    .selectFrom('guest')
+    .select(['id', 'party_leader_id'])
+    .where('invite_code', '=', code)
+    .executeTakeFirst()
+  if (!actingGuest) throw new Error('Invite code not found')
 
-  const leaderId = actingGuest.party_leader_id ?? actingGuest.id;
+  const leaderId = actingGuest.party_leader_id ?? actingGuest.id
 
   const leader = await db
-    .selectFrom("guest")
+    .selectFrom('guest')
     .selectAll()
-    .where("id", "=", leaderId)
-    .executeTakeFirst();
-  if (!leader) throw new Error("Party leader not found");
+    .where('id', '=', leaderId)
+    .executeTakeFirst()
+  if (!leader) throw new Error('Party leader not found')
 
   const members = await db
-    .selectFrom("guest")
+    .selectFrom('guest')
     .selectAll()
-    .where("party_leader_id", "=", leaderId)
-    .execute();
-  const allGuests = [leader, ...members];
+    .where('party_leader_id', '=', leaderId)
+    .execute()
+  const allGuests = [leader, ...members]
 
   const invitations = await db
-    .selectFrom("invitation")
+    .selectFrom('invitation')
     .selectAll()
-    .where("guest_id", "=", leaderId)
-    .execute();
-  const eventIds = invitations.map((i) => i.event_id);
+    .where('guest_id', '=', leaderId)
+    .execute()
+  const eventIds = invitations.map((i) => i.event_id)
 
   const events = eventIds.length
     ? await db
-        .selectFrom("event")
+        .selectFrom('event')
         .selectAll()
-        .where("id", "in", eventIds)
-        .orderBy("sort_order")
+        .where('id', 'in', eventIds)
+        .orderBy('sort_order')
         .execute()
-    : [];
+    : []
 
   const mealOptions = eventIds.length
     ? await db
-        .selectFrom("meal_option")
+        .selectFrom('meal_option')
         .selectAll()
-        .where("event_id", "in", eventIds)
+        .where('event_id', 'in', eventIds)
         .execute()
-    : [];
+    : []
 
-  const guestIds = allGuests.map((g) => g.id);
+  const guestIds = allGuests.map((g) => g.id)
   const rsvps = guestIds.length
     ? await db
-        .selectFrom("rsvp")
+        .selectFrom('rsvp')
         .selectAll()
-        .where("guest_id", "in", guestIds)
+        .where('guest_id', 'in', guestIds)
         .execute()
-    : [];
+    : []
 
   const eventResponse: EventDetails[] = events.map((e) => ({
     id: e.id,
@@ -139,14 +135,14 @@ export async function getRsvpGroup(
         label: m.label,
         description: m.description,
       })),
-  }));
+  }))
 
   function parseNotesJson(raw: string | null) {
-    if (!raw) return null;
+    if (!raw) return null
     try {
-      return JSON.parse(raw);
+      return JSON.parse(raw)
     } catch {
-      return null;
+      return null
     }
   }
 
@@ -161,12 +157,12 @@ export async function getRsvpGroup(
     dietaryRestrictions: g.dietary_restrictions,
     notes: g.notes,
     notesJson: parseNotesJson(g.notes_json),
-  }));
+  }))
 
   return {
     group: {
       id: leaderId,
-      label: leader.group_label ?? "",
+      label: leader.group_label ?? '',
     },
     actingGuestId: actingGuest.id,
     guests: guestResponse,
@@ -178,88 +174,83 @@ export async function getRsvpGroup(
       mealChoiceId: r.meal_choice_id,
       respondedAt: r.responded_at,
     })),
-  };
+  }
 }
 
 export async function submitRsvp(
   code: string,
   submission: RsvpSubmission
 ): Promise<{ ok: true; respondedAt: string }> {
-  if (!code) throw new Error("Missing invite code");
+  if (!code) throw new Error('Missing invite code')
 
-  const parsed = rsvpSubmissionSchema.safeParse(submission);
-  if (!parsed.success) throw new Error("Invalid submission data");
-  const data = parsed.data;
+  const parsed = rsvpSubmissionSchema.safeParse(submission)
+  if (!parsed.success) throw new Error('Invalid submission data')
+  const data = parsed.data
 
-  const db = getDbConn();
+  const db = getDbConn()
   const actingGuest = await db
-    .selectFrom("guest")
-    .select(["id", "party_leader_id"])
-    .where("invite_code", "=", code)
-    .executeTakeFirst();
-  if (!actingGuest) throw new Error("Invite code not found");
+    .selectFrom('guest')
+    .select(['id', 'party_leader_id'])
+    .where('invite_code', '=', code)
+    .executeTakeFirst()
+  if (!actingGuest) throw new Error('Invite code not found')
 
-  const leaderId = actingGuest.party_leader_id ?? actingGuest.id;
+  const leaderId = actingGuest.party_leader_id ?? actingGuest.id
 
   const partyGuests = await db
-    .selectFrom("guest")
-    .select(["id"])
+    .selectFrom('guest')
+    .select(['id'])
     .where((eb) =>
-      eb.or([
-        eb("id", "=", leaderId),
-        eb("party_leader_id", "=", leaderId),
-      ])
+      eb.or([eb('id', '=', leaderId), eb('party_leader_id', '=', leaderId)])
     )
-    .execute();
-  const allowedGuestIds = new Set(partyGuests.map((g) => g.id));
+    .execute()
+  const allowedGuestIds = new Set(partyGuests.map((g) => g.id))
 
   if (!allowedGuestIds.has(data.respondedByGuestId)) {
-    throw new Error("respondedByGuestId is not in this group");
+    throw new Error('respondedByGuestId is not in this group')
   }
 
   const invitations = await db
-    .selectFrom("invitation")
-    .select(["id", "event_id"])
-    .where("guest_id", "=", leaderId)
-    .execute();
-  const invitedEventIds = new Set(invitations.map((i) => i.event_id));
+    .selectFrom('invitation')
+    .select(['id', 'event_id'])
+    .where('guest_id', '=', leaderId)
+    .execute()
+  const invitedEventIds = new Set(invitations.map((i) => i.event_id))
 
-  const eventIds = invitations.map((i) => i.event_id);
+  const eventIds = invitations.map((i) => i.event_id)
   const mealOptions = eventIds.length
     ? await db
-        .selectFrom("meal_option")
-        .select(["id", "event_id"])
-        .where("event_id", "in", eventIds)
+        .selectFrom('meal_option')
+        .select(['id', 'event_id'])
+        .where('event_id', 'in', eventIds)
         .execute()
-    : [];
-  const mealEventByMealId = new Map(
-    mealOptions.map((m) => [m.id, m.event_id])
-  );
+    : []
+  const mealEventByMealId = new Map(mealOptions.map((m) => [m.id, m.event_id]))
 
   for (const r of data.rsvps) {
     if (!allowedGuestIds.has(r.guestId)) {
-      throw new Error(`Guest ${r.guestId} is not in this group`);
+      throw new Error(`Guest ${r.guestId} is not in this group`)
     }
     if (!invitedEventIds.has(r.eventId)) {
-      throw new Error(`Group is not invited to event ${r.eventId}`);
+      throw new Error(`Group is not invited to event ${r.eventId}`)
     }
     if (r.mealChoiceId) {
-      const mealEvent = mealEventByMealId.get(r.mealChoiceId);
+      const mealEvent = mealEventByMealId.get(r.mealChoiceId)
       if (mealEvent !== r.eventId) {
         throw new Error(
           `Meal choice ${r.mealChoiceId} does not belong to event ${r.eventId}`
-        );
+        )
       }
     }
   }
 
-  const now = nowIso();
+  const now = nowIso()
 
   for (const r of data.rsvps) {
     await db
-      .insertInto("rsvp")
+      .insertInto('rsvp')
       .values({
-        id: newId("rsvp"),
+        id: newId('rsvp'),
         guest_id: r.guestId,
         event_id: r.eventId,
         status: r.status,
@@ -268,35 +259,35 @@ export async function submitRsvp(
         responded_by_guest_id: data.respondedByGuestId,
       })
       .onConflict((oc) =>
-        oc.columns(["guest_id", "event_id"]).doUpdateSet({
+        oc.columns(['guest_id', 'event_id']).doUpdateSet({
           status: r.status,
           meal_choice_id: r.mealChoiceId ?? null,
           responded_at: now,
           responded_by_guest_id: data.respondedByGuestId,
         })
       )
-      .execute();
+      .execute()
   }
 
   for (const update of data.guestUpdates ?? []) {
-    if (!allowedGuestIds.has(update.guestId)) continue;
+    if (!allowedGuestIds.has(update.guestId)) continue
     await db
-      .updateTable("guest")
+      .updateTable('guest')
       .set({
         dietary_restrictions: update.dietaryRestrictions ?? null,
         notes: update.notes ?? null,
         notes_json: update.notesJson ? JSON.stringify(update.notesJson) : null,
         updated_at: now,
       })
-      .where("id", "=", update.guestId)
-      .execute();
+      .where('id', '=', update.guestId)
+      .execute()
   }
 
   await db
-    .updateTable("guest")
+    .updateTable('guest')
     .set({ updated_at: now })
-    .where("id", "=", leaderId)
-    .execute();
+    .where('id', '=', leaderId)
+    .execute()
 
-  return { ok: true, respondedAt: now };
+  return { ok: true, respondedAt: now }
 }

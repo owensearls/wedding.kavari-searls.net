@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
 import Button from './Button'
 import styles from './EditFormShell.module.css'
+import type { ReactNode } from 'react'
 
 interface EditFormShellProps {
   title: string

@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
 import Section from './Section'
+import type { ReactNode } from 'react'
 
 interface BackgroundLayoutProps {
   children?: ReactNode

@@ -14,9 +14,7 @@ interface StatusBadgeProps {
 function StatusBadge({ status, label }: StatusBadgeProps) {
   const text = label ?? (status ? DEFAULT_STATUS_LABELS[status] : '—')
   return (
-    <span className={`${styles.badge} ${statusClassName(status)}`}>
-      {text}
-    </span>
+    <span className={`${styles.badge} ${statusClassName(status)}`}>{text}</span>
   )
 }
 

@@ -1,8 +1,8 @@
 import styles from './App.module.css'
-import typography from './typography.module.css'
 import BackgroundLayout from './components/BackgroundLayout'
 import Section from './components/Section'
 import RsvpLookup from './routes/RsvpLookup'
+import typography from './typography.module.css'
 
 function App() {
   return (

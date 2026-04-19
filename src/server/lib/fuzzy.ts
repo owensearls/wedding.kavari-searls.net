@@ -72,7 +72,7 @@ export interface AggregatedLookupMatch {
 export function aggregateLookupMatches(
   candidates: LookupCandidate[],
   query: string,
-  limit = 8,
+  limit = 8
 ): AggregatedLookupMatch[] {
   const byGroup = new Map<
     string,

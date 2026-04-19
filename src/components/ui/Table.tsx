@@ -1,5 +1,5 @@
-import type { ReactNode, TableHTMLAttributes } from 'react'
 import styles from './Table.module.css'
+import type { ReactNode, TableHTMLAttributes } from 'react'
 
 interface TableProps extends TableHTMLAttributes<HTMLTableElement> {
   children: ReactNode

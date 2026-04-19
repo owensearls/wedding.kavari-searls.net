@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import ErrorMessage from '../components/ui/ErrorMessage'
+import LoadingIndicator from '../components/ui/LoadingIndicator'
+import {
+  buildInitialRsvpFormState,
+  rsvpKey,
+  type RsvpFormState,
+} from '../lib/rsvpFormState'
+import { getRsvpGroup, submitRsvp } from '../server/public/rsvp'
+import EventCardEditor from './EventCardEditor'
+import styles from './RsvpFull.module.css'
 import type {
   Guest,
   RsvpGroupResponse,
   RsvpStatus,
   RsvpSubmission,
 } from '@shared/schemas/rsvp'
-import ErrorMessage from '../components/ui/ErrorMessage'
-import LoadingIndicator from '../components/ui/LoadingIndicator'
-import { getRsvpGroup, submitRsvp } from '../server/public/rsvp'
-import {
-  buildInitialRsvpFormState,
-  rsvpKey,
-  type RsvpFormState,
-} from '../lib/rsvpFormState'
-import EventCardEditor from './EventCardEditor'
-import styles from './RsvpFull.module.css'
 
 function RsvpFull() {
   const { code = '' } = useParams<{ code: string }>()
@@ -91,15 +91,11 @@ function RsvpFull() {
 
   function setDietary(guestId: string, value: string) {
     setState((s) =>
-      s ? { ...s, dietary: { ...s.dietary, [guestId]: value } } : s,
+      s ? { ...s, dietary: { ...s.dietary, [guestId]: value } } : s
     )
   }
 
-  function setSong(
-    guestId: string,
-    field: 'title' | 'artist',
-    value: string,
-  ) {
+  function setSong(guestId: string, field: 'title' | 'artist', value: string) {
     setState((s) =>
       s
         ? {
@@ -112,14 +108,12 @@ function RsvpFull() {
               },
             },
           }
-        : s,
+        : s
     )
   }
 
   function setNotes(guestId: string, value: string) {
-    setState((s) =>
-      s ? { ...s, notes: { ...s.notes, [guestId]: value } } : s,
-    )
+    setState((s) => (s ? { ...s, notes: { ...s.notes, [guestId]: value } } : s))
   }
 
   async function onSubmit() {

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import styles from './Section.module.css'
+import type { ReactNode } from 'react'
 
 interface SectionProps {
   id: string

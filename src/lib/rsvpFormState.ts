@@ -31,13 +31,13 @@ export function formatRsvpDate(iso: string | null): string | null {
 }
 
 export function buildInitialRsvpFormState(
-  data: RsvpGroupResponse,
+  data: RsvpGroupResponse
 ): RsvpFormState {
   const rsvps: RsvpFormState['rsvps'] = {}
   for (const ev of data.events) {
     for (const guestId of ev.invitedGuestIds) {
       const existing = data.rsvps.find(
-        (r) => r.guestId === guestId && r.eventId === ev.id,
+        (r) => r.guestId === guestId && r.eventId === ev.id
       )
       rsvps[rsvpKey(guestId, ev.id)] = {
         status: existing?.status ?? 'pending',

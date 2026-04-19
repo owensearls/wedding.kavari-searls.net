@@ -19,11 +19,7 @@ function Modal({ title, onClose, children }: ModalProps) {
   }, [onClose])
 
   return (
-    <div
-      className={styles.backdrop}
-      onClick={onClose}
-      role="presentation"
-    >
+    <div className={styles.backdrop} onClick={onClose} role="presentation">
       <div
         className={styles.modal}
         role="dialog"

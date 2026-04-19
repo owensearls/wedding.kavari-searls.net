@@ -1,6 +1,6 @@
+import Papa from 'papaparse'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Papa from 'papaparse'
 import Button from '../../components/ui/Button'
 import EditFormSection from '../../components/ui/EditFormSection'
 import EditFormShell from '../../components/ui/EditFormShell'
@@ -51,15 +51,10 @@ function Import() {
   }
 
   const previewColumns =
-    preview && preview.data.length > 0
-      ? Object.keys(preview.data[0] ?? {})
-      : []
+    preview && preview.data.length > 0 ? Object.keys(preview.data[0] ?? {}) : []
 
   return (
-    <EditFormShell
-      title="Import guests"
-      onBack={() => navigate('/groups')}
-    >
+    <EditFormShell title="Import guests" onBack={() => navigate('/groups')}>
       <EditFormSection>
         <p className={styles.helper}>
           Paste a CSV. Columns: <code>groupLabel</code>, <code>firstName</code>,{' '}
@@ -75,10 +70,7 @@ function Import() {
           onChange={(e) => setCsv(e.target.value)}
         />
         <div className={styles.row}>
-          <Button
-            onClick={onSubmit}
-            disabled={submitting || !csv.trim()}
-          >
+          <Button onClick={onSubmit} disabled={submitting || !csv.trim()}>
             {submitting ? 'Importing…' : 'Import'}
           </Button>
           <Button variant="ghost" onClick={() => setCsv(EXAMPLE)}>
@@ -124,9 +116,7 @@ function Import() {
           <SectionLabel>Result</SectionLabel>
           <p>Created {result.created.length} invites.</p>
           {result.skipped.length > 0 && (
-            <p>
-              Skipped (label already existed): {result.skipped.join(', ')}
-            </p>
+            <p>Skipped (label already existed): {result.skipped.join(', ')}</p>
           )}
           {result.created.length > 0 && (
             <Table>
@@ -147,7 +137,7 @@ function Import() {
                         <code>{g.inviteCode}</code>
                       </td>
                     </tr>
-                  )),
+                  ))
                 )}
               </tbody>
             </Table>

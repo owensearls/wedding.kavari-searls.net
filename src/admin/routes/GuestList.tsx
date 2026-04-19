@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type {
-  AdminGroupInput,
-  AdminGroupListItem,
-  AdminGuestInput,
-} from '@shared/schemas/admin'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorMessage from '../../components/ui/ErrorMessage'
@@ -24,6 +19,11 @@ import { downloadCsv, responsesToCsv } from '../lib/rsvpCsv'
 import EditGroupForm from './EditGroupForm'
 import GroupBlock from './GroupBlock'
 import GuestDetailModal from './GuestDetailModal'
+import type {
+  AdminGroupInput,
+  AdminGroupListItem,
+  AdminGuestInput,
+} from '@shared/schemas/admin'
 
 const blankGuest = (): AdminGuestInput => ({
   firstName: '',
@@ -96,7 +96,7 @@ function GuestList() {
       const csv = responsesToCsv(res.rows)
       downloadCsv(
         `rsvp-responses-${new Date().toISOString().slice(0, 10)}.csv`,
-        csv,
+        csv
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Export failed')
@@ -123,9 +123,7 @@ function GuestList() {
             setSaving(false)
           }
         }}
-        onDelete={
-          editing.id ? () => onDelete(editing.id!) : undefined
-        }
+        onDelete={editing.id ? () => onDelete(editing.id!) : undefined}
         onCancel={() => {
           setEditing(null)
           setError(null)

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { AdminEventInput } from '@shared/schemas/admin'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorMessage from '../../components/ui/ErrorMessage'
@@ -9,6 +8,7 @@ import Table from '../../components/ui/Table'
 import { listEvents, saveEvent, type AdminEventRecord } from '../api'
 import { formatForDisplay } from '../lib/dateHelpers'
 import EditEventForm from './EditEventForm'
+import type { AdminEventInput } from '@shared/schemas/admin'
 
 const blankEvent = (): AdminEventInput => ({
   name: '',

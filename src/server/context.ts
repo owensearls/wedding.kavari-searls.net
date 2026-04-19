@@ -1,19 +1,19 @@
-import { AsyncLocalStorage } from "node:async_hooks";
-import type { Kysely } from "kysely";
-import type { Database } from "./lib/schema";
+import { AsyncLocalStorage } from 'node:async_hooks'
+import type { Database } from './lib/schema'
+import type { Kysely } from 'kysely'
 
 export type ServerEnv =
   | { DB: D1Database; ACCESS_AUD?: string; ACCESS_TEAM_DOMAIN?: string } // Worker env
-  | { DB: Kysely<Database> }; // Node env
+  | { DB: Kysely<Database> } // Node env
 
-const envStorage = new AsyncLocalStorage<ServerEnv>();
+const envStorage = new AsyncLocalStorage<ServerEnv>()
 
 export function runWithEnv<T>(env: ServerEnv, fn: () => T): T {
-  return envStorage.run(env, fn);
+  return envStorage.run(env, fn)
 }
 
 export function getEnv(): ServerEnv {
-  const env = envStorage.getStore();
-  if (!env) throw new Error("Env not available outside request context");
-  return env;
+  const env = envStorage.getStore()
+  if (!env) throw new Error('Env not available outside request context')
+  return env
 }

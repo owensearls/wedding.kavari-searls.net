@@ -1,10 +1,10 @@
-import type {
-  EventDetails,
-  Guest,
-  RsvpStatus,
-} from '@shared/schemas/rsvp'
-import { formatRsvpDate, rsvpKey, type RsvpFormState } from '../lib/rsvpFormState'
+import {
+  formatRsvpDate,
+  rsvpKey,
+  type RsvpFormState,
+} from '../lib/rsvpFormState'
 import styles from './RsvpFull.module.css'
+import type { EventDetails, Guest, RsvpStatus } from '@shared/schemas/rsvp'
 
 interface EventCardEditorProps {
   event: EventDetails
@@ -68,7 +68,9 @@ function EventCardEditor({
                 id={`meal-${k}`}
                 className={styles.select}
                 value={current.mealChoiceId ?? ''}
-                onChange={(e) => onMealChange(guestId, event.id, e.target.value)}
+                onChange={(e) =>
+                  onMealChange(guestId, event.id, e.target.value)
+                }
               >
                 <option value="">Choose…</option>
                 {event.mealOptions.map((m) => (

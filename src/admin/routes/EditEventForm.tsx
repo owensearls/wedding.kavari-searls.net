@@ -1,4 +1,3 @@
-import type { AdminEventInput } from '@shared/schemas/admin'
 import Button from '../../components/ui/Button'
 import EditFormActions from '../../components/ui/EditFormActions'
 import EditFormSection from '../../components/ui/EditFormSection'
@@ -10,6 +9,7 @@ import RemoveButton from '../../components/ui/RemoveButton'
 import SectionLabel from '../../components/ui/SectionLabel'
 import { isoToLocalInput, localInputToIso } from '../lib/dateHelpers'
 import styles from './EditEventForm.module.css'
+import type { AdminEventInput } from '@shared/schemas/admin'
 
 interface EditEventFormProps {
   event: AdminEventInput
@@ -85,9 +85,7 @@ function EditEventForm({
             <input
               className="admin-input"
               value={event.address ?? ''}
-              onChange={(e) =>
-                onChange({ ...event, address: e.target.value })
-              }
+              onChange={(e) => onChange({ ...event, address: e.target.value })}
             />
           </FieldGroup>
         </FormGrid>
@@ -112,7 +110,10 @@ function EditEventForm({
               type="datetime-local"
               value={isoToLocalInput(event.startsAt)}
               onChange={(e) =>
-                onChange({ ...event, startsAt: localInputToIso(e.target.value) })
+                onChange({
+                  ...event,
+                  startsAt: localInputToIso(e.target.value),
+                })
               }
             />
           </FieldGroup>

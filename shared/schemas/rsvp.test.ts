@@ -89,7 +89,7 @@ describe('rsvpSubmissionSchema', () => {
     })
     expect(parsed.guestUpdates).toHaveLength(1)
     expect(parsed.guestUpdates[0].notesJson?.songRequest?.title).toBe(
-      'Wagon Wheel',
+      'Wagon Wheel'
     )
   })
 
@@ -97,7 +97,7 @@ describe('rsvpSubmissionSchema', () => {
     expect(() =>
       rsvpSubmissionSchema.parse({
         rsvps: minimal.rsvps,
-      }),
+      })
     ).toThrow()
   })
 
@@ -106,7 +106,7 @@ describe('rsvpSubmissionSchema', () => {
       rsvpSubmissionSchema.parse({
         respondedByGuestId: 'g1',
         rsvps: [{ guestId: 'g1', eventId: 'e1', status: 'yes' }],
-      }),
+      })
     ).toThrow()
   })
 })

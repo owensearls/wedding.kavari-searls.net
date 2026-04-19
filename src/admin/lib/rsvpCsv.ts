@@ -32,7 +32,7 @@ export function responsesToCsv(rows: AdminResponseRow[]): string {
         r.respondedAt,
       ]
         .map(escapeCsv)
-        .join(','),
+        .join(',')
     ),
   ].join('\n')
 }

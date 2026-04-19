@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { lookupGuests } from '../server/public/rsvp'
-import type { LookupMatch } from '@shared/schemas/rsvp'
 import styles from './RsvpLookup.module.css'
+import type { LookupMatch } from '@shared/schemas/rsvp'
 
 function RsvpLookup() {
   const [query, setQuery] = useState('')
@@ -20,7 +20,7 @@ function RsvpLookup() {
       const res = await lookupGuests(query.trim())
       if (res.matches.length === 0) {
         setError(
-          "We couldn't find your invitation. Try a different spelling, or reach out to Sanam or Owen.",
+          "We couldn't find your invitation. Try a different spelling, or reach out to Sanam or Owen."
         )
       } else {
         setMatches(res.matches)
@@ -57,7 +57,10 @@ function RsvpLookup() {
       {matches && matches.length > 0 && (
         <div className={styles.matches}>
           {matches.length > 1 && (
-            <p className={styles.intro} style={{ marginTop: 8, marginBottom: 0 }}>
+            <p
+              className={styles.intro}
+              style={{ marginTop: 8, marginBottom: 0 }}
+            >
               We found a few possibilities — pick yours:
             </p>
           )}

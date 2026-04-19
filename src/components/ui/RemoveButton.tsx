@@ -1,5 +1,5 @@
-import type { ButtonHTMLAttributes } from 'react'
 import styles from './RemoveButton.module.css'
+import type { ButtonHTMLAttributes } from 'react'
 
 type RemoveButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,

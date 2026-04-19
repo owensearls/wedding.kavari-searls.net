@@ -1,8 +1,8 @@
-import type { AdminGroupListItem } from '@shared/schemas/admin'
 import StatusBadge from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
-import type { AdminEventRecord } from '../api'
 import styles from './GuestList.module.css'
+import type { AdminEventRecord } from '../api'
+import type { AdminGroupListItem } from '@shared/schemas/admin'
 
 interface GroupBlockProps {
   group: AdminGroupListItem

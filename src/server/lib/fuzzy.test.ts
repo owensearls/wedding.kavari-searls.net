@@ -22,7 +22,7 @@ describe('normalize', () => {
     expect(normalize('  Alice   Smith  ')).toBe('alice smith')
   })
 
-  it("keeps email-safe characters and apostrophes/hyphens", () => {
+  it('keeps email-safe characters and apostrophes/hyphens', () => {
     expect(normalize('Foo@Bar.com')).toBe('foo@bar.com')
     expect(normalize("O'Brien-Smith")).toBe("o'brien-smith")
   })
@@ -167,7 +167,7 @@ describe('aggregateLookupMatches', () => {
           groupLabel: 'The Kavari family',
         },
       ],
-      'alice@example.com',
+      'alice@example.com'
     )
     // Alice's exact email beats anyone else — first result should be her group
     // and the returned code should be Alice's (best-scoring guest in the group).

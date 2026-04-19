@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react'
 import styles from './FormGrid.module.css'
+import type { CSSProperties, ReactNode } from 'react'
 
 interface FormGridProps {
   cols: 2 | 3 | 4

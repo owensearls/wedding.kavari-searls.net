@@ -14,15 +14,18 @@ const blankToNull = (v: unknown) =>
 export const adminGuestInputSchema = z.object({
   id: z.string().optional(),
   firstName: z.string().min(1).max(100),
-  lastName: z.preprocess(blankToNull, z.string().max(100).nullable().optional()),
+  lastName: z.preprocess(
+    blankToNull,
+    z.string().max(100).nullable().optional()
+  ),
   email: z.preprocess(
     blankToNull,
-    z.string().email().max(200).nullable().optional(),
+    z.string().email().max(200).nullable().optional()
   ),
   phone: z.preprocess(blankToNull, z.string().max(50).nullable().optional()),
   dietaryRestrictions: z.preprocess(
     blankToNull,
-    z.string().max(500).nullable().optional(),
+    z.string().max(500).nullable().optional()
   ),
   notes: z.preprocess(blankToNull, z.string().max(500).nullable().optional()),
 })
@@ -60,12 +63,16 @@ export type AdminImport = z.infer<typeof adminImportSchema>
 export const adminEventInputSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1).max(200),
-  slug: z.string().min(1).max(80).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(1)
+    .max(80)
+    .regex(/^[a-z0-9-]+$/),
   startsAt: z.preprocess(blankToNull, z.string().nullable().optional()),
   endsAt: z.preprocess(blankToNull, z.string().nullable().optional()),
   locationName: z.preprocess(
     blankToNull,
-    z.string().max(200).nullable().optional(),
+    z.string().max(200).nullable().optional()
   ),
   address: z.preprocess(blankToNull, z.string().max(500).nullable().optional()),
   rsvpDeadline: z.preprocess(blankToNull, z.string().nullable().optional()),
@@ -78,9 +85,9 @@ export const adminEventInputSchema = z.object({
         label: z.string().min(1).max(200),
         description: z.preprocess(
           blankToNull,
-          z.string().max(500).nullable().optional(),
+          z.string().max(500).nullable().optional()
         ),
-      }),
+      })
     )
     .default([]),
 })
@@ -137,7 +144,7 @@ export const adminGuestDetailSchema = z.object({
       mealLabel: z.string().nullable(),
       respondedAt: z.string().nullable(),
       respondedByDisplayName: z.string().nullable(),
-    }),
+    })
   ),
 })
 export type AdminGuestDetail = z.infer<typeof adminGuestDetailSchema>

@@ -1,10 +1,6 @@
 import styles from './StatusBadge.module.css'
 
-export type StatusValue =
-  | 'pending'
-  | 'attending'
-  | 'declined'
-  | 'not-invited'
+export type StatusValue = 'pending' | 'attending' | 'declined' | 'not-invited'
 
 export const DEFAULT_STATUS_LABELS: Record<StatusValue, string> = {
   attending: 'Attending',

@@ -26,7 +26,7 @@ describe('adminGuestInputSchema', () => {
 
   it('rejects invalid emails', () => {
     expect(() =>
-      adminGuestInputSchema.parse({ firstName: 'Alice', email: 'not-an-email' }),
+      adminGuestInputSchema.parse({ firstName: 'Alice', email: 'not-an-email' })
     ).toThrow()
   })
 
@@ -47,7 +47,7 @@ describe('adminGroupInputSchema', () => {
 
   it('requires at least one guest', () => {
     expect(() =>
-      adminGroupInputSchema.parse({ label: 'Empty', guests: [] }),
+      adminGroupInputSchema.parse({ label: 'Empty', guests: [] })
     ).toThrow()
   })
 
@@ -63,7 +63,7 @@ describe('adminGroupInputSchema', () => {
       adminGroupInputSchema.parse({
         label: '',
         guests: [{ firstName: 'Alice' }, { firstName: 'Bob' }],
-      }),
+      })
     ).toThrow()
     const parsed = adminGroupInputSchema.parse({
       label: 'The Smiths',
@@ -105,10 +105,10 @@ describe('adminImportRowSchema', () => {
 
   it('rejects rows missing firstName or groupLabel', () => {
     expect(() =>
-      adminImportRowSchema.parse({ groupLabel: '', firstName: 'Alice' }),
+      adminImportRowSchema.parse({ groupLabel: '', firstName: 'Alice' })
     ).toThrow()
     expect(() =>
-      adminImportRowSchema.parse({ groupLabel: 'Smiths', firstName: '' }),
+      adminImportRowSchema.parse({ groupLabel: 'Smiths', firstName: '' })
     ).toThrow()
   })
 })
@@ -121,7 +121,7 @@ describe('adminImportSchema', () => {
   it('caps the number of rows at 2000', () => {
     const row = { groupLabel: 'g', firstName: 'f' }
     expect(() =>
-      adminImportSchema.parse({ rows: Array.from({ length: 2001 }, () => row) }),
+      adminImportSchema.parse({ rows: Array.from({ length: 2001 }, () => row) })
     ).toThrow()
   })
 })
@@ -129,7 +129,7 @@ describe('adminImportSchema', () => {
 describe('adminEventInputSchema', () => {
   it('validates slug is url-safe', () => {
     expect(() =>
-      adminEventInputSchema.parse({ name: 'X', slug: 'Not A Slug!' }),
+      adminEventInputSchema.parse({ name: 'X', slug: 'Not A Slug!' })
     ).toThrow()
     const ok = adminEventInputSchema.parse({ name: 'X', slug: 'ok-slug-1' })
     expect(ok.slug).toBe('ok-slug-1')
@@ -180,7 +180,7 @@ describe('adminEventInputSchema', () => {
         name: 'Reception',
         slug: 'reception',
         mealOptions: [{ label: '' }],
-      }),
+      })
     ).toThrow()
   })
 })

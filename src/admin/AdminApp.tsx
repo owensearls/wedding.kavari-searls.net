@@ -1,8 +1,8 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import styles from './AdminApp.module.css'
+import EventSettings from './routes/EventSettings'
 import GuestList from './routes/GuestList'
 import Import from './routes/Import'
-import EventSettings from './routes/EventSettings'
 
 function AdminApp() {
   return (

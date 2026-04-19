@@ -10,8 +10,10 @@
     "start": "pnpm build && node --experimental-strip-types src/node-server.ts",
     "preview": "wrangler dev",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "typecheck": "tsc --build",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
@@ -46,8 +48,11 @@
     "better-sqlite3": "^12.9.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^16.5.0",
     "jose": "^5.10.0",
     "kysely": "^0.27.5",
@@ -60,6 +65,11 @@
     "wrangler": "^4.83.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3", "esbuild", "sharp", "workerd"]
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
   }
 }
