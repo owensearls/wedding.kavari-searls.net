@@ -6,7 +6,7 @@ import {
 import { afterAll, beforeAll, expect, test } from 'vitest'
 
 let server: ViteDevServer
-let createRscHandler: typeof import('../../src/entry.rsc.ts').createRscHandler
+let createRscHandler: typeof import('../../src/entry.rsc.tsx').createRscHandler
 let adminActionId: string
 let publicActionId: string
 
@@ -41,8 +41,8 @@ beforeAll(async () => {
   // @vitejs/plugin-rsc/rsc imports virtual modules that only resolve
   // under Vite, not plain Node's ESM loader.
   const entry =
-    await loadRscModule<typeof import('../../src/entry.rsc.ts')>(
-      '/src/entry.rsc.ts'
+    await loadRscModule<typeof import('../../src/entry.rsc.tsx')>(
+      '/src/entry.rsc.tsx'
     )
   createRscHandler = entry.createRscHandler
 

@@ -1,3 +1,5 @@
+'use client'
+
 import styles from './App.module.css'
 import { BackgroundLayout } from './components/BackgroundLayout'
 import { Section } from './components/Section'

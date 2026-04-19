@@ -5,7 +5,11 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client", "@cloudflare/workers-types"],
+    "types": [
+      "vite/client",
+      "@cloudflare/workers-types",
+      "@vitejs/plugin-rsc/types"
+    ],
     "skipLibCheck": true,
 
     /* Bundler mode */

@@ -72,8 +72,8 @@ beforeAll(async () => {
   // handler from the rsc environment's runner so server functions get the
   // RSC transform and carry $$id.
   const entry =
-    await loadRscModule<typeof import('../../src/entry.rsc.ts')>(
-      '/src/entry.rsc.ts'
+    await loadRscModule<typeof import('../../src/entry.rsc.tsx')>(
+      '/src/entry.rsc.tsx'
     )
   const rscHandler = entry.createRscHandler() // no auth for tests
 

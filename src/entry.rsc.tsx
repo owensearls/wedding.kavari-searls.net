@@ -3,6 +3,9 @@ import {
   loadServerAction,
   renderToReadableStream,
 } from '@vitejs/plugin-rsc/rsc'
+import { Root } from './root'
+
+export { getStaticPaths } from './root'
 
 // Auto-discover every server-action module with Vite's `import.meta.glob`.
 // Two jobs here:
@@ -85,4 +88,19 @@ export function createRscHandler(authorize: Authorize = async () => null) {
       headers: { 'content-type': 'text/x-component' },
     })
   }
+}
+
+export async function handleSsg(request: Request): Promise<{
+  html: ReadableStream<Uint8Array>
+  rsc: ReadableStream<Uint8Array>
+}> {
+  const url = new URL(request.url)
+  const rscPayload = { root: <Root url={url} /> }
+  const rscStream = renderToReadableStream(rscPayload)
+  const [rscStream1, rscStream2] = rscStream.tee()
+  const ssr = await import.meta.viteRsc.loadModule<
+    typeof import('./entry.ssr')
+  >('ssr', 'index')
+  const ssrResult = await ssr.renderHtml(rscStream1, { ssg: true })
+  return { html: ssrResult.stream, rsc: rscStream2 }
 }
