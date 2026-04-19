@@ -4,12 +4,13 @@ import {
   renderToReadableStream,
 } from "@vitejs/plugin-rsc/rsc";
 
-// Statically import every server-action module. Two jobs here:
+// Auto-discover every server-action module with Vite's `import.meta.glob`.
+// Two jobs here:
 //
 // 1. Plugin-rsc only registers modules it sees via graph walk. Without these
-//    imports, `loadServerAction(id)` throws because the built RSC bundle's
-//    server-references manifest is empty. (The client bundle does import
-//    these, but its graph doesn't feed back into the worker bundle.)
+//    eager imports, `loadServerAction(id)` throws because the built RSC
+//    bundle's server-references manifest is empty. (The client bundle does
+//    import these, but its graph doesn't feed back into the worker bundle.)
 //
 // 2. At module-load time each export becomes a server reference with a
 //    `$$id` property. We collect those ids into admin/public allowlists so
@@ -17,12 +18,17 @@ import {
 //    plugin-rsc hashes ids (`hashString(relativeId)`), so a substring check
 //    like `id.includes("src/server/admin/")` does not work. Exact-set
 //    membership works in both dev (source-path ids) and prod (hashed ids).
-import * as adminEvents from "./server/admin/events";
-import * as adminGroups from "./server/admin/groups";
-import * as adminGuests from "./server/admin/guests";
-import * as adminImport from "./server/admin/import";
-import * as adminResponses from "./server/admin/responses";
-import * as publicRsvp from "./server/public/rsvp";
+//
+// Using a glob rather than a hand-maintained list means adding a new module
+// under ./server/admin or ./server/public is picked up automatically.
+const adminModules = import.meta.glob<Record<string, unknown>>(
+  "./server/admin/*.ts",
+  { eager: true }
+);
+const publicModules = import.meta.glob<Record<string, unknown>>(
+  "./server/public/*.ts",
+  { eager: true }
+);
 
 export type Authorize = (request: Request) => Promise<Response | null>;
 
@@ -41,14 +47,8 @@ function collectActionIds(
   return ids;
 }
 
-const adminActionIds = collectActionIds([
-  adminEvents,
-  adminGroups,
-  adminGuests,
-  adminImport,
-  adminResponses,
-]);
-const publicActionIds = collectActionIds([publicRsvp]);
+const adminActionIds = collectActionIds(Object.values(adminModules));
+const publicActionIds = collectActionIds(Object.values(publicModules));
 
 export function createRscHandler(authorize: Authorize = async () => null) {
   return async function handler(request: Request): Promise<Response> {

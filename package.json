@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:node": "vite --config vite.config.node.ts",
     "build": "vite build",
-    "start": "node --experimental-strip-types src/node-server.ts",
+    "start": "pnpm build && node --experimental-strip-types src/node-server.ts",
     "preview": "wrangler dev",
     "lint": "eslint .",
     "format": "prettier --write .",

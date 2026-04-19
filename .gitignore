@@ -8,3 +8,5 @@ dist
 dist/
 .wrangler/
 *.tsbuildinfo
+original.tif
+*.tif

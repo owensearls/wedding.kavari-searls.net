@@ -14,7 +14,8 @@ export interface Env {
 }
 
 const handler = createRscHandler(async (request) => {
-  // This callback only runs for /@rsc/admin/*. Verify Access JWT.
+  // Runs only for action ids in the admin allowlist (see entry.rsc.ts).
+  // Verifies the Cloudflare Access JWT injected at the edge.
   const ok = await verifyAccessJwt(request, {
     aud: globalThis.ACCESS_AUD,
     teamDomain: globalThis.ACCESS_TEAM_DOMAIN,
