@@ -67,20 +67,19 @@ beforeAll(async () => {
   if (!addr || typeof addr === 'string') throw new Error('no address')
   baseUrl = `http://127.0.0.1:${addr.port}`
 
-  // Wire /@rsc/* to the RSC handler in dev. The plugin is configured with
-  // `serverHandler: false`, so no middleware is auto-registered. Pull the
-  // handler from the rsc environment's runner so server functions get the
-  // RSC transform and carry $$id.
-  const entry =
-    await loadRscModule<typeof import('../../src/entry.rsc.tsx')>(
-      '/src/entry.rsc.tsx'
+  // Load per-prefix RSC handlers via the RSC env runner so server functions
+  // get the RSC transform and carry $$id.
+  const adminEntry =
+    await loadRscModule<typeof import('../../src/server/admin/rsc-entry')>(
+      '/src/server/admin/rsc-entry.ts'
     )
-  const rscHandler = entry.createRscHandler() // no auth for tests
+  const publicEntry =
+    await loadRscModule<typeof import('../../src/server/public/rsc-entry')>(
+      '/src/server/public/rsc-entry.ts'
+    )
 
   // IMPORTANT: load runWithEnv via the RSC env runner so we share the same
-  // AsyncLocalStorage instance the server functions use. Loading
-  // `src/server/context.ts` through Node's default loader would create a
-  // second, unrelated ALS and the env wouldn't be visible in getEnv().
+  // AsyncLocalStorage instance the server functions use.
   const ctx = await loadRscModule<typeof import('../../src/server/shared/context')>(
     '/src/server/shared/context.ts'
   )
@@ -88,11 +87,18 @@ beforeAll(async () => {
 
   const listener = createRequestListener(async (request) => {
     const url = new URL(request.url)
-    if (!url.pathname.startsWith('/@rsc/')) {
-      return new Response('not found', { status: 404 })
-    }
     try {
-      return await runWithEnv({ DB: localKyselyDb }, () => rscHandler(request))
+      if (url.pathname.startsWith('/@rsc-admin/')) {
+        return await runWithEnv({ DB: localKyselyDb }, () =>
+          adminEntry.handleAdminRsc(request, { aud: '', teamDomain: '' })
+        )
+      }
+      if (url.pathname.startsWith('/@rsc-public/')) {
+        return await runWithEnv({ DB: localKyselyDb }, () =>
+          publicEntry.handlePublicRsc(request)
+        )
+      }
+      return new Response('not found', { status: 404 })
     } catch (e) {
       console.error('[test rsc handler error]', e)
       const msg = e instanceof Error ? `${e.message}\n${e.stack}` : String(e)
@@ -101,7 +107,11 @@ beforeAll(async () => {
   })
 
   server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
-    if (!req.url?.startsWith('/@rsc/')) return next()
+    if (
+      !req.url?.startsWith('/@rsc-admin/') &&
+      !req.url?.startsWith('/@rsc-public/')
+    )
+      return next()
     Promise.resolve(listener(req, res)).catch(next)
   })
 }, 60_000)
@@ -134,7 +144,7 @@ test('public RPC: lookupGuests returns 200 with matches array', async () => {
 
   const encodeReply = await getEncodeReply()
   const body = await encodeReply(['kavari'])
-  const res = await fetch(`${baseUrl}/@rsc/${encodeURIComponent(id)}`, {
+  const res = await fetch(`${baseUrl}/@rsc-public/${encodeURIComponent(id)}`, {
     method: 'POST',
     headers: { 'rsc-action-id': id },
     body: body as BodyInit,
@@ -154,11 +164,14 @@ test('unknown action id is rejected with 403', async () => {
   const body = await encodeReply([])
   // Fabricate an id that is not in either allowlist.
   const fakeId = 'deadbeef#nothing'
-  const res = await fetch(`${baseUrl}/@rsc/${encodeURIComponent(fakeId)}`, {
-    method: 'POST',
-    headers: { 'rsc-action-id': fakeId },
-    body: body as BodyInit,
-  })
+  const res = await fetch(
+    `${baseUrl}/@rsc-public/${encodeURIComponent(fakeId)}`,
+    {
+      method: 'POST',
+      headers: { 'rsc-action-id': fakeId },
+      body: body as BodyInit,
+    }
+  )
   expect(res.status).toBe(403)
 })
 
@@ -170,14 +183,36 @@ test('admin RPC (no auth in Node dev) returns 200', async () => {
 
   const encodeReply = await getEncodeReply()
   const body = await encodeReply([])
-  const res = await fetch(`${baseUrl}/@rsc/${encodeURIComponent(id)}`, {
-    method: 'POST',
-    headers: { 'rsc-action-id': id },
-    body: body as BodyInit,
-  })
+  const res = await fetch(
+    `${baseUrl}/@rsc-admin/${encodeURIComponent(id)}`,
+    {
+      method: 'POST',
+      headers: { 'rsc-action-id': id },
+      body: body as BodyInit,
+    }
+  )
   if (res.status !== 200) {
     const text = await res.text()
     throw new Error(`expected 200, got ${res.status}: ${text}`)
   }
   expect(res.status).toBe(200)
+})
+
+test('public action id rejected on admin prefix', async () => {
+  const mod = await loadRscModule<
+    typeof import('../../src/server/public/rsvp')
+  >('/src/server/public/rsvp.ts')
+  const id = extractActionId(mod.lookupGuests)
+
+  const encodeReply = await getEncodeReply()
+  const body = await encodeReply(['test'])
+  const res = await fetch(
+    `${baseUrl}/@rsc-admin/${encodeURIComponent(id)}`,
+    {
+      method: 'POST',
+      headers: { 'rsc-action-id': id },
+      body: body as BodyInit,
+    }
+  )
+  expect(res.status).toBe(403)
 })

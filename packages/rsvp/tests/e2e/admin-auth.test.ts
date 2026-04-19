@@ -6,7 +6,7 @@ import {
 import { afterAll, beforeAll, expect, test } from 'vitest'
 
 let server: ViteDevServer
-let createRscHandler: typeof import('../../src/entry.rsc.tsx').createRscHandler
+let handleAdminRsc: typeof import('../../src/server/admin/rsc-entry').handleAdminRsc
 let adminActionId: string
 let publicActionId: string
 
@@ -37,18 +37,15 @@ beforeAll(async () => {
   })
   await server.listen()
 
-  // Load entry.rsc via the RSC env runner because
-  // @vitejs/plugin-rsc/rsc imports virtual modules that only resolve
-  // under Vite, not plain Node's ESM loader.
-  const entry =
-    await loadRscModule<typeof import('../../src/entry.rsc.tsx')>(
-      '/src/entry.rsc.tsx'
+  // Load the admin RSC entry handler via the RSC env runner.
+  const adminEntry =
+    await loadRscModule<typeof import('../../src/server/admin/rsc-entry')>(
+      '/src/server/admin/rsc-entry.ts'
     )
-  createRscHandler = entry.createRscHandler
+  handleAdminRsc = adminEntry.handleAdminRsc
 
   // Derive real action ids from the same RSC-env module graph so the handler's
-  // allowlist sees them. Ids are path-based in dev / hashed in prod; the tests
-  // stay agnostic to format.
+  // allowlist sees them.
   const adminMod = await loadRscModule<
     typeof import('../../src/server/admin/events')
   >('/src/server/admin/events.ts')
@@ -63,36 +60,44 @@ afterAll(async () => {
   await server?.close()
 })
 
-test('admin action id triggers authorize callback (returns 401 when denied)', async () => {
-  const handler = createRscHandler(
-    async () => new Response('Unauthorized', { status: 401 })
-  )
-  const res = await handler(
-    new Request(`http://x/@rsc/${encodeURIComponent(adminActionId)}`, {
-      method: 'POST',
-    })
+test('admin action with non-localhost triggers auth (returns 401 when denied)', async () => {
+  const res = await handleAdminRsc(
+    new Request(
+      `http://example.com/@rsc-admin/${encodeURIComponent(adminActionId)}`,
+      { method: 'POST' }
+    ),
+    { aud: 'test-aud', teamDomain: 'test-team' }
   )
   expect(res.status).toBe(401)
 })
 
-test('public action id does not trigger authorize callback', async () => {
-  const handler = createRscHandler(
-    async () => new Response('Unauthorized', { status: 401 })
-  )
-  // The authorize callback must be skipped for public ids. The request has no
-  // body, so `decodeReply` will either return a non-401 Response or throw —
-  // both outcomes prove the callback was not consulted.
+test('admin action with localhost bypasses auth', async () => {
+  // localhost bypass means auth is skipped; request will proceed to
+  // decodeReply which may fail on missing body — but NOT with 401.
   let status: number | null = null
   try {
-    const res = await handler(
-      new Request(`http://x/@rsc/${encodeURIComponent(publicActionId)}`, {
-        method: 'POST',
-      })
+    const res = await handleAdminRsc(
+      new Request(
+        `http://localhost/@rsc-admin/${encodeURIComponent(adminActionId)}`,
+        { method: 'POST' }
+      ),
+      { aud: 'test-aud', teamDomain: 'test-team' }
     )
     status = res.status
   } catch {
-    // decodeReply rejected on an empty body — not an auth failure.
+    // decodeReply rejected on empty body — not an auth failure.
     status = null
   }
   expect(status).not.toBe(401)
+})
+
+test('public action id rejected on admin handler', async () => {
+  const res = await handleAdminRsc(
+    new Request(
+      `http://localhost/@rsc-admin/${encodeURIComponent(publicActionId)}`,
+      { method: 'POST' }
+    ),
+    { aud: '', teamDomain: '' }
+  )
+  expect(res.status).toBe(403)
 })
