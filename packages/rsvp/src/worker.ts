@@ -1,10 +1,8 @@
-import { createRscHandler } from './entry.rsc'
-import { verifyAccessJwt } from './server/shared/auth'
+import { handleAdminRsc } from './server/admin/rsc-entry'
+import { handlePublicRsc } from './server/public/rsc-entry'
 import { runWithEnv } from './server/shared/context'
 
-// Re-export so the Node production server can reach the un-bundled helpers
-// via the built `dist/rsc/index.js` (which inlines virtual RSC modules).
-export { createRscHandler, runWithEnv }
+export { runWithEnv }
 export { getStaticPaths, handleSsg } from './entry.rsc'
 
 export interface Env {
@@ -14,43 +12,46 @@ export interface Env {
   ACCESS_TEAM_DOMAIN: string
 }
 
-// Loopback hostnames can only be reached in local dev: Cloudflare won't route
-// a request whose URL hostname is localhost to a deployed Worker, so this is
-// safe to treat as a trusted-dev signal without any config flag.
-const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
-
-// TODO(task-7): replace this globalThis shim by extending runWithEnv's env
-// object so verifyAccessJwt reads from getEnv() instead of globals.
-const accessGlobals = globalThis as unknown as {
-  ACCESS_AUD?: string
-  ACCESS_TEAM_DOMAIN?: string
+const CORS_HEADERS: Record<string, string> = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'POST, OPTIONS',
+  'access-control-allow-headers': 'content-type, rsc-action-id',
 }
 
-const handler = createRscHandler(async (request) => {
-  // Runs only for action ids in the admin allowlist (see entry.rsc.ts).
-  // Verifies the Cloudflare Access JWT injected at the edge.
-  if (LOCAL_HOSTNAMES.has(new URL(request.url).hostname)) return null
-  const ok = await verifyAccessJwt(request, {
-    aud: accessGlobals.ACCESS_AUD ?? '',
-    teamDomain: accessGlobals.ACCESS_TEAM_DOMAIN ?? '',
-  })
-  return ok ? null : new Response('Unauthorized', { status: 401 })
-})
+function withCors(response: Response): Response {
+  const res = new Response(response.body, response)
+  for (const [k, v] of Object.entries(CORS_HEADERS)) {
+    res.headers.set(k, v)
+  }
+  return res
+}
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url)
+
+    // CORS preflight for public endpoint
+    if (
+      request.method === 'OPTIONS' &&
+      url.pathname.startsWith('/@rsc-public/')
+    ) {
+      return new Response(null, { status: 204, headers: CORS_HEADERS })
+    }
+
     return runWithEnv(env, async () => {
-      const url = new URL(request.url)
-      if (url.pathname.startsWith('/@rsc/')) {
-        // Access config values live on env, not globals — forward via closure.
-        accessGlobals.ACCESS_AUD = env.ACCESS_AUD
-        accessGlobals.ACCESS_TEAM_DOMAIN = env.ACCESS_TEAM_DOMAIN
-        return handler(request)
+      if (url.pathname.startsWith('/@rsc-admin/')) {
+        return handleAdminRsc(request, {
+          aud: env.ACCESS_AUD,
+          teamDomain: env.ACCESS_TEAM_DOMAIN,
+        })
       }
-      // Serve static assets; if 404, SPA-fallback to the single shell.
-      // Wrangler's built-in SPA fallback is disabled in wrangler.toml so the
-      // RSC handler branch above can own the /@rsc/ path; the fallback itself
-      // is a straightforward re-fetch of the root index.html.
+
+      if (url.pathname.startsWith('/@rsc-public/')) {
+        const response = await handlePublicRsc(request)
+        return withCors(response)
+      }
+
+      // Static assets; SPA fallback to root index.html
       const assetResponse = await env.ASSETS.fetch(request)
       if (assetResponse.status !== 404) return assetResponse
 
