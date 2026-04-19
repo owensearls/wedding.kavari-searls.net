@@ -13,9 +13,15 @@ export interface Env {
   ACCESS_TEAM_DOMAIN: string;
 }
 
+// Loopback hostnames can only be reached in local dev: Cloudflare won't route
+// a request whose URL hostname is localhost to a deployed Worker, so this is
+// safe to treat as a trusted-dev signal without any config flag.
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+
 const handler = createRscHandler(async (request) => {
   // Runs only for action ids in the admin allowlist (see entry.rsc.ts).
   // Verifies the Cloudflare Access JWT injected at the edge.
+  if (LOCAL_HOSTNAMES.has(new URL(request.url).hostname)) return null;
   const ok = await verifyAccessJwt(request, {
     aud: globalThis.ACCESS_AUD,
     teamDomain: globalThis.ACCESS_TEAM_DOMAIN,
