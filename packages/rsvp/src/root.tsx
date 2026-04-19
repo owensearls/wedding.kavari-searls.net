@@ -1,11 +1,6 @@
 import { AdminRoot } from './admin/AdminRoot'
-import { App } from './App'
 
 export function Root({ url }: { url: URL }) {
-  const isAdmin = url.pathname === '/admin' || url.pathname.startsWith('/admin/')
-  const title = isAdmin
-    ? 'Admin · Kavari-Searls Wedding'
-    : 'Kavari-Searls Wedding'
   return (
     <html lang="en">
       <head>
@@ -15,31 +10,19 @@ export function Root({ url }: { url: URL }) {
           name="viewport"
           content="width=device-width, initial-scale=1.0, viewport-fit=cover"
         />
-        <title>{title}</title>
-        {isAdmin ? (
-          <meta name="robots" content="noindex,nofollow" />
-        ) : (
-          <>
-            <meta property="og:title" content="Kavari-Searls Wedding" />
-            <meta property="og:type" content="website" />
-          </>
-        )}
+        <title>Admin · RSVP</title>
+        <meta name="robots" content="noindex,nofollow" />
       </head>
       <body>
         <div id="root">
-          {isAdmin ? (
-            <AdminRoot location={url.pathname + url.search} />
-          ) : (
-            <App />
-          )}
+          <AdminRoot location={url.pathname + url.search} />
         </div>
       </body>
     </html>
   )
 }
 
-// Server-only file; not subject to Fast Refresh boundaries.
 // eslint-disable-next-line react-refresh/only-export-components
 export async function getStaticPaths(): Promise<string[]> {
-  return ['/', '/admin/', '/admin/groups/', '/admin/import/', '/admin/events/']
+  return ['/admin/', '/admin/groups/', '/admin/import/', '/admin/events/']
 }
