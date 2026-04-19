@@ -5,7 +5,7 @@ import './index.css'
 import { App } from './App.tsx'
 import { setupServerCallback } from './rsc-client'
 
-setupServerCallback()
+setupServerCallback('/@rsc-admin/')
 
 const router = createBrowserRouter([
   { path: '/', Component: App },
