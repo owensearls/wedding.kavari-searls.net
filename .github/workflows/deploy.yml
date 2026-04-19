@@ -18,6 +18,10 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: lts/*, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - name: Provision local D1 sqlite for tests
+        # rpc.roundtrip + feature-parity tests read from .wrangler/state/v3/d1/*.sqlite;
+        # this step creates it offline via miniflare and applies migrations.
+        run: pnpm exec wrangler d1 migrations apply DB --local
       - run: pnpm vitest run
       - run: pnpm build
       - name: Inject production D1 database_id
