@@ -7,7 +7,7 @@ import {
   type AdminEventInput,
 } from "@shared/schemas/admin";
 
-function db() {
+function getDbConn() {
   return getDb(getEnv().DB);
 }
 
@@ -16,7 +16,7 @@ export interface AdminEventRecord extends AdminEventInput {
 }
 
 export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
-  const db = db();
+  const db = getDbConn();
   const events = await db
     .selectFrom("event")
     .selectAll()
@@ -53,7 +53,7 @@ export async function saveEvent(
   if (!parsed.success) throw new Error("Invalid event data");
   const data = parsed.data;
 
-  const db = db();
+  const db = getDbConn();
   const id = data.id ?? newId("evt");
   const sortOrder = data.sortOrder ?? 0;
   const mealOptions = data.mealOptions ?? [];

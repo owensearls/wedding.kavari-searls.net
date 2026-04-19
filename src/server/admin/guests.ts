@@ -4,13 +4,13 @@ import { getDb } from "../lib/db";
 import { getEnv } from "../context";
 import type { AdminGuestDetail } from "@shared/schemas/admin";
 
-function db() {
+function getDbConn() {
   return getDb(getEnv().DB);
 }
 
 export async function getGuest(id: string): Promise<AdminGuestDetail> {
   if (!id) throw new Error("Missing id");
-  const db = db();
+  const db = getDbConn();
 
   const guest = await db
     .selectFrom("guest")

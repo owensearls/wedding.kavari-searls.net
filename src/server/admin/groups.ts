@@ -9,12 +9,12 @@ import {
   type AdminGuestEventStatus,
 } from "@shared/schemas/admin";
 
-function db() {
+function getDbConn() {
   return getDb(getEnv().DB);
 }
 
 export async function listGroups(): Promise<{ groups: AdminGroupListItem[] }> {
-  const db = db();
+  const db = getDbConn();
 
   const leaders = await db
     .selectFrom("guest")
@@ -128,7 +128,7 @@ export async function saveGroup(
   if (!parsed.success) throw new Error("Invalid group data");
   const data = parsed.data;
 
-  const db = db();
+  const db = getDbConn();
   const now = nowIso();
 
   const leaderId = data.id ?? newId("gst");
@@ -255,7 +255,7 @@ export async function getGroup(
   id: string
 ): Promise<AdminGroupInput & { id: string }> {
   if (!id) throw new Error("Missing id");
-  const db = db();
+  const db = getDbConn();
 
   const leader = await db
     .selectFrom("guest")
@@ -298,7 +298,7 @@ export async function getGroup(
 
 export async function deleteGroup(id: string): Promise<{ ok: true }> {
   if (!id) throw new Error("Missing id");
-  const db = db();
+  const db = getDbConn();
   await db.deleteFrom("guest").where("id", "=", id).execute();
   return { ok: true };
 }

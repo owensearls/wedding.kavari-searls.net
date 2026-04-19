@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
+import { readdirSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
 import { createRequestListener } from "@remix-run/node-fetch-server";
 import Database from "better-sqlite3";
@@ -11,9 +12,22 @@ import type { Database as DbSchema } from "./server/lib/schema";
 const CLIENT_DIR = resolve("dist/client");
 const PORT = Number(process.env.PORT ?? 3000);
 
-const sqlitePath =
-  process.env.SQLITE_PATH ??
-  ".wrangler/state/v3/d1/miniflare-D1DatabaseObject/db.sqlite";
+function resolveSqlitePath(): string {
+  if (process.env.SQLITE_PATH) return process.env.SQLITE_PATH;
+  const dir = ".wrangler/state/v3/d1/miniflare-D1DatabaseObject";
+  try {
+    const entries = readdirSync(dir);
+    const match = entries.find((e) => e.endsWith(".sqlite") && e !== "metadata.sqlite");
+    if (match) return `${dir}/${match}`;
+  } catch {
+    // fall through
+  }
+  throw new Error(
+    "No local D1 SQLite file found. Run `pnpm db:migrate:local` first, or set SQLITE_PATH."
+  );
+}
+
+const sqlitePath = resolveSqlitePath();
 const sqliteDb = new Database(sqlitePath);
 const localKyselyDb = new Kysely<DbSchema>({
   dialect: new SqliteDialect({ database: sqliteDb }),

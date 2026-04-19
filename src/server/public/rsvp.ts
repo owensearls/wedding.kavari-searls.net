@@ -13,7 +13,7 @@ import {
   type RsvpSubmission,
 } from "@shared/schemas/rsvp";
 
-function db() {
+function getDbConn() {
   return getDb(getEnv().DB);
 }
 
@@ -26,7 +26,7 @@ export async function lookupGuests(
   }
   const { query: q } = parsed.data;
 
-  const db = db();
+  const db = getDbConn();
 
   const rows = await db
     .selectFrom("guest")
@@ -62,7 +62,7 @@ export async function getRsvpGroup(
   code: string
 ): Promise<RsvpGroupResponse> {
   if (!code) throw new Error("Missing invite code");
-  const db = db();
+  const db = getDbConn();
 
   const actingGuest = await db
     .selectFrom("guest")
@@ -191,7 +191,7 @@ export async function submitRsvp(
   if (!parsed.success) throw new Error("Invalid submission data");
   const data = parsed.data;
 
-  const db = db();
+  const db = getDbConn();
   const actingGuest = await db
     .selectFrom("guest")
     .select(["id", "party_leader_id"])

@@ -4,12 +4,12 @@ import { getDb } from "../lib/db";
 import { getEnv } from "../context";
 import type { AdminResponseRow } from "@shared/schemas/admin";
 
-function db() {
+function getDbConn() {
   return getDb(getEnv().DB);
 }
 
 export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
-  const db = db();
+  const db = getDbConn();
 
   const guests = await db
     .selectFrom("guest")

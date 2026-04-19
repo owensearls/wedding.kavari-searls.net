@@ -4,7 +4,7 @@ import { getDb, newId, newInviteCode, nowIso } from "../lib/db";
 import { getEnv } from "../context";
 import { adminImportSchema } from "@shared/schemas/admin";
 
-function db() {
+function getDbConn() {
   return getDb(getEnv().DB);
 }
 
@@ -23,7 +23,7 @@ export async function importRows(
   const parsed = adminImportSchema.safeParse({ rows });
   if (!parsed.success) throw new Error("Invalid import data");
 
-  const db = db();
+  const db = getDbConn();
   const events = await db
     .selectFrom("event")
     .select(["id", "slug"])
