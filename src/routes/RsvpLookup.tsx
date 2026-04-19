@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { rsvpLookup } from '../lib/api'
+import { lookupGuests } from '../server/public/rsvp'
 import type { LookupMatch } from '@shared/schemas/rsvp'
 import styles from './RsvpLookup.module.css'
 
@@ -17,7 +17,7 @@ function RsvpLookup() {
     setError(null)
     setMatches(null)
     try {
-      const res = await rsvpLookup(query.trim())
+      const res = await lookupGuests(query.trim())
       if (res.matches.length === 0) {
         setError(
           "We couldn't find your invitation. Try a different spelling, or reach out to Sanam or Owen.",

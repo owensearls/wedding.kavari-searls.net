@@ -8,7 +8,7 @@ import type {
 } from '@shared/schemas/rsvp'
 import ErrorMessage from '../components/ui/ErrorMessage'
 import LoadingIndicator from '../components/ui/LoadingIndicator'
-import { rsvpGroupGet, rsvpGroupSubmit } from '../lib/api'
+import { getRsvpGroup, submitRsvp } from '../server/public/rsvp'
 import {
   buildInitialRsvpFormState,
   rsvpKey,
@@ -31,7 +31,7 @@ function RsvpFull() {
     let cancelled = false
     setLoading(true)
     setLoadError(null)
-    rsvpGroupGet(code)
+    getRsvpGroup(code)
       .then((res) => {
         if (cancelled) return
         setData(res)
@@ -157,7 +157,7 @@ function RsvpFull() {
           }
         }),
       }
-      await rsvpGroupSubmit(code, submission)
+      await submitRsvp(code, submission)
       setSubmitted(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
