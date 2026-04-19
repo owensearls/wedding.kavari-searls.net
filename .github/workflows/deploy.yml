@@ -54,9 +54,7 @@ jobs:
         with: { node-version: lts/*, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Provision local D1 sqlite for tests
-        # rpc.roundtrip + feature-parity tests read from .wrangler/state/v3/d1/*.sqlite;
-        # this step creates it offline via miniflare and applies migrations.
-        run: pnpm exec wrangler d1 migrations apply DB --local
+        run: pnpm --filter rsvp db:migrate:local
       - run: pnpm test
 
   build:
@@ -90,11 +88,11 @@ jobs:
           fi
           sed -i "s/REPLACE_ME_WITH_REAL_ID/${{ secrets.CLOUDFLARE_DATABASE_ID }}/g" wrangler.toml
           grep database_id wrangler.toml
-      - run: pnpm exec wrangler d1 migrations apply DB --remote
+      - run: pnpm --filter rsvp exec wrangler d1 migrations apply DB --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - run: pnpm exec wrangler deploy
+      - run: pnpm --filter rsvp exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
