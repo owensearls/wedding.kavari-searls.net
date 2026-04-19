@@ -4,7 +4,7 @@ import {
   type AdminGroupInput,
   type AdminGuestInput,
 } from '@shared/schemas/admin'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import Button from '../../components/ui/Button'
 import EditFormActions from '../../components/ui/EditFormActions'
 import EditFormSection from '../../components/ui/EditFormSection'
@@ -49,7 +49,6 @@ function EditGroupForm({
     register,
     handleSubmit,
     control,
-    watch,
     formState: { errors },
   } = useForm<AdminGroupInput>({
     resolver: zodResolver(adminGroupInputSchema),
@@ -61,7 +60,7 @@ function EditGroupForm({
     name: 'guests',
   })
 
-  const invitedEventIds = watch('invitedEventIds') ?? []
+  const invitedEventIds = useWatch({ control, name: 'invitedEventIds' }) ?? []
 
   function fieldError(path: string): string | undefined {
     const parts = path.split('.')
