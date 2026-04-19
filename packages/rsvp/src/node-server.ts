@@ -5,12 +5,8 @@ import { extname, join, resolve } from 'node:path'
 import { createRequestListener } from '@remix-run/node-fetch-server'
 import Database from 'better-sqlite3'
 import { Kysely, SqliteDialect } from 'kysely'
-// Import helpers from the BUILT rsc bundle. `entry.rsc.ts` pulls in
-// `@vitejs/plugin-rsc/rsc`, which imports virtual modules that only resolve
-// under Vite. The built bundle has those inlined, so it runs on plain Node.
-// Run `pnpm build` before `pnpm start`.
 // @ts-expect-error built artifact, no types
-import { createRscHandler, runWithEnv } from '../dist/rsc/index.js'
+import rscBundle from '../dist/rsc/index.js'
 import type { Database as DbSchema } from './server/shared/lib/schema.ts'
 
 const CLIENT_DIR = resolve('dist/client')
@@ -50,9 +46,6 @@ const MIME: Record<string, string> = {
   '.json': 'application/json',
 }
 
-// No auth for the Node target: deployed behind a firewall / trusted network.
-const rscHandler = createRscHandler()
-
 async function serveStatic(pathname: string): Promise<Response | null> {
   const safe = pathname.replace(/\?.*$/, '').replace(/^\/+/, '')
   const filePath = join(CLIENT_DIR, safe || 'index.html')
@@ -72,23 +65,24 @@ async function serveStatic(pathname: string): Promise<Response | null> {
   }
 }
 
+// Use the built worker's default export
+const workerHandler = rscBundle.default
+
 const listener = createRequestListener(async (request) => {
-  return runWithEnv({ DB: localKyselyDb }, async () => {
-    const url = new URL(request.url)
-    if (url.pathname.startsWith('/@rsc/')) return rscHandler(request)
-    const file = await serveStatic(url.pathname)
-    if (file) return file
-    // SPA fallback: /admin/* sub-routes must load the admin shell so the
-    // admin React app can take over client-side routing. Everything else
-    // falls back to the public index.html.
-    const fallbackShell = url.pathname.startsWith('/admin/')
-      ? join(CLIENT_DIR, 'admin', 'index.html')
-      : join(CLIENT_DIR, 'index.html')
-    const html = await readFile(fallbackShell)
-    return new Response(html, {
-      headers: { 'content-type': 'text/html; charset=utf-8' },
-    })
-  })
+  const fakeAssets = {
+    async fetch(req: Request) {
+      const url = new URL(req.url)
+      const file = await serveStatic(url.pathname)
+      return file ?? new Response('Not found', { status: 404 })
+    },
+  }
+  const env = {
+    DB: localKyselyDb,
+    ASSETS: fakeAssets,
+    ACCESS_AUD: '',
+    ACCESS_TEAM_DOMAIN: '',
+  }
+  return workerHandler.fetch(request, env)
 })
 
 createServer(listener).listen(PORT, () => {
