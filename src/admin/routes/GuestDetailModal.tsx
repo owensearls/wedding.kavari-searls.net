@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../../components/ui/LoadingIndicator'

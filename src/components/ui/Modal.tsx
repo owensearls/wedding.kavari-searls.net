@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, type ReactNode } from 'react'
 import { Button } from './Button'
 import styles from './Modal.module.css'

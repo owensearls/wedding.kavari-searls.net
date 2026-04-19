@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '../../components/ui/Button'
 import { EditFormActions } from '../../components/ui/EditFormActions'
 import { EditFormSection } from '../../components/ui/EditFormSection'

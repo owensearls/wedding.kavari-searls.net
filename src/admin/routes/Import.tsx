@@ -1,3 +1,5 @@
+'use client'
+
 import Papa from 'papaparse'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
