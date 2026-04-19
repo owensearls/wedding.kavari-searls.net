@@ -3,7 +3,7 @@ import { handlePublicRsc } from './server/public/rsc-entry'
 import { runWithEnv } from './server/shared/context'
 
 export { runWithEnv }
-export { getStaticPaths, handleSsg } from './entry.rsc'
+export { getStaticPaths, handleSsg } from './framework/ssg-entry'
 
 export interface Env {
   DB: D1Database

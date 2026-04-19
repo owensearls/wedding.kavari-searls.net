@@ -8,7 +8,7 @@ export default defineConfig({
     rsc({
       entries: {
         client: './src/main.tsx',
-        rsc: './src/entry.rsc.tsx',
+        rsc: './src/framework/rsc-dev-entry.ts',
         ssr: './src/entry.ssr.tsx',
       },
       serverHandler: false,

@@ -81,7 +81,7 @@ export default defineConfig([
   },
   // Files that require default exports
   {
-    files: ['src/worker.ts', 'src/entry.rsc.tsx', 'vite.config.ts', 'vite.config.node.ts', 'vitest.config.ts', 'eslint.config.js'],
+    files: ['src/worker.ts', 'vite.config.ts', 'vite.config.node.ts', 'vitest.config.ts', 'eslint.config.js'],
     rules: {
       'import-x/no-default-export': 'off',
     },
