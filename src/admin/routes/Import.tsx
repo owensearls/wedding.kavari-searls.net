@@ -54,7 +54,7 @@ export function Import() {
     preview && preview.data.length > 0 ? Object.keys(preview.data[0] ?? {}) : []
 
   return (
-    <EditFormShell title="Import guests" onBack={() => navigate('/groups')}>
+    <EditFormShell title="Import guests" onBack={() => navigate('/admin/groups')}>
       <EditFormSection>
         <p className={styles.helper}>
           Paste a CSV. Columns: <code>groupLabel</code>, <code>firstName</code>,{' '}

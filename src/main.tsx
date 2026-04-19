@@ -1,20 +1,31 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import { App } from './App.tsx'
-import { RsvpFull } from './routes/RsvpFull.tsx'
 import { setupServerCallback } from './rsc-client'
+
 setupServerCallback()
+
+const router = createBrowserRouter([
+  { path: '/', Component: App },
+  {
+    path: '/rsvp/:code',
+    lazy: async () => ({
+      Component: (await import('./routes/RsvpFull')).RsvpFull,
+    }),
+  },
+  {
+    path: '/admin/*',
+    lazy: async () => ({
+      Component: (await import('./admin/AdminApp')).AdminApp,
+    }),
+  },
+  { path: '*', Component: App },
+])
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/rsvp/:code" element={<RsvpFull />} />
-        <Route path="*" element={<App />} />
-      </Routes>
-    </BrowserRouter>
+    <RouterProvider router={router} />
   </StrictMode>
 )

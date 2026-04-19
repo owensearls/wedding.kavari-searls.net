@@ -146,7 +146,7 @@ export function GuestList() {
         title="Guests"
         actions={
           <>
-            <Button variant="ghost" onClick={() => navigate('/import')}>
+            <Button variant="ghost" onClick={() => navigate('/admin/import')}>
               Import CSV
             </Button>
             <Button

@@ -46,15 +46,14 @@ export default {
         accessGlobals.ACCESS_TEAM_DOMAIN = env.ACCESS_TEAM_DOMAIN
         return handler(request)
       }
-      // Serve static assets; if 404, SPA-fallback to the appropriate shell.
-      // We disable Wrangler's built-in single-page-application fallback in
-      // wrangler.toml so we can route /admin/* sub-paths to admin/index.html
-      // instead of the public root index.html.
+      // Serve static assets; if 404, SPA-fallback to the single shell.
+      // Wrangler's built-in SPA fallback is disabled in wrangler.toml so the
+      // RSC handler branch above can own the /@rsc/ path; the fallback itself
+      // is a straightforward re-fetch of the root index.html.
       const assetResponse = await env.ASSETS.fetch(request)
       if (assetResponse.status !== 404) return assetResponse
 
-      const shellPath = url.pathname.startsWith('/admin/') ? '/admin/' : '/'
-      const shellUrl = new URL(shellPath, url)
+      const shellUrl = new URL('/', url)
       return env.ASSETS.fetch(new Request(shellUrl, request))
     })
   },
