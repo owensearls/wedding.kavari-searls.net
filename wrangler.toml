@@ -14,7 +14,11 @@ database_id = "REPLACE_ME_WITH_REAL_ID"
 [assets]
 directory = "./dist/client"
 binding = "ASSETS"
-not_found_handling = "single-page-application"
+# Worker handles SPA fallback (see src/worker.ts) so it can pick between the
+# public shell (/index.html) and the admin shell (/admin/index.html) based on
+# the request path. The built-in "single-page-application" mode always falls
+# back to the root index.html, which breaks /admin/* sub-routes.
+not_found_handling = "none"
 
 # Production injection path: before `wrangler deploy`, either
 #   1. Edit this file locally to paste the real D1 id (do not commit), OR

@@ -34,7 +34,16 @@ export default {
         (globalThis as any).ACCESS_TEAM_DOMAIN = env.ACCESS_TEAM_DOMAIN;
         return handler(request);
       }
-      return env.ASSETS.fetch(request);
+      // Serve static assets; if 404, SPA-fallback to the appropriate shell.
+      // We disable Wrangler's built-in single-page-application fallback in
+      // wrangler.toml so we can route /admin/* sub-paths to admin/index.html
+      // instead of the public root index.html.
+      const assetResponse = await env.ASSETS.fetch(request);
+      if (assetResponse.status !== 404) return assetResponse;
+
+      const shellPath = url.pathname.startsWith("/admin/") ? "/admin/" : "/";
+      const shellUrl = new URL(shellPath, url);
+      return env.ASSETS.fetch(new Request(shellUrl, request));
     });
   },
 } satisfies ExportedHandler<Env>;

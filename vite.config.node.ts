@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
+import { adminSpaFallback } from "./src/vite/admin-spa-fallback";
 
 export default defineConfig({
   plugins: [
@@ -10,6 +11,7 @@ export default defineConfig({
       entries: { rsc: "./src/entry.rsc.ts" },
       serverHandler: false,
     }),
+    adminSpaFallback(),
     react(),
   ],
   resolve: {

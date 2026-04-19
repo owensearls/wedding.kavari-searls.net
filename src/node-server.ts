@@ -73,7 +73,13 @@ const listener = createRequestListener(async (request) => {
     if (url.pathname.startsWith("/@rsc/")) return rscHandler(request);
     const file = await serveStatic(url.pathname);
     if (file) return file;
-    const html = await readFile(join(CLIENT_DIR, "index.html"));
+    // SPA fallback: /admin/* sub-routes must load the admin shell so the
+    // admin React app can take over client-side routing. Everything else
+    // falls back to the public index.html.
+    const fallbackShell = url.pathname.startsWith("/admin/")
+      ? join(CLIENT_DIR, "admin", "index.html")
+      : join(CLIENT_DIR, "index.html");
+    const html = await readFile(fallbackShell);
     return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
   });
 });
