@@ -2,7 +2,7 @@ import {
   formatRsvpDate,
   rsvpKey,
   type RsvpFormState,
-} from '../lib/rsvpFormState'
+} from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type { EventDetails, Guest, RsvpStatus } from '@shared/schemas/rsvp'
 

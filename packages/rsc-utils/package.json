@@ -16,6 +16,10 @@
       "types": "./dist/plugins/functions/browser.d.ts",
       "default": "./dist/plugins/functions/browser.js"
     },
+    "./static-pages/client": {
+      "types": "./dist/plugins/static-pages/client.d.ts",
+      "default": "./dist/plugins/static-pages/client.js"
+    },
     "./ssg": {
       "types": "./dist/plugins/ssg/ssg-entry.d.ts",
       "default": "./dist/plugins/ssg/ssg-entry.js"

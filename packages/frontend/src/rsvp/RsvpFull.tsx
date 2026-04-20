@@ -1,14 +1,14 @@
+'use client'
+
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { getRsvpGroup, submitRsvp } from 'rsvp/api/public'
 import { ErrorMessage } from '../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../components/ui/LoadingIndicator'
+import { EventCardEditor } from './EventCardEditor'
 import {
   buildInitialRsvpFormState,
   rsvpKey,
   type RsvpFormState,
-} from '../lib/rsvpFormState'
-import { EventCardEditor } from './EventCardEditor'
+} from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type {
   Guest,
@@ -18,7 +18,7 @@ import type {
 } from '@shared/schemas/rsvp'
 
 export function RsvpFull() {
-  const { code = '' } = useParams<{ code: string }>()
+  const [code, setCode] = useState<string | null>(null)
   const [data, setData] = useState<RsvpGroupResponse | null>(null)
   const [state, setState] = useState<RsvpFormState | null>(null)
   const [loading, setLoading] = useState(true)
@@ -28,10 +28,21 @@ export function RsvpFull() {
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
+    setCode(new URLSearchParams(window.location.search).get('code'))
+  }, [])
+
+  useEffect(() => {
+    if (code === null) return
+    if (code === '') {
+      setLoading(false)
+      setLoadError('Missing invite code.')
+      return
+    }
     let cancelled = false
     setLoading(true)
     setLoadError(null)
-    getRsvpGroup(code)
+    import('rsvp/api/public')
+      .then((m) => m.getRsvpGroup(code))
       .then((res) => {
         if (cancelled) return
         setData(res)
@@ -117,7 +128,7 @@ export function RsvpFull() {
   }
 
   async function onSubmit() {
-    if (!state || !data) return
+    if (!state || !data || !code) return
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -151,6 +162,7 @@ export function RsvpFull() {
           }
         }),
       }
+      const { submitRsvp } = await import('rsvp/api/public')
       await submitRsvp(code, submission)
       setSubmitted(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -166,9 +178,9 @@ export function RsvpFull() {
   return (
     <div className={`${styles.page} ${styles.background}`}>
       <div className={styles.content}>
-        <Link to="/" className={styles.backLink}>
+        <a href="/" className={styles.backLink}>
           ← Back to home
-        </Link>
+        </a>
 
         {loading && <LoadingIndicator label="Loading your invitation…" />}
         {loadError && <ErrorMessage>{loadError}</ErrorMessage>}
@@ -271,9 +283,9 @@ export function RsvpFull() {
               We've recorded your RSVP. You can return to this page any time
               before the deadline to change it.
             </p>
-            <Link to="/" className={styles.backLink}>
+            <a href="/" className={styles.backLink}>
               ← Back to home
-            </Link>
+            </a>
           </div>
         )}
       </div>

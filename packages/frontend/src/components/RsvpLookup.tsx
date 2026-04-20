@@ -1,6 +1,6 @@
+'use client'
+
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
-import { lookupGuests } from 'rsvp/api/public'
 import styles from './RsvpLookup.module.css'
 import type { LookupMatch } from '@shared/schemas/rsvp'
 
@@ -17,6 +17,7 @@ export function RsvpLookup() {
     setError(null)
     setMatches(null)
     try {
+      const { lookupGuests } = await import('rsvp/api/public')
       const res = await lookupGuests(query.trim())
       if (res.matches.length === 0) {
         setError(
@@ -65,14 +66,14 @@ export function RsvpLookup() {
             </p>
           )}
           {matches.map((m) => (
-            <Link
+            <a
               key={m.partyLeaderId}
-              to={`/rsvp/${m.inviteCode}`}
+              href={`/rsvp?code=${encodeURIComponent(m.inviteCode)}`}
               className={styles.match}
             >
               <div className={styles.matchLabel}>{m.label}</div>
               <div className={styles.matchNames}>{m.guestNames.join(', ')}</div>
-            </Link>
+            </a>
           ))}
         </div>
       )}

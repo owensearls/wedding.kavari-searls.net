@@ -1,14 +1,12 @@
-'use client'
-
-import styles from './App.module.css'
 import { BackgroundLayout } from './components/BackgroundLayout'
+import { RsvpLookup } from './components/RsvpLookup'
 import { Section } from './components/Section'
-import { RsvpLookup } from './routes/RsvpLookup'
+import { PageLayout } from './components/ui/PageLayout'
 import typography from './typography.module.css'
 
-export function App() {
+export default function Home() {
   return (
-    <div className={styles.container}>
+    <PageLayout title="Kavari-Searls Wedding">
       <BackgroundLayout
         header={
           <div
@@ -79,6 +77,6 @@ export function App() {
           </div>
         </Section>
       </BackgroundLayout>
-    </div>
+    </PageLayout>
   )
 }
