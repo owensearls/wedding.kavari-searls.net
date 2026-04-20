@@ -15,7 +15,7 @@ import type {
   RsvpGroupResponse,
   RsvpStatus,
   RsvpSubmission,
-} from '@shared/schemas/rsvp'
+} from 'schema/rsvp'
 
 export function RsvpFull() {
   const [code, setCode] = useState<string | null>(null)

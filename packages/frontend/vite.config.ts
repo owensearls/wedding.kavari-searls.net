@@ -1,4 +1,3 @@
-import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import rsc from '@vitejs/plugin-rsc'
 import { rscStaticPages } from 'rsc-utils'
@@ -22,11 +21,6 @@ export default defineConfig({
           input: { index: './src/client-entry.tsx' },
         },
       },
-    },
-  },
-  resolve: {
-    alias: {
-      '@shared': fileURLToPath(new URL('../../shared', import.meta.url)),
     },
   },
   server: {

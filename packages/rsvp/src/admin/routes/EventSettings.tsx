@@ -10,7 +10,7 @@ import { Table } from '../../components/ui/Table'
 import { listEvents, saveEvent, type AdminEventRecord } from '../api'
 import { formatForDisplay } from '../lib/dateHelpers'
 import { EditEventForm } from './EditEventForm'
-import type { AdminEventInput } from '@shared/schemas/admin'
+import type { AdminEventInput } from 'schema/admin'
 
 const blankEvent = (): AdminEventInput => ({
   name: '',

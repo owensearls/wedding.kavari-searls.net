@@ -5,7 +5,7 @@ import {
   adminGroupInputSchema,
   type AdminGroupInput,
   type AdminGuestInput,
-} from '@shared/schemas/admin'
+} from 'schema/admin'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Button } from '../../components/ui/Button'
 import { EditFormActions } from '../../components/ui/EditFormActions'

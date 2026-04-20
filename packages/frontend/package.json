@@ -21,6 +21,7 @@
     "react-hook-form": "^7.55.0",
     "rsc-utils": "workspace:*",
     "rsvp": "workspace:*",
+    "schema": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {

@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import styles from './RsvpLookup.module.css'
-import type { LookupMatch } from '@shared/schemas/rsvp'
+import type { LookupMatch } from 'schema/rsvp'
 
 export function RsvpLookup() {
   const [query, setQuery] = useState('')

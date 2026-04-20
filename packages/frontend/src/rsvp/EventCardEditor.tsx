@@ -4,7 +4,7 @@ import {
   type RsvpFormState,
 } from './rsvpFormState'
 import styles from './RsvpFull.module.css'
-import type { EventDetails, Guest, RsvpStatus } from '@shared/schemas/rsvp'
+import type { EventDetails, Guest, RsvpStatus } from 'schema/rsvp'
 
 interface EventCardEditorProps {
   event: EventDetails

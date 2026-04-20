@@ -8,7 +8,7 @@ import {
   type Guest,
   type RsvpGroupResponse,
   type RsvpSubmission,
-} from '@shared/schemas/rsvp'
+} from 'schema/rsvp'
 import { getEnv } from '../shared/context'
 import { getDb, newId, nowIso } from '../shared/lib/db'
 import { aggregateLookupMatches } from '../shared/lib/fuzzy'

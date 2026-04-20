@@ -1,6 +1,6 @@
 'use server'
 
-import { adminImportSchema } from '@shared/schemas/admin'
+import { adminImportSchema } from 'schema/admin'
 import { getEnv } from '../shared/context'
 import { getDb, newId, newInviteCode, nowIso } from '../shared/lib/db'
 

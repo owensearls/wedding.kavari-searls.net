@@ -5,7 +5,7 @@ import {
   type AdminGroupInput,
   type AdminGroupListItem,
   type AdminGuestEventStatus,
-} from '@shared/schemas/admin'
+} from 'schema/admin'
 import { getEnv } from '../shared/context'
 import { getDb, newId, newInviteCode, nowIso } from '../shared/lib/db'
 

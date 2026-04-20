@@ -2,7 +2,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import styles from './GuestList.module.css'
 import type { AdminEventRecord } from '../api'
-import type { AdminGroupListItem } from '@shared/schemas/admin'
+import type { AdminGroupListItem } from 'schema/admin'
 
 interface GroupBlockProps {
   group: AdminGroupListItem

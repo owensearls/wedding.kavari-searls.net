@@ -1,4 +1,3 @@
-import { fileURLToPath, URL } from 'node:url'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import react from '@vitejs/plugin-react'
 import rsc from '@vitejs/plugin-rsc'
@@ -42,11 +41,6 @@ export default defineConfig({
       optimizeDeps: {
         include: ['zod', 'kysely', 'kysely-d1'],
       },
-    },
-  },
-  resolve: {
-    alias: {
-      '@shared': fileURLToPath(new URL('../../shared', import.meta.url)),
     },
   },
 })

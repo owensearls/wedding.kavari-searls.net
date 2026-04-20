@@ -2,7 +2,7 @@ import type {
   LookupResponse,
   RsvpGroupResponse,
   RsvpSubmission,
-} from '@shared/schemas/rsvp'
+} from 'schema/rsvp'
 
 export declare function lookupGuests(query: string): Promise<LookupResponse>
 export declare function getRsvpGroup(code: string): Promise<RsvpGroupResponse>

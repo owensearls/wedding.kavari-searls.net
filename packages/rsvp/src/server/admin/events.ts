@@ -3,7 +3,7 @@
 import {
   adminEventInputSchema,
   type AdminEventInput,
-} from '@shared/schemas/admin'
+} from 'schema/admin'
 import { getEnv } from '../shared/context'
 import { getDb, newId } from '../shared/lib/db'
 

@@ -2,7 +2,7 @@
 
 import { getEnv } from '../shared/context'
 import { getDb } from '../shared/lib/db'
-import type { AdminGuestDetail } from '@shared/schemas/admin'
+import type { AdminGuestDetail } from 'schema/admin'
 
 function getDbConn() {
   return getDb(getEnv().DB)

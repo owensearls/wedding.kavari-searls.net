@@ -2,7 +2,7 @@
 
 import { getEnv } from '../shared/context'
 import { getDb } from '../shared/lib/db'
-import type { AdminResponseRow } from '@shared/schemas/admin'
+import type { AdminResponseRow } from 'schema/admin'
 
 function getDbConn() {
   return getDb(getEnv().DB)
