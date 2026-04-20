@@ -30,7 +30,11 @@
   },
   "scripts": {
     "build": "tsc --build && cp src/ambient.d.ts dist/ambient.d.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "peerDependencies": {
     "@vitejs/plugin-rsc": "~0.5.24",

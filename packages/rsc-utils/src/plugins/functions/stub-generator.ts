@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { getPluginApi } from '@vitejs/plugin-rsc'
-import type { Plugin, ResolvedConfig } from 'vite'
 import type { FunctionsConfig, NamespaceConfig } from '../../types.js'
+import type { Plugin, ResolvedConfig } from 'vite'
 
 interface ServerReferenceMeta {
   importId: string

@@ -9,7 +9,13 @@ interface FieldGroupProps {
   style?: CSSProperties
 }
 
-export function FieldGroup({ label, hint, error, children, style }: FieldGroupProps) {
+export function FieldGroup({
+  label,
+  hint,
+  error,
+  children,
+  style,
+}: FieldGroupProps) {
   return (
     <div className={styles.fieldGroup} style={style}>
       <label className={styles.label}>

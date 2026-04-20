@@ -21,4 +21,3 @@ export function Root({ url }: { url: URL }) {
     </html>
   )
 }
-

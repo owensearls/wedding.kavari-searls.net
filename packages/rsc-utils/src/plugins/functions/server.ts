@@ -4,7 +4,11 @@ import {
   renderToReadableStream,
 } from '@vitejs/plugin-rsc/rsc'
 import { modules as namespaceModules } from 'virtual:rsc-utils/functions/modules'
-import type { CorsOptions, FunctionsConfig, NamespaceConfig } from '../../types.js'
+import type {
+  CorsOptions,
+  FunctionsConfig,
+  NamespaceConfig,
+} from '../../types.js'
 
 type Handler = (request: Request) => Promise<Response>
 
@@ -103,7 +107,9 @@ function collectActionIds(
 }
 
 function buildCorsHeaders(cors: CorsOptions): Record<string, string> {
-  const origin = Array.isArray(cors.origin) ? cors.origin.join(', ') : cors.origin
+  const origin = Array.isArray(cors.origin)
+    ? cors.origin.join(', ')
+    : cors.origin
   const methods = cors.methods ?? ['POST', 'OPTIONS']
   const headers = cors.headers ?? ['content-type', 'rsc-action-id']
   return {

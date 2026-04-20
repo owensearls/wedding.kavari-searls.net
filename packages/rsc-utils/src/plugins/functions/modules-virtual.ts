@@ -1,8 +1,8 @@
-import type { Plugin } from 'vite'
 import type { FunctionsConfig } from '../../types.js'
+import type { Plugin } from 'vite'
 
 const VIRTUAL_ID = 'virtual:rsc-utils/functions/modules'
-const RESOLVED_ID = '\0' + VIRTUAL_ID
+const RESOLVED_ID = `\0${VIRTUAL_ID}`
 
 export function modulesVirtualPlugin(config: FunctionsConfig): Plugin {
   return {

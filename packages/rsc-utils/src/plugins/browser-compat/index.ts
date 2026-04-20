@@ -19,7 +19,7 @@ export function rscBrowser(): Plugin[] {
 
 function clientReferencesStub(): Plugin {
   const virtualId = 'virtual:vite-rsc/client-references'
-  const resolvedId = '\0' + virtualId
+  const resolvedId = `\0${virtualId}`
   return {
     name: 'rsc-utils:browser-client-references',
     resolveId(id) {

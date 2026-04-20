@@ -1,8 +1,8 @@
-import type { Plugin } from 'vite'
 import { renderStatic } from './build-orchestrator.js'
+import type { Plugin } from 'vite'
 
 const SSG_ENTRY_ID = 'virtual:rsc-utils/ssg-entry'
-const RESOLVED_SSG_ID = '\0' + SSG_ENTRY_ID
+const RESOLVED_SSG_ID = `\0${SSG_ENTRY_ID}`
 
 export type RscSsgOptions = {
   staticPaths: string[]

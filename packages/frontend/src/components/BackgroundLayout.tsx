@@ -12,7 +12,11 @@ interface BackgroundLayoutProps {
   footer?: ReactNode
 }
 
-export function BackgroundLayout({ children, header, footer }: BackgroundLayoutProps) {
+export function BackgroundLayout({
+  children,
+  header,
+  footer,
+}: BackgroundLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)

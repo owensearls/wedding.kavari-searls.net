@@ -5,6 +5,7 @@
 **Goal:** Move the shared `/@rsc/` RSC endpoint onto two separate URL prefixes — `/@rsc-admin/` and `/@rsc-public/` — so Cloudflare Access can gate `/@rsc-admin/*` at the edge. Relocate shared server helpers into `src/server/shared/` so admin/public/shared are three peer directories with lint-enforced import boundaries between admin and public.
 
 **Architecture:**
+
 - Each of `src/server/admin/` and `src/server/public/` grows a new `rsc-entry.ts` that globs only its own server-action modules and exports a `{ fetch }` handler bound to its URL prefix. The old single-endpoint factory at `src/entry.rsc.ts` goes away.
 - `src/worker.ts` becomes a path-prefix dispatcher: `/@rsc-admin/*` → admin entry, `/@rsc-public/*` → public entry, everything else → static assets (SPA fallback unchanged).
 - The admin entry performs Cloudflare Access JWT verification with a localhost bypass (defense-in-depth alongside the Access rule at the edge). The public entry needs no auth.
@@ -14,6 +15,7 @@
 **Tech Stack:** No additions. Node 22, Vite 8, `@vitejs/plugin-rsc`, `@cloudflare/vite-plugin`, Wrangler 4, TypeScript 5.9.
 
 **Execution guidance:**
+
 - One commit per task where possible. Each phase ends with `pnpm test` green.
 - Never `git add -A` — use explicit paths (there's a lot of file movement).
 - Keep the dev server on `http://localhost:5173/admin/groups` as a smoke-test target. The Playwright probe from `/tmp/pw-debug/probe.mjs` catches RSC regressions quickly.
@@ -57,6 +59,7 @@ shared/schemas/                     (unchanged — stays at root, @shared alias 
 ```
 
 Routing:
+
 - `GET /` → public shell (`index.html`)
 - `GET /admin/...` → admin shell (`admin/index.html`, via SPA fallback)
 - `POST /@rsc-admin/<id>` → admin entry (Access-gated in prod, localhost-open in dev)
@@ -104,6 +107,7 @@ Goal: everything under `src/server/` that's neither admin nor public lives under
 ### Task 1.1: Move context.ts and auth.ts
 
 **Files:**
+
 - Move: `src/server/context.ts` → `src/server/shared/context.ts`
 - Move: `src/server/auth.ts` → `src/server/shared/auth.ts`
 
@@ -159,6 +163,7 @@ git commit -m "Move server/{context,auth}.ts into server/shared/"
 ### Task 1.2: Move the `lib/` dir into shared
 
 **Files:**
+
 - Move: `src/server/lib/db.ts` → `src/server/shared/lib/db.ts`
 - Move: `src/server/lib/schema.ts` → `src/server/shared/lib/schema.ts`
 - Move: `src/server/lib/fuzzy.ts` → `src/server/shared/lib/fuzzy.ts`
@@ -203,6 +208,7 @@ Should return zero hits (except possibly inside this plan doc).
 - [ ] **Step 3: Update `vitest.config.ts` include patterns**
 
 Current:
+
 ```ts
 include: [
   'functions/**/*.test.ts',
@@ -238,6 +244,7 @@ ls src/server
 ```
 
 Expected:
+
 ```
 admin/
 public/
@@ -253,6 +260,7 @@ Only three directories, no stray files. `src/server/shared/` contains `context.t
 ### Task 2.1: Write the admin RSC entry
 
 **Files:**
+
 - Create: `src/server/admin/rsc-entry.ts`
 
 - [ ] **Step 1: Write the file**
@@ -275,9 +283,7 @@ const adminModules = import.meta.glob<Record<string, unknown>>('./*.ts', {
 // handler itself as a server action.
 delete (adminModules as Record<string, unknown>)['./rsc-entry.ts']
 
-function collectActionIds(
-  modules: Record<string, unknown>[]
-): Set<string> {
+function collectActionIds(modules: Record<string, unknown>[]): Set<string> {
   const ids = new Set<string>()
   for (const mod of modules) {
     for (const key of Object.keys(mod)) {
@@ -295,12 +301,7 @@ const RSC_PREFIX = '/@rsc-admin/'
 
 // Loopback hostnames can only be reached in local dev — Cloudflare won't route
 // a request with hostname "localhost" to a deployed Worker.
-const LOCAL_HOSTNAMES = new Set([
-  'localhost',
-  '127.0.0.1',
-  '::1',
-  '[::1]',
-])
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
 
 export default {
   async fetch(request: Request): Promise<Response> {
@@ -355,6 +356,7 @@ export default {
 ```
 
 Notes:
+
 - Reads Access config from `getEnv()` (the AsyncLocalStorage-backed env) — no more `globalThis` shim.
 - The cast `getEnv() as { ACCESS_AUD?: string; ACCESS_TEAM_DOMAIN?: string }` is needed because `ServerEnv` is a union where only the Worker variant has those fields.
 
@@ -370,6 +372,7 @@ git commit -m "Add admin RSC entry bound to /@rsc-admin/"
 ### Task 2.2: Write the public RSC entry
 
 **Files:**
+
 - Create: `src/server/public/rsc-entry.ts`
 
 - [ ] **Step 1: Write the file**
@@ -386,9 +389,7 @@ const publicModules = import.meta.glob<Record<string, unknown>>('./*.ts', {
 })
 delete (publicModules as Record<string, unknown>)['./rsc-entry.ts']
 
-function collectActionIds(
-  modules: Record<string, unknown>[]
-): Set<string> {
+function collectActionIds(modules: Record<string, unknown>[]): Set<string> {
   const ids = new Set<string>()
   for (const mod of modules) {
     for (const key of Object.keys(mod)) {
@@ -452,6 +453,7 @@ git commit -m "Add public RSC entry bound to /@rsc-public/"
 ### Task 2.3: Parameterize `rsc-client.ts`
 
 **Files:**
+
 - Modify: `src/rsc-client.ts`
 
 - [ ] **Step 1: Replace the exported function**
@@ -527,16 +529,20 @@ git commit -m "Parameterize setupServerCallback with URL prefix"
 ### Task 2.4: Update the two main.tsx files to pass their prefix
 
 **Files:**
+
 - Modify: `src/main.tsx`
 - Modify: `src/admin/main.tsx`
 
 - [ ] **Step 1: `src/main.tsx`**
 
 Change:
+
 ```ts
 setupServerCallback()
 ```
+
 to:
+
 ```ts
 setupServerCallback('/@rsc-public/')
 ```
@@ -544,10 +550,13 @@ setupServerCallback('/@rsc-public/')
 - [ ] **Step 2: `src/admin/main.tsx`**
 
 Change:
+
 ```ts
 setupServerCallback()
 ```
+
 to:
+
 ```ts
 setupServerCallback('/@rsc-admin/')
 ```
@@ -566,6 +575,7 @@ git commit -m "Pass per-SPA RSC URL prefix into setupServerCallback"
 ### Task 3.1: Replace `src/worker.ts`
 
 **Files:**
+
 - Modify: `src/worker.ts`
 
 - [ ] **Step 1: Rewrite**
@@ -613,6 +623,7 @@ export default {
 ```
 
 What went away:
+
 - The `createRscHandler(authorize)` wrapper — the admin entry enforces auth itself.
 - The `globalThis.ACCESS_AUD` / `globalThis.ACCESS_TEAM_DOMAIN` shim + TODO — admin entry reads from `getEnv()`.
 - The `LOCAL_HOSTNAMES` set — moved into the admin entry (it's an admin-only concern).
@@ -630,6 +641,7 @@ git commit -m "Make worker a URL-prefix dispatcher; drop globalThis shim"
 ### Task 3.2: Delete `src/entry.rsc.ts`
 
 **Files:**
+
 - Delete: `src/entry.rsc.ts`
 
 - [ ] **Step 1: Verify no remaining callers**
@@ -669,11 +681,13 @@ git commit -m "Remove unused entry.rsc.ts factory"
 The Node server currently mounts ONE `/@rsc/` handler from the built bundle. It needs to match the Cloudflare worker's new dispatch — handling `/@rsc-admin/` and `/@rsc-public/` via the same per-package entries.
 
 **Files:**
+
 - Modify: `src/node-server.ts`
 
 - [ ] **Step 1: Read the current file**
 
 Use the Read tool. The current structure:
+
 - Imports `createRscHandler` + `runWithEnv` from `../dist/rsc/index.js`
 - Sets up a single `rscHandler = createRscHandler()` with no auth
 - Middleware branches on `url.pathname.startsWith("/@rsc/")` to route to that handler
@@ -775,6 +789,7 @@ createServer(listener).listen(PORT, () => {
 ```
 
 Notes:
+
 - `dispatcher.fetch(request, env)` does everything: runs `runWithEnv`, dispatches /@rsc-admin/ and /@rsc-public/, serves static assets, and does SPA fallback. No more duplicating that logic here.
 - `env.ASSETS.fetch` is called by the dispatcher; we implement it with the existing static-file reader.
 - The `DB` field is a Kysely instance instead of a `D1Database` — that's fine because `getDb()` in shared/lib/db.ts duck-types on `selectFrom`.
@@ -787,6 +802,7 @@ pnpm start
 ```
 
 In another terminal:
+
 ```bash
 curl -s http://localhost:3000/ | head -5
 curl -s http://localhost:3000/admin/ | head -5
@@ -810,6 +826,7 @@ git commit -m "Use the worker dispatcher in node-server.ts"
 The old test exercised the `createRscHandler(authorize)` wrapper pattern. That's gone — admin auth now lives inside `src/server/admin/rsc-entry.ts`. Rewrite to exercise that entry directly.
 
 **Files:**
+
 - Modify: `tests/e2e/admin-auth.test.ts`
 
 - [ ] **Step 1: Replace with a new test set**
@@ -875,7 +892,11 @@ afterAll(async () => {
 
 test('rejects non-local request with no Access JWT (401)', async () => {
   const res = await runWithEnv(
-    { DB: undefined as never, ACCESS_AUD: 'unset', ACCESS_TEAM_DOMAIN: 'unset' },
+    {
+      DB: undefined as never,
+      ACCESS_AUD: 'unset',
+      ACCESS_TEAM_DOMAIN: 'unset',
+    },
     () =>
       adminEntry.fetch(
         new Request(
@@ -921,6 +942,7 @@ test('localhost request with real admin action id is past the auth gate', async 
 ```
 
 Notes:
+
 - Uses the existing `./vite.config.node.ts` (no changes needed since we're not changing Vite configs in this plan).
 - The `DB: undefined as never` cast is a test-only hack: the admin entry's auth gate runs before any DB access, so the test doesn't need a real DB.
 
@@ -944,10 +966,12 @@ git commit -m "Rewrite admin-auth test for per-entry auth gate"
 ### Task 5.2: Update `tests/e2e/rpc.roundtrip.test.ts`
 
 Two changes needed:
+
 1. Module paths: `/src/server/context.ts` → `/src/server/shared/context.ts`, `/src/server/lib/schema.ts` → `/src/server/shared/lib/schema.ts`, `/src/entry.rsc.ts` removed.
 2. The test no longer uses `createRscHandler` — it wires the two per-package entries into the middleware dispatch.
 
 **Files:**
+
 - Modify: `tests/e2e/rpc.roundtrip.test.ts`
 
 - [ ] **Step 1: Replace the relevant sections**
@@ -1002,9 +1026,14 @@ const listener = createRequestListener(async (request) => {
 })
 
 server.middlewares.use(
-  (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse, next) => {
+  (
+    req: import('node:http').IncomingMessage,
+    res: import('node:http').ServerResponse,
+    next
+  ) => {
     const startsWith =
-      req.url?.startsWith('/@rsc-admin/') || req.url?.startsWith('/@rsc-public/')
+      req.url?.startsWith('/@rsc-admin/') ||
+      req.url?.startsWith('/@rsc-public/')
     if (!startsWith) return next()
     Promise.resolve(listener(req, res)).catch(next)
   }
@@ -1014,9 +1043,11 @@ server.middlewares.use(
 **Tests — update URL prefixes in the fetches:**
 
 The test `"public RPC: lookupGuests returns 200..."` does:
+
 ```ts
 const res = await fetch(`${baseUrl}/@rsc/${encodeURIComponent(id)}`, { ... })
 ```
+
 → update to `${baseUrl}/@rsc-public/...`
 
 The test `"unknown action id is rejected with 403"` — keep hitting `/@rsc-public/` (the fake id is neither admin nor public, so 403 either way; pick public for clarity).
@@ -1024,6 +1055,7 @@ The test `"unknown action id is rejected with 403"` — keep hitting `/@rsc-publ
 The test `"admin RPC (no auth in Node dev) returns 200"` — update to `${baseUrl}/@rsc-admin/...`.
 
 Also: each test's type-level `typeof import(...)` specifiers stay (the `consistent-type-imports` rule allows them), but update paths:
+
 - `typeof import('../../src/server/public/rsvp')` stays (public/rsvp didn't move)
 - `typeof import('../../src/server/admin/events')` stays
 - `typeof import('../../src/entry.rsc.ts')` DELETED (entry.rsc is gone)
@@ -1050,11 +1082,13 @@ git commit -m "Update RPC roundtrip test for per-prefix dispatch"
 This test calls server actions directly (not over HTTP), so no URL-prefix changes — only module path updates.
 
 **Files:**
+
 - Modify: `tests/e2e/feature-parity.test.ts`
 
 - [ ] **Step 1: Update path patterns**
 
 Find-and-replace:
+
 ```
 "/src/server/context.ts"            →  "/src/server/shared/context.ts"
 "/src/server/lib/schema"            →  "/src/server/shared/lib/schema"
@@ -1104,6 +1138,7 @@ Expected: 78/78 pass.
 ### Task 6.1: Add `no-restricted-imports` rules
 
 **Files:**
+
 - Modify: `eslint.config.js`
 
 - [ ] **Step 1: Add two file-scoped rule blocks**
@@ -1219,12 +1254,14 @@ cd /tmp/pw-debug && node probe.mjs 2>&1 | grep -E '(status|body-text|pageerror)'
 ```
 
 Expected for `http://localhost:5173/admin/groups`:
+
 - Body text includes "Wedding Admin" and a guest row
 - No 401s
 - No "Connection closed."
 - RSC responses hit `/@rsc-admin/...` with status 200, content-type `text/x-component`
 
 Expected for `http://localhost:5173/`:
+
 - Body text includes "Sanam Louise Kavari" and "will be married"
 - No errors
 - RSC responses hit `/@rsc-public/...` if any (the public homepage might not trigger RSC actions on first paint)
@@ -1250,6 +1287,7 @@ Same on `http://localhost:5173/admin/groups`, exercise an admin action (e.g., cl
 - [ ] **Step 3: Update path rules**
 
 If the current Access app's included paths are `/@rsc*` and/or `/admin*`, change to:
+
 - Include `/admin*`
 - Include `/@rsc-admin*`
 
@@ -1258,6 +1296,7 @@ Do **not** include `/@rsc-public*` — public actions must be reachable without 
 - [ ] **Step 4: Save and deploy**
 
 After the next `pnpm exec wrangler deploy` (or CI push to `main`), test:
+
 - `https://wedding.kavari-searls.net/` should load without the Access gate.
 - `https://wedding.kavari-searls.net/admin/groups` should show the Access login.
 - After logging in, admin actions should succeed (JWT injected by Access, verified in the admin rsc-entry).

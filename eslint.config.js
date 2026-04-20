@@ -1,15 +1,15 @@
 import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import importX from 'eslint-plugin-import-x'
-import unusedImports from 'eslint-plugin-unused-imports'
-import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import eslintConfigPrettier from 'eslint-config-prettier'
+import importX from 'eslint-plugin-import-x'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import unusedImports from 'eslint-plugin-unused-imports'
+import globals from 'globals'
+import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores(['dist', '.wrangler', 'docs']),
+  globalIgnores(['**/dist', '**/.wrangler', '**/node_modules', 'docs']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -33,9 +33,6 @@ export default defineConfig([
         {
           prefer: 'type-imports',
           fixStyle: 'separate-type-imports',
-          // Allow inline `typeof import("...")` in type positions: the tests
-          // use these for dynamically-loaded modules where a top-level
-          // `import type` wouldn't match the runtime loader's semantics.
           disallowTypeAnnotations: false,
         },
       ],
@@ -74,14 +71,20 @@ export default defineConfig([
   },
   // Test files — relaxed rules
   {
-    files: ['**/*.test.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    files: ['**/*.test.{ts,tsx}', '**/tests/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   // Files that require default exports
   {
-    files: ['src/worker.ts', 'vite.config.ts', 'vite.config.node.ts', 'vitest.config.ts', 'eslint.config.js'],
+    files: [
+      '**/src/worker.ts',
+      '**/vite.config.ts',
+      '**/vite.config.node.ts',
+      '**/vitest.config.ts',
+      '**/eslint.config.js',
+    ],
     rules: {
       'import-x/no-default-export': 'off',
     },

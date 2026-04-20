@@ -5,6 +5,7 @@
 **Goal:** Split the wedding RSVP site into a pnpm workspace with two packages — `packages/rsvp/` (Cloudflare Worker serving admin SPA + RSC endpoints) and `packages/frontend/` (static site importing pre-built public server action stubs from rsvp). The rsvp build generates client stubs via a custom vite plugin that reads `@vitejs/plugin-rsc` metadata.
 
 **Architecture:**
+
 - `packages/rsvp/` owns all server code, the admin SPA, and the Cloudflare Worker. Its vite build (plugin-rsc + cloudflare) produces three outputs: the worker bundle, admin SPA assets, and client API stubs (`dist/client-api/public.js`). The worker dispatches `/@rsc-admin/` (JWT-gated, same-origin) and `/@rsc-public/` (CORS-enabled, open) to separate RSC handlers.
 - `packages/frontend/` is a plain Vite+React app (no plugin-rsc). It depends on the `rsvp` workspace package and imports `rsvp/api/public` which resolves to the pre-built stubs. It builds to fully static HTML/JS for GitHub Pages.
 - `shared/` (Zod schemas) stays at the workspace root.
@@ -12,6 +13,7 @@
 **Tech Stack:** No additions. Node 22, Vite 8, `@vitejs/plugin-rsc` 0.5.x, `@cloudflare/vite-plugin`, Wrangler 4, TypeScript 5.9, pnpm workspaces.
 
 **Execution guidance:**
+
 - One commit per task where possible. Each phase ends with verification.
 - Never `git add -A` — use explicit paths (there's a lot of file movement).
 - After Phase 0 the rsvp package must pass typecheck + test + build before continuing.
@@ -25,6 +27,7 @@ Move the existing single-app into `packages/rsvp/` and set up the pnpm workspace
 ### Task 0.1: Create workspace root files
 
 **Files:**
+
 - Create: `pnpm-workspace.yaml`
 - Create: `package.json` (workspace root)
 
@@ -32,7 +35,7 @@ Move the existing single-app into `packages/rsvp/` and set up the pnpm workspace
 
 ```yaml
 packages:
-  - "packages/*"
+  - 'packages/*'
 ```
 
 - [ ] **Step 2: Create workspace root package.json**
@@ -62,6 +65,7 @@ git commit -m "Add workspace root scaffolding"
 ### Task 0.2: Move source files into packages/rsvp/
 
 **Files:**
+
 - Move: `src/` → `packages/rsvp/src/`
 - Move: `tests/` → `packages/rsvp/tests/`
 - Move: `migrations/` → `packages/rsvp/migrations/`
@@ -95,6 +99,7 @@ git mv package.json packages/rsvp/package.json
 ```
 
 Edit `packages/rsvp/package.json`:
+
 - Change `"name"` to `"rsvp"`
 - Add `"exports"` field:
 
@@ -140,6 +145,7 @@ git commit -m "Move source files into packages/rsvp/"
 ### Task 0.3: Update config files for workspace layout
 
 **Files:**
+
 - Modify: `packages/rsvp/vite.config.ts` — update `@shared` alias
 - Modify: `packages/rsvp/vite.config.node.ts` — update `@shared` alias
 - Move+Modify: `tsconfig.app.json` → `packages/rsvp/tsconfig.app.json` — update paths
@@ -381,6 +387,7 @@ Split the single `/@rsc/` endpoint into `/@rsc-admin/` and `/@rsc-public/` with 
 ### Task 1.1: Move shared server code to src/server/shared/
 
 **Files:**
+
 - Create: `packages/rsvp/src/server/shared/` directory
 - Create: `packages/rsvp/src/server/shared/lib/` directory
 - Move: `src/server/context.ts` → `src/server/shared/context.ts`
@@ -492,6 +499,7 @@ git commit -m "Move shared server code to src/server/shared/"
 ### Task 1.2: Parameterize rsc-client.ts
 
 **Files:**
+
 - Modify: `packages/rsvp/src/rsc-client.ts`
 - Modify: `packages/rsvp/src/main.tsx`
 
@@ -560,6 +568,7 @@ git commit -m "Parameterize rsc-client.ts with URL prefix"
 ### Task 1.3: Create per-prefix RSC entry handlers
 
 **Files:**
+
 - Create: `packages/rsvp/src/server/admin/rsc-entry.ts`
 - Create: `packages/rsvp/src/server/public/rsc-entry.ts`
 
@@ -675,9 +684,7 @@ function collectActionIds(
 
 const allowedIds = collectActionIds(modules)
 
-export async function handlePublicRsc(
-  request: Request
-): Promise<Response> {
+export async function handlePublicRsc(request: Request): Promise<Response> {
   const url = new URL(request.url)
   if (!url.pathname.startsWith(PREFIX)) {
     return new Response('Not found', { status: 404 })
@@ -725,6 +732,7 @@ git commit -m "Create per-prefix RSC entry handlers"
 ### Task 1.4: Rewrite worker.ts as prefix dispatcher
 
 **Files:**
+
 - Modify: `packages/rsvp/src/worker.ts`
 - Modify: `packages/rsvp/src/entry.rsc.tsx` — will be deleted after SSG is handled
 
@@ -813,6 +821,7 @@ git commit -m "Rewrite worker.ts as prefix dispatcher with CORS"
 ### Task 1.5: Move SSG exports out of entry.rsc.tsx, then delete it
 
 **Files:**
+
 - Modify: `packages/rsvp/src/entry.rsc.tsx` — extract SSG, then delete
 - Create or Modify: `packages/rsvp/src/framework/ssg-entry.tsx` — new home for SSG exports
 - Modify: `packages/rsvp/src/worker.ts` — update SSG import
@@ -908,6 +917,7 @@ git commit -m "Move SSG exports to framework/ssg-entry.tsx, delete entry.rsc.tsx
 ### Task 1.6: Update tests for prefix split
 
 **Files:**
+
 - Modify: `packages/rsvp/tests/e2e/rpc.roundtrip.test.ts`
 - Modify: `packages/rsvp/tests/e2e/admin-auth.test.ts`
 
@@ -916,6 +926,7 @@ The tests currently use `/@rsc/` and import `createRscHandler` from `entry.rsc.t
 - [ ] **Step 1: Update rpc.roundtrip.test.ts**
 
 Key changes:
+
 - Import handlers via RSC env runner from the new locations
 - Use `/@rsc-admin/` and `/@rsc-public/` prefixes
 - Wire both handlers into the middleware
@@ -1242,6 +1253,7 @@ git commit -m "Update tests for /@rsc-admin/ and /@rsc-public/ prefix split"
 ### Task 1.7: Update node-server.ts for prefix dispatch
 
 **Files:**
+
 - Modify: `packages/rsvp/src/node-server.ts`
 
 - [ ] **Step 1: Update node-server.ts**
@@ -1382,6 +1394,7 @@ git commit -m "Update node-server.ts for prefix dispatch"
 ### Task 2.1: Write the stub-generator vite plugin
 
 **Files:**
+
 - Create: `packages/rsvp/src/framework/stub-generator-plugin.ts`
 
 This plugin runs after plugin-rsc's build completes. It reads `manager.serverReferenceMetaMap`, filters for public actions (those whose `importId` contains `/server/public/`), and generates a standalone JS module with `createServerReference` stubs.
@@ -1485,6 +1498,7 @@ git commit -m "Add stub-generator vite plugin"
 ### Task 2.2: Wire plugin into vite config and add type definitions
 
 **Files:**
+
 - Modify: `packages/rsvp/vite.config.ts`
 - Create: `packages/rsvp/src/client-api/public.d.ts`
 - Modify: `packages/rsvp/eslint.config.js` — allow default export in plugin file
@@ -1581,6 +1595,7 @@ git commit -m "Wire stub-generator plugin into build, add public API types"
 ### Task 3.1: Create frontend package skeleton
 
 **Files:**
+
 - Create: `packages/frontend/package.json`
 - Create: `packages/frontend/tsconfig.json`
 - Create: `packages/frontend/tsconfig.app.json`
@@ -1654,7 +1669,10 @@ export default defineConfig({
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>Kavari-Searls Wedding</title>
   </head>
   <body>
@@ -1747,6 +1765,7 @@ git commit -m "Create frontend package skeleton"
 ### Task 3.2: Create frontend app entry and rsc-client
 
 **Files:**
+
 - Create: `packages/frontend/src/main.tsx`
 - Create: `packages/frontend/src/rsc-client.ts`
 - Create: `packages/frontend/src/App.tsx`
@@ -1955,6 +1974,7 @@ Expected: `204` response with `access-control-allow-origin: *` header.
 ### Task 4.1: Remove duplicated public routes from rsvp
 
 **Files:**
+
 - Delete: `packages/rsvp/src/routes/RsvpFull.tsx` and `.module.css`
 - Delete: `packages/rsvp/src/routes/RsvpLookup.tsx` and `.module.css`
 - Delete: `packages/rsvp/src/routes/EventCardEditor.tsx`
@@ -2065,11 +2085,13 @@ git commit -m "Remove public routes from rsvp, admin-only package"
 ### Task 4.2: Update CI workflow
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml` (or equivalent)
 
 - [ ] **Step 1: Update CI to build workspace**
 
 The CI should:
+
 1. `pnpm install` at workspace root
 2. `pnpm -r typecheck`
 3. `pnpm -r lint`
@@ -2091,11 +2113,13 @@ git commit -m "Update CI for workspace build"
 ## Verification
 
 After each phase:
+
 - `pnpm -r typecheck` — all packages compile
 - `pnpm --filter rsvp test` — server tests pass
 - `pnpm --filter rsvp build` — worker + admin SPA + stubs generated
 
 Final verification (Phase 3):
+
 - Start rsvp worker locally (`pnpm --filter rsvp preview`)
 - Serve frontend separately (`pnpm --filter frontend preview`)
 - Confirm cross-origin RSC round-trip works (guest lookup, RSVP submission)

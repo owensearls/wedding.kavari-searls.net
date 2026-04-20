@@ -15,10 +15,7 @@ type RscEntry = {
 }
 
 export async function renderStatic(config: ResolvedConfig): Promise<void> {
-  const entryPath = path.join(
-    config.environments.rsc.build.outDir,
-    'index.js'
-  )
+  const entryPath = path.join(config.environments.rsc.build.outDir, 'index.js')
   const entry: RscEntry = await import(pathToFileURL(entryPath).href)
   const staticPaths = await entry.getStaticPaths()
   const baseDir = config.environments.client.build.outDir

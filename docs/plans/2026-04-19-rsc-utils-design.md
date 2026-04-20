@@ -10,18 +10,18 @@
 
 ### Three Vite plugins
 
-| Plugin | Purpose | Internal `name` |
-|--------|---------|-----------------|
-| `rscFunctions(config)` | Everything related to RSC server functions: generates a virtual modules map per namespace, optionally emits client stubs | `rsc-utils:functions` |
-| `rscSsg({ staticPaths })` | Provides virtual SSG + SSR entries; orchestrates static prerender during build | `rsc-utils:ssg` |
-| `rscBrowser()` | Zero-config compatibility shim so a plain-Vite SPA can consume stubs that import `@vitejs/plugin-rsc/browser` | `rsc-utils:browser` |
+| Plugin                    | Purpose                                                                                                                  | Internal `name`       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| `rscFunctions(config)`    | Everything related to RSC server functions: generates a virtual modules map per namespace, optionally emits client stubs | `rsc-utils:functions` |
+| `rscSsg({ staticPaths })` | Provides virtual SSG + SSR entries; orchestrates static prerender during build                                           | `rsc-utils:ssg`       |
+| `rscBrowser()`            | Zero-config compatibility shim so a plain-Vite SPA can consume stubs that import `@vitejs/plugin-rsc/browser`            | `rsc-utils:browser`   |
 
 ### Two runtime helpers
 
-| Helper | Exported from | Purpose |
-|--------|---------------|---------|
-| `createRscHandlers(config)` | `rsc-utils/functions/server` | Builds all per-namespace request handlers from the shared config; returns `{ handle, handlers }` |
-| `setupServerCallback(endpoint)` | `rsc-utils/functions/browser` | Registers the browser-side RSC action callback for a given endpoint prefix |
+| Helper                          | Exported from                 | Purpose                                                                                          |
+| ------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| `createRscHandlers(config)`     | `rsc-utils/functions/server`  | Builds all per-namespace request handlers from the shared config; returns `{ handle, handlers }` |
+| `setupServerCallback(endpoint)` | `rsc-utils/functions/browser` | Registers the browser-side RSC action callback for a given endpoint prefix                       |
 
 ### Shared config (used by plugin + runtime)
 
@@ -30,24 +30,31 @@ import type { FunctionsConfig } from 'rsc-utils'
 
 export const functionsConfig = {
   namespaces: [
-    { name: 'public', glob: 'src/server/public/*.ts', buildStub: true, cors: { origin: '*' } },
-    { name: 'admin',  glob: 'src/server/admin/*.ts' },
+    {
+      name: 'public',
+      glob: 'src/server/public/*.ts',
+      buildStub: true,
+      cors: { origin: '*' },
+    },
+    { name: 'admin', glob: 'src/server/admin/*.ts' },
   ],
 } satisfies FunctionsConfig
 ```
 
 **Per-namespace options:**
+
 - `name: string` — drives prefix `/@rsc-${name}/` and stub filename `dist/client-api/${name}.js`
 - `glob: string` — project-root-relative glob for this namespace's server-function modules (e.g. `'src/server/public/*.ts'`, matching Vite's `import.meta.glob` with a leading `/`)
 - `buildStub?: boolean` — default `false`; set `true` to emit `dist/client-api/${name}.js` for external consumers
 - `cors?: CorsOptions` — per-namespace CORS; omitted means no CORS handling
 
 **`CorsOptions` shape:**
+
 ```ts
 type CorsOptions = {
-  origin: string | string[]        // required; e.g. '*' or a specific origin
-  methods?: string[]               // default ['POST', 'OPTIONS']
-  headers?: string[]               // default ['content-type', 'rsc-action-id']
+  origin: string | string[] // required; e.g. '*' or a specific origin
+  methods?: string[] // default ['POST', 'OPTIONS']
+  headers?: string[] // default ['content-type', 'rsc-action-id']
 }
 ```
 
@@ -87,8 +94,8 @@ packages/rsc-utils/
   "name": "rsc-utils",
   "type": "module",
   "exports": {
-    ".":                   "./dist/index.js",
-    "./functions/server":  "./dist/plugins/functions/server.js",
+    ".": "./dist/index.js",
+    "./functions/server": "./dist/plugins/functions/server.js",
     "./functions/browser": "./dist/plugins/functions/browser.js"
   }
 }
@@ -110,7 +117,7 @@ Build-time behavior:
    ```js
    export const modules = {
      public: import.meta.glob('/src/server/public/*.ts', { eager: true }),
-     admin:  import.meta.glob('/src/server/admin/*.ts',  { eager: true }),
+     admin: import.meta.glob('/src/server/admin/*.ts', { eager: true }),
    }
    ```
 2. **Emits client stubs** via `closeBundle` hook (post-order). For each namespace where `buildStub === true`:
@@ -121,6 +128,7 @@ Build-time behavior:
 ### `rscSsg({ staticPaths })`
 
 Input:
+
 - `staticPaths: string[]` — routes to prerender (e.g. `['/admin/', '/admin/groups/']`)
 
 Build-time behavior:
@@ -170,6 +178,7 @@ export function createRscHandlers(config: FunctionsConfig): {
 ```
 
 For each namespace in `config.namespaces`:
+
 - Builds a handler using `modules[name]` (from the virtual globs module), prefix `/@rsc-${name}/`, and `cors` if present.
 - Handler validates prefix + method + action ID allowlist (collected from `$$id` markers on exported functions), decodes the reply, runs the action via `loadServerAction`, streams the result back as `text/x-component`.
 - If `cors` is configured, the handler also answers `OPTIONS` preflight and adds CORS headers to responses.
@@ -187,6 +196,7 @@ Identical to the current implementation. Registers a `setServerCallback` from `@
 ### `packages/rsvp/`
 
 **Deleted:**
+
 - `src/framework/` (entire directory)
 - `src/entry.ssr.tsx`
 - `src/rsc-client.ts`
@@ -194,6 +204,7 @@ Identical to the current implementation. Registers a `setServerCallback` from `@
 - `src/server/public/rsc-entry.ts`
 
 **Added:**
+
 - `src/rsc-functions.ts` — the shared config object
 
 **`src/root.tsx`** — drops `getStaticPaths` export; keeps the React `Root` component (now imported directly by `src/ssg-entry.tsx`).
@@ -209,12 +220,23 @@ import { functionsConfig } from './src/rsc-functions'
 
 export default defineConfig({
   plugins: [
-    cloudflare({ viteEnvironment: { name: 'rsc' }, configPath: './wrangler.toml' }),
-    rsc({ entries: { client: './src/main.tsx', rsc: './src/worker.ts' }, serverHandler: false }),
+    cloudflare({
+      viteEnvironment: { name: 'rsc' },
+      configPath: './wrangler.toml',
+    }),
+    rsc({
+      entries: { client: './src/main.tsx', rsc: './src/worker.ts' },
+      serverHandler: false,
+    }),
     react(),
     rscFunctions(functionsConfig),
     rscSsg({
-      staticPaths: ['/admin/', '/admin/groups/', '/admin/import/', '/admin/events/'],
+      staticPaths: [
+        '/admin/',
+        '/admin/groups/',
+        '/admin/import/',
+        '/admin/events/',
+      ],
     }),
   ],
 })
@@ -250,6 +272,7 @@ export default {
 ```
 
 **`src/main.tsx`** — uses the runtime import:
+
 ```ts
 import { setupServerCallback } from 'rsc-utils/functions/browser'
 setupServerCallback('/@rsc-admin/')

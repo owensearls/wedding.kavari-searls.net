@@ -7,7 +7,10 @@ interface ErrorMessageProps {
   variant?: 'default' | 'inline'
 }
 
-export function ErrorMessage({ children, variant = 'default' }: ErrorMessageProps) {
+export function ErrorMessage({
+  children,
+  variant = 'default',
+}: ErrorMessageProps) {
   if (!children) return null
   const cls = [styles.error, variant === 'inline' ? styles.inline : null]
     .filter(Boolean)

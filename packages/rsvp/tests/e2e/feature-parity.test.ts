@@ -81,9 +81,9 @@ beforeAll(async () => {
 
   // IMPORTANT: load runWithEnv through the RSC env runner so the server
   // functions — also loaded through the runner — share the same ALS instance.
-  const ctx = await loadRscModule<typeof import('../../src/server/shared/context')>(
-    '/src/server/shared/context.ts'
-  )
+  const ctx = await loadRscModule<
+    typeof import('../../src/server/shared/context')
+  >('/src/server/shared/context.ts')
   runWithEnv = ctx.runWithEnv
 
   rsvpMod = await loadRscModule('/src/server/public/rsvp.ts')
