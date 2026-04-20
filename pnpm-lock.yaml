@@ -35,6 +35,9 @@ importers:
       react-router-dom:
         specifier: ^7.2.0
         version: 7.14.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      rsc-utils:
+        specifier: workspace:*
+        version: link:../rsc-utils
       rsvp:
         specifier: workspace:*
         version: link:../rsvp
