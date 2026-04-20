@@ -1,5 +1,5 @@
 name = "wedding-kavari-searls-net"
-main = "./src/worker.ts"
+main = "./src/entry.worker.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
@@ -14,7 +14,7 @@ database_id = "REPLACE_ME_WITH_REAL_ID"
 [assets]
 directory = "./dist/client"
 binding = "ASSETS"
-# Worker owns 404 handling (see src/worker.ts) so the /@rsc/ request path can
+# Worker owns 404 handling (see src/entry.worker.ts) so the /@rsc/ request path can
 # short-circuit to the RSC handler before the asset fetcher runs. With the
 # built-in SPA fallback on, /@rsc/ requests would be rewritten to index.html
 # instead of reaching our handler.

@@ -28,15 +28,15 @@ export default defineConfig({
     client: {
       build: {
         outDir: 'dist/client/admin',
-        rollupOptions: {
-          input: { index: './src/client-entry.tsx' },
+        rolldownOptions: {
+          input: { index: './src/entry.client.tsx' },
         },
       },
     },
     rsc: {
       build: {
-        rollupOptions: {
-          input: { index: './src/worker.ts' },
+        rolldownOptions: {
+          input: { index: './src/entry.worker.ts' },
         },
       },
       optimizeDeps: {

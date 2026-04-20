@@ -79,7 +79,7 @@ export default defineConfig([
   // Files that require default exports
   {
     files: [
-      '**/src/worker.ts',
+      '**/src/entry.worker.ts',
       '**/vite.config.ts',
       '**/vitest.config.ts',
       '**/eslint.config.js',

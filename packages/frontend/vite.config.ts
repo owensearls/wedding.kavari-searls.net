@@ -18,7 +18,7 @@ export default defineConfig({
   environments: {
     client: {
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           input: { index: './src/client-entry.tsx' },
         },
       },
