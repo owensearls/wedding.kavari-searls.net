@@ -1,0 +1,44 @@
+{
+  "name": "rsc-utils",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./functions/server": {
+      "types": "./src/plugins/functions/server.ts",
+      "default": "./src/plugins/functions/server.ts"
+    },
+    "./functions/browser": {
+      "types": "./src/plugins/functions/browser.ts",
+      "default": "./src/plugins/functions/browser.ts"
+    },
+    "./ssg": {
+      "types": "./src/plugins/ssg/ssg-entry.ts",
+      "default": "./src/plugins/ssg/ssg-entry.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  },
+  "peerDependencies": {
+    "@vitejs/plugin-rsc": "~0.5.24",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-rsc": "~0.5.24",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "rsc-html-stream": "^0.0.7",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.8"
+  }
+}
