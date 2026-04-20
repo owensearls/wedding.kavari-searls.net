@@ -9,6 +9,10 @@ export type NamespaceConfig = {
   glob: string
   buildStub?: boolean
   cors?: CorsOptions
+  // Override the URL prefix for this namespace. Defaults to Vite's
+  // config.base. Set to '/' for namespaces served cross-origin from a
+  // consumer whose Vite base differs.
+  basename?: string
 }
 
 export type FunctionsConfig = {

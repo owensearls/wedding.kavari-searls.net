@@ -3,6 +3,7 @@ import {
   loadServerAction,
   renderToReadableStream,
 } from '@vitejs/plugin-rsc/rsc'
+import { endpoints as namespaceEndpoints } from 'virtual:rsc-utils/functions/config'
 import { modules as namespaceModules } from 'virtual:rsc-utils/functions/modules'
 import type {
   CorsOptions,
@@ -22,7 +23,12 @@ export function createRscHandlers(config: FunctionsConfig): RscHandlers {
   const routes: Array<{ prefix: string; handler: Handler }> = []
 
   for (const ns of config.namespaces) {
-    const prefix = `/@rsc-${ns.name}/`
+    const prefix = namespaceEndpoints[ns.name]
+    if (!prefix) {
+      throw new Error(
+        `[rsc-utils:functions] no endpoint resolved for namespace '${ns.name}'`
+      )
+    }
     const modules = namespaceModules[ns.name] ?? {}
     const handler = buildHandler({ prefix, modules, cors: ns.cors })
     handlers[ns.name] = handler
