@@ -38,6 +38,9 @@ export default defineConfig({
           input: { index: './src/worker.ts' },
         },
       },
+      optimizeDeps: {
+        include: ['zod', 'kysely', 'kysely-d1'],
+      },
     },
   },
   resolve: {
