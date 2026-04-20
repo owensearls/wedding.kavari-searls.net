@@ -81,7 +81,6 @@ export default defineConfig([
     files: [
       '**/src/worker.ts',
       '**/vite.config.ts',
-      '**/vite.config.node.ts',
       '**/vitest.config.ts',
       '**/eslint.config.js',
     ],

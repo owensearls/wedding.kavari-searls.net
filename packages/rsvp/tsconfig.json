@@ -33,7 +33,6 @@
     "src",
     "../../shared",
     "vite.config.ts",
-    "vite.config.node.ts",
     "vitest.config.ts"
   ]
 }

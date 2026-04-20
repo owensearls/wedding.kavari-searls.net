@@ -2,12 +2,10 @@
 
 ## Local development
 
-- `pnpm install` (native deps: run `pnpm approve-builds` for better-sqlite3 if needed)
+- `pnpm install`
 - `pnpm db:migrate:local` — apply D1 migrations to local SQLite
-- `pnpm run dev` — primary dev: Cloudflare Workers runtime via `@cloudflare/vite-plugin`. Uses miniflare D1.
-- `pnpm run dev:node` — alternative: plain Node + local SQLite via better-sqlite3. Useful for on-prem parity.
+- `pnpm run dev` — Cloudflare Workers runtime via `@cloudflare/vite-plugin`. Uses miniflare D1.
 - `pnpm vitest run` — run tests.
-- `pnpm build && pnpm start` — production Node server (serves `dist/client/`, dispatches `/@rsc/*`). No auth — deploy behind a firewall or localhost only.
 
 ## Architecture
 
