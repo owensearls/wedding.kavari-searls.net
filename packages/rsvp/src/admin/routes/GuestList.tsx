@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
@@ -44,7 +43,6 @@ const blankGroup = (): AdminGroupInput => ({
 })
 
 export function GuestList() {
-  const navigate = useNavigate()
   const [groups, setGroups] = useState<AdminGroupListItem[]>([])
   const [events, setEvents] = useState<AdminEventRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -148,7 +146,12 @@ export function GuestList() {
         title="Guests"
         actions={
           <>
-            <Button variant="ghost" onClick={() => navigate('/admin/import')}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                window.location.assign('/admin/import/')
+              }}
+            >
               Import CSV
             </Button>
             <Button

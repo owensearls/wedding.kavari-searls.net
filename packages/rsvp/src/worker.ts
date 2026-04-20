@@ -3,8 +3,10 @@ import { functionsConfig } from './rsc-functions'
 import { runWithEnv } from './server/shared/context'
 
 export { runWithEnv }
-export { getStaticPaths } from 'virtual:rsc-utils/ssg-entry'
-export { handleSsg } from './ssg-entry'
+export {
+  getStaticPaths,
+  handleRequest,
+} from 'virtual:rsc-utils/static-pages/rsc-entry'
 
 export interface Env {
   DB: D1Database
@@ -20,12 +22,7 @@ export default {
     return runWithEnv(env, async () => {
       const rscResponse = await handle(request)
       if (rscResponse) return rscResponse
-
-      const assetResponse = await env.ASSETS.fetch(request)
-      if (assetResponse.status !== 404) return assetResponse
-
-      const shellUrl = new URL('/', request.url)
-      return env.ASSETS.fetch(new Request(shellUrl, request))
+      return env.ASSETS.fetch(request)
     })
   },
 } satisfies ExportedHandler<Env>

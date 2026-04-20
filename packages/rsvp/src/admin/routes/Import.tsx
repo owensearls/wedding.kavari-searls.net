@@ -2,7 +2,6 @@
 
 import Papa from 'papaparse'
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
 import { EditFormSection } from '../../components/ui/EditFormSection'
 import { EditFormShell } from '../../components/ui/EditFormShell'
@@ -20,7 +19,6 @@ Jordan & guest,Jordan,Lee,jordan@example.com,,"ceremony,reception"
 Jordan & guest,Plus,one,,,reception`
 
 export function Import() {
-  const navigate = useNavigate()
   const [csv, setCsv] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,7 +56,9 @@ export function Import() {
   return (
     <EditFormShell
       title="Import guests"
-      onBack={() => navigate('/admin/groups')}
+      onBack={() => {
+        window.location.assign('/admin/')
+      }}
     >
       <EditFormSection>
         <p className={styles.helper}>

@@ -20,14 +20,6 @@
       "types": "./dist/plugins/static-pages/client.d.ts",
       "default": "./dist/plugins/static-pages/client.js"
     },
-    "./ssg": {
-      "types": "./dist/plugins/ssg/ssg-entry.d.ts",
-      "default": "./dist/plugins/ssg/ssg-entry.js"
-    },
-    "./ssr": {
-      "types": "./dist/plugins/ssg/ssr-entry.d.ts",
-      "default": "./dist/plugins/ssg/ssr-entry.js"
-    },
     "./types": {
       "types": "./dist/ambient.d.ts"
     }
