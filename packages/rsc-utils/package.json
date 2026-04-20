@@ -5,28 +5,32 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./functions/server": {
-      "types": "./src/plugins/functions/server.ts",
-      "default": "./src/plugins/functions/server.ts"
+      "types": "./dist/plugins/functions/server.d.ts",
+      "default": "./dist/plugins/functions/server.js"
     },
     "./functions/browser": {
-      "types": "./src/plugins/functions/browser.ts",
-      "default": "./src/plugins/functions/browser.ts"
+      "types": "./dist/plugins/functions/browser.d.ts",
+      "default": "./dist/plugins/functions/browser.js"
     },
     "./ssg": {
-      "types": "./src/plugins/ssg/ssg-entry.tsx",
-      "default": "./src/plugins/ssg/ssg-entry.tsx"
+      "types": "./dist/plugins/ssg/ssg-entry.d.ts",
+      "default": "./dist/plugins/ssg/ssg-entry.js"
     },
     "./ssr": {
-      "types": "./src/plugins/ssg/ssr-entry.tsx",
-      "default": "./src/plugins/ssg/ssr-entry.tsx"
+      "types": "./dist/plugins/ssg/ssr-entry.d.ts",
+      "default": "./dist/plugins/ssg/ssr-entry.js"
+    },
+    "./types": {
+      "types": "./dist/ambient.d.ts"
     }
   },
   "scripts": {
-    "typecheck": "tsc --build"
+    "build": "tsc --build && cp src/ambient.d.ts dist/ambient.d.ts",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "@vitejs/plugin-rsc": "~0.5.24",

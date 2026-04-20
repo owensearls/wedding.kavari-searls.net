@@ -4,7 +4,7 @@ import {
   renderToReadableStream,
 } from '@vitejs/plugin-rsc/rsc'
 import { modules as namespaceModules } from 'virtual:rsc-utils/functions/modules'
-import type { CorsOptions, FunctionsConfig, NamespaceConfig } from '../../types'
+import type { CorsOptions, FunctionsConfig, NamespaceConfig } from '../../types.js'
 
 type Handler = (request: Request) => Promise<Response>
 

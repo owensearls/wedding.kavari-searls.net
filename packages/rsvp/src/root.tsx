@@ -22,7 +22,3 @@ export function Root({ url }: { url: URL }) {
   )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export async function getStaticPaths(): Promise<string[]> {
-  return ['/admin/', '/admin/groups/', '/admin/import/', '/admin/events/']
-}

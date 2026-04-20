@@ -2,6 +2,7 @@
   min-height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr;
+  background-color: #f5f3ec;
 }
 
 .header {

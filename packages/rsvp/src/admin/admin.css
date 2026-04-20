@@ -1,6 +1,5 @@
-body {
-  background-color: #f5f3ec;
-}
+/* Background moved to AdminApp.module.css .shell so it can't be
+   overridden by the global index.css body rule. */
 
 /* Global form-input styling used by admin <input>, <textarea>, and <select>
    elements. Kept as global classes (not CSS modules) because they're applied

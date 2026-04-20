@@ -54,12 +54,10 @@ beforeAll(async () => {
     dialect: new SqliteDialect({ database: sqliteDb }),
   })
 
-  // Pick a high random port to avoid clashes with a dev server on 5173.
   const port = 20000 + Math.floor(Math.random() * 20000)
   server = await createServer({
     configFile: './vite.config.node.ts',
     server: { port, strictPort: false, host: '127.0.0.1' },
-    // Avoid auto-opening browser / HMR clients by forcing `appType: custom`.
     appType: 'custom',
   })
   await server.listen()
@@ -67,38 +65,29 @@ beforeAll(async () => {
   if (!addr || typeof addr === 'string') throw new Error('no address')
   baseUrl = `http://127.0.0.1:${addr.port}`
 
-  // Load per-prefix RSC handlers via the RSC env runner so server functions
-  // get the RSC transform and carry $$id.
-  const adminEntry =
-    await loadRscModule<typeof import('../../src/server/admin/rsc-entry')>(
-      '/src/server/admin/rsc-entry.ts'
-    )
-  const publicEntry =
-    await loadRscModule<typeof import('../../src/server/public/rsc-entry')>(
-      '/src/server/public/rsc-entry.ts'
-    )
+  // Load the RSC handler via the RSC env runner so server functions get the
+  // RSC transform and carry $$id, and so virtual:rsc-utils/functions/modules
+  // resolves through Vite's plugin chain.
+  const server_ = await loadRscModule<
+    typeof import('rsc-utils/functions/server')
+  >('rsc-utils/functions/server')
+  const functions = await loadRscModule<
+    typeof import('../../src/rsc-functions')
+  >('/src/rsc-functions.ts')
 
-  // IMPORTANT: load runWithEnv via the RSC env runner so we share the same
-  // AsyncLocalStorage instance the server functions use.
-  const ctx = await loadRscModule<typeof import('../../src/server/shared/context')>(
-    '/src/server/shared/context.ts'
-  )
+  const { handle } = server_.createRscHandlers(functions.functionsConfig)
+
+  const ctx = await loadRscModule<
+    typeof import('../../src/server/shared/context')
+  >('/src/server/shared/context.ts')
   const runWithEnv = ctx.runWithEnv
 
   const listener = createRequestListener(async (request) => {
-    const url = new URL(request.url)
     try {
-      if (url.pathname.startsWith('/@rsc-admin/')) {
-        return await runWithEnv({ DB: localKyselyDb }, () =>
-          adminEntry.handleAdminRsc(request, { aud: '', teamDomain: '' })
-        )
-      }
-      if (url.pathname.startsWith('/@rsc-public/')) {
-        return await runWithEnv({ DB: localKyselyDb }, () =>
-          publicEntry.handlePublicRsc(request)
-        )
-      }
-      return new Response('not found', { status: 404 })
+      const response = await runWithEnv({ DB: localKyselyDb }, () =>
+        handle(request)
+      )
+      return response ?? new Response('not found', { status: 404 })
     } catch (e) {
       console.error('[test rsc handler error]', e)
       const msg = e instanceof Error ? `${e.message}\n${e.stack}` : String(e)
@@ -154,7 +143,6 @@ test('public RPC: lookupGuests returns 200 with matches array', async () => {
     throw new Error(`expected 200, got ${res.status}: ${text}`)
   }
   expect(res.status).toBe(200)
-  // Response body is an RSC stream; just make sure it's non-empty.
   const bodyText = await res.text()
   expect(bodyText.length).toBeGreaterThan(0)
 })
@@ -162,7 +150,6 @@ test('public RPC: lookupGuests returns 200 with matches array', async () => {
 test('unknown action id is rejected with 403', async () => {
   const encodeReply = await getEncodeReply()
   const body = await encodeReply([])
-  // Fabricate an id that is not in either allowlist.
   const fakeId = 'deadbeef#nothing'
   const res = await fetch(
     `${baseUrl}/@rsc-public/${encodeURIComponent(fakeId)}`,
@@ -175,7 +162,7 @@ test('unknown action id is rejected with 403', async () => {
   expect(res.status).toBe(403)
 })
 
-test('admin RPC (no auth in Node dev) returns 200', async () => {
+test('admin RPC returns 200', async () => {
   const mod = await loadRscModule<
     typeof import('../../src/server/admin/events')
   >('/src/server/admin/events.ts')
@@ -183,14 +170,11 @@ test('admin RPC (no auth in Node dev) returns 200', async () => {
 
   const encodeReply = await getEncodeReply()
   const body = await encodeReply([])
-  const res = await fetch(
-    `${baseUrl}/@rsc-admin/${encodeURIComponent(id)}`,
-    {
-      method: 'POST',
-      headers: { 'rsc-action-id': id },
-      body: body as BodyInit,
-    }
-  )
+  const res = await fetch(`${baseUrl}/@rsc-admin/${encodeURIComponent(id)}`, {
+    method: 'POST',
+    headers: { 'rsc-action-id': id },
+    body: body as BodyInit,
+  })
   if (res.status !== 200) {
     const text = await res.text()
     throw new Error(`expected 200, got ${res.status}: ${text}`)
@@ -206,13 +190,10 @@ test('public action id rejected on admin prefix', async () => {
 
   const encodeReply = await getEncodeReply()
   const body = await encodeReply(['test'])
-  const res = await fetch(
-    `${baseUrl}/@rsc-admin/${encodeURIComponent(id)}`,
-    {
-      method: 'POST',
-      headers: { 'rsc-action-id': id },
-      body: body as BodyInit,
-    }
-  )
+  const res = await fetch(`${baseUrl}/@rsc-admin/${encodeURIComponent(id)}`, {
+    method: 'POST',
+    headers: { 'rsc-action-id': id },
+    body: body as BodyInit,
+  })
   expect(res.status).toBe(403)
 })

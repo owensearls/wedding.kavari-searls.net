@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { setupServerCallback } from './rsc-client'
+import { setupServerCallback } from 'rsc-utils/functions/browser'
 import './index.css'
 
 setupServerCallback('/@rsc-admin/')

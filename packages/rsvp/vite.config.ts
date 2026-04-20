@@ -2,9 +2,9 @@ import { fileURLToPath, URL } from 'node:url'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import react from '@vitejs/plugin-react'
 import rsc from '@vitejs/plugin-rsc'
+import { rscFunctions, rscSsg } from 'rsc-utils'
 import { defineConfig } from 'vite'
-import { rscSsgPlugin } from './src/framework/ssg-plugin'
-import { stubGeneratorPlugin } from './src/framework/stub-generator-plugin'
+import { functionsConfig } from './src/rsc-functions'
 
 export default defineConfig({
   plugins: [
@@ -16,13 +16,20 @@ export default defineConfig({
       entries: {
         client: './src/main.tsx',
         rsc: './src/worker.ts',
-        ssr: './src/entry.ssr.tsx',
+        ssr: 'rsc-utils/ssr',
       },
       serverHandler: false,
     }),
     react(),
-    rscSsgPlugin(),
-    stubGeneratorPlugin(),
+    rscFunctions(functionsConfig),
+    rscSsg({
+      staticPaths: [
+        '/admin/',
+        '/admin/groups/',
+        '/admin/import/',
+        '/admin/events/',
+      ],
+    }),
   ],
   resolve: {
     alias: {

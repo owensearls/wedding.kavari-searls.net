@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite'
-import { renderStatic } from './build-orchestrator'
+import { renderStatic } from './build-orchestrator.js'
 
 const SSG_ENTRY_ID = 'virtual:rsc-utils/ssg-entry'
 const RESOLVED_SSG_ID = '\0' + SSG_ENTRY_ID
