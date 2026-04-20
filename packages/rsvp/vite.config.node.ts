@@ -7,7 +7,7 @@ import { functionsConfig } from './src/rsc-functions'
 
 export default defineConfig({
   plugins: [
-    rsc({ serverHandler: false }),
+    rsc({ serverHandler: false, loadModuleDevProxy: true }),
     react(),
     rscFunctions(functionsConfig),
     rscStaticPages({

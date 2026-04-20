@@ -12,7 +12,7 @@ export default defineConfig({
       viteEnvironment: { name: 'rsc' },
       configPath: './wrangler.toml',
     }),
-    rsc({ serverHandler: false }),
+    rsc({ serverHandler: false, loadModuleDevProxy: true }),
     react(),
     rscFunctions(functionsConfig),
     rscStaticPages({
