@@ -17,8 +17,12 @@
       "default": "./src/plugins/functions/browser.ts"
     },
     "./ssg": {
-      "types": "./src/plugins/ssg/ssg-entry.ts",
-      "default": "./src/plugins/ssg/ssg-entry.ts"
+      "types": "./src/plugins/ssg/ssg-entry.tsx",
+      "default": "./src/plugins/ssg/ssg-entry.tsx"
+    },
+    "./ssr": {
+      "types": "./src/plugins/ssg/ssr-entry.tsx",
+      "default": "./src/plugins/ssg/ssr-entry.tsx"
     }
   },
   "scripts": {

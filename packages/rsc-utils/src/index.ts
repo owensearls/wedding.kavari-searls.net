@@ -1,3 +1,5 @@
 export { rscBrowser } from './plugins/browser-compat'
 export { rscFunctions } from './plugins/functions'
+export { rscSsg } from './plugins/ssg'
+export type { RscSsgOptions } from './plugins/ssg'
 export type { CorsOptions, FunctionsConfig, NamespaceConfig } from './types'
