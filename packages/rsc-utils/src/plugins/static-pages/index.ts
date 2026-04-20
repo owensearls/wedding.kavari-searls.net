@@ -10,7 +10,6 @@ import {
 } from './virtual-modules.js'
 
 export type RscStaticPagesOptions = {
-  basename?: string
   pages: Record<string, string>
 }
 
@@ -23,14 +22,11 @@ export function rscStaticPages(options: RscStaticPagesOptions): Plugin[] {
 
   let cache: PageEntry[] | null = null
   let projectRoot = process.cwd()
+  let base = '/'
 
   const getPages = (): PageEntry[] => {
     if (!cache) {
-      cache = discoverPages({
-        projectRoot,
-        basename: options.basename ?? '/',
-        pages: options.pages,
-      })
+      cache = discoverPages({ projectRoot, pages: options.pages })
     }
     return cache
   }
@@ -38,6 +34,8 @@ export function rscStaticPages(options: RscStaticPagesOptions): Plugin[] {
   const invalidatePages = () => {
     cache = null
   }
+
+  const getBase = () => base
 
   return [
     {
@@ -71,8 +69,11 @@ export function rscStaticPages(options: RscStaticPagesOptions): Plugin[] {
           }
         },
       },
+      configResolved(config) {
+        base = config.base
+      },
       configureServer(server) {
-        installDevMiddleware(server, getPages)
+        installDevMiddleware(server, getPages, getBase)
       },
       handleHotUpdate(ctx) {
         const absPaths = new Set(getPages().map((p) => p.absPath))
@@ -85,6 +86,6 @@ export function rscStaticPages(options: RscStaticPagesOptions): Plugin[] {
         },
       },
     },
-    virtualModulesPlugin({ getPages }),
+    virtualModulesPlugin({ getPages, getBase }),
   ]
 }

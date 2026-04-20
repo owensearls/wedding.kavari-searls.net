@@ -7,6 +7,7 @@ import { defineConfig } from 'vite'
 import { functionsConfig } from './src/rsc-functions'
 
 export default defineConfig({
+  base: '/admin/',
   plugins: [
     cloudflare({
       viteEnvironment: { name: 'rsc' },
@@ -16,17 +17,17 @@ export default defineConfig({
     react(),
     rscFunctions(functionsConfig),
     rscStaticPages({
-      basename: '/admin/',
       pages: {
-        '/admin/': './src/admin/index.tsx',
-        '/admin/events/': './src/admin/events.tsx',
-        '/admin/import/': './src/admin/import.tsx',
+        '/': './src/admin/index.tsx',
+        '/events/': './src/admin/events.tsx',
+        '/import/': './src/admin/import.tsx',
       },
     }),
   ],
   environments: {
     client: {
       build: {
+        outDir: 'dist/client/admin',
         rollupOptions: {
           input: { index: './src/client-entry.tsx' },
         },

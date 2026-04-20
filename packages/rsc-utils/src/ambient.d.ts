@@ -16,5 +16,5 @@ declare module 'virtual:rsc-utils/static-pages/rsc-entry' {
   export function handleRequest(request: Request): Promise<{
     html: ReadableStream<Uint8Array>
     rsc: ReadableStream<Uint8Array>
-  }>
+  } | null>
 }

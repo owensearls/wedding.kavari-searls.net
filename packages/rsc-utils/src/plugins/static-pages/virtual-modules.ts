@@ -9,6 +9,7 @@ const RESOLVED_PREFIX = '\0'
 
 export type VirtualCtx = {
   getPages: () => PageEntry[]
+  getBase: () => string
 }
 
 export function virtualModulesPlugin(ctx: VirtualCtx): Plugin {
@@ -27,7 +28,7 @@ export function virtualModulesPlugin(ctx: VirtualCtx): Plugin {
         case MANIFEST_ID:
           return generateManifest(ctx.getPages())
         case RSC_ENTRY_ID:
-          return generateRscEntry()
+          return generateRscEntry(ctx.getBase())
         case SSR_ENTRY_ID:
           return generateSsrEntry()
         default:
@@ -50,13 +51,19 @@ function generateManifest(pages: PageEntry[]): string {
   return `${imports}\n\nexport const pages = [\n${list}\n]\n`
 }
 
-function generateRscEntry(): string {
+function generateRscEntry(base: string): string {
   return `\
 import { renderToReadableStream } from '@vitejs/plugin-rsc/rsc'
 import { createElement } from 'react'
 import { pages } from ${JSON.stringify(MANIFEST_ID)}
 
+const BASE = ${JSON.stringify(base)}
 const byPath = new Map(pages.map((p) => [p.pathname, p]))
+
+function stripBase(pathname) {
+  if (BASE === '/' || !pathname.startsWith(BASE)) return pathname
+  return '/' + pathname.slice(BASE.length)
+}
 
 export function getStaticPaths() {
   return pages.map((p) => p.pathname)
@@ -64,10 +71,9 @@ export function getStaticPaths() {
 
 export async function handleRequest(request) {
   const url = new URL(request.url)
-  const page = byPath.get(url.pathname)
-  if (!page) {
-    return new Response('Not found', { status: 404 })
-  }
+  const page = byPath.get(stripBase(url.pathname))
+  if (!page) return null
+
   const rscStream = renderToReadableStream({
     root: createElement(page.Component, { url }),
   })
@@ -106,4 +112,3 @@ export async function renderHtml(rscStream) {
 }
 `
 }
-

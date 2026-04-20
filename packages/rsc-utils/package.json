@@ -20,6 +20,10 @@
       "types": "./dist/plugins/static-pages/client.d.ts",
       "default": "./dist/plugins/static-pages/client.js"
     },
+    "./static-pages/server": {
+      "types": "./dist/plugins/static-pages/server.d.ts",
+      "default": "./dist/plugins/static-pages/server.js"
+    },
     "./types": {
       "types": "./dist/ambient.d.ts"
     }

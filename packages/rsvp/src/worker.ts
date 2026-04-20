@@ -2,7 +2,8 @@ import { createRscHandlers } from 'rsc-utils/functions/server'
 import {
   getStaticPaths,
   handleRequest,
-} from 'virtual:rsc-utils/static-pages/rsc-entry'
+  serveStaticPage,
+} from 'rsc-utils/static-pages/server'
 import { functionsConfig } from './rsc-functions'
 import { runWithEnv } from './server/shared/context'
 
@@ -22,27 +23,7 @@ export default {
     return runWithEnv(env, async () => {
       const rscResponse = await handle(request)
       if (rscResponse) return rscResponse
-
-      const assetResponse = await env.ASSETS.fetch(request)
-      if (assetResponse.status !== 404) return assetResponse
-
-      // In dev, ASSETS.fetch routes back through Vite and won't find
-      // the prerendered HTML. Fall back to rendering the page live —
-      // cheap on known static paths, a no-op for unknown URLs.
-      const url = new URL(request.url)
-      const pathname = url.pathname.endsWith('/')
-        ? url.pathname
-        : `${url.pathname}/`
-      if (getStaticPaths().includes(pathname)) {
-        const { html } = await handleRequest(
-          new Request(new URL(pathname, url.origin), request)
-        )
-        return new Response(html, {
-          headers: { 'content-type': 'text/html; charset=utf-8' },
-        })
-      }
-
-      return assetResponse
+      return serveStaticPage(request, env.ASSETS)
     })
   },
 } satisfies ExportedHandler<Env>

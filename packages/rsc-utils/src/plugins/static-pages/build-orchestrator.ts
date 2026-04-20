@@ -6,12 +6,14 @@ import type { ResolvedConfig } from 'vite'
 
 const RSC_POSTFIX = '_.rsc'
 
+type RenderResult = {
+  html: ReadableStream<Uint8Array>
+  rsc: ReadableStream<Uint8Array>
+}
+
 type RscEntry = {
   getStaticPaths: () => string[] | Promise<string[]>
-  handleRequest: (request: Request) => Promise<{
-    html: ReadableStream<Uint8Array>
-    rsc: ReadableStream<Uint8Array>
-  }>
+  handleRequest: (request: Request) => Promise<RenderResult | null>
 }
 
 export async function renderStatic(config: ResolvedConfig): Promise<void> {
@@ -22,16 +24,21 @@ export async function renderStatic(config: ResolvedConfig): Promise<void> {
 
   for (const staticPath of staticPaths) {
     config.logger.info(`[rsc-utils:static-pages] -> ${staticPath}`)
-    const { html, rsc } = await entry.handleRequest(
+    const result = await entry.handleRequest(
       new Request(new URL(staticPath, 'http://ssg.local'))
     )
+    if (!result) {
+      throw new Error(
+        `[rsc-utils:static-pages] handleRequest returned null for ${staticPath}`
+      )
+    }
     await writeFileStream(
       path.join(baseDir, normalizeHtmlFilePath(staticPath)),
-      html
+      result.html
     )
     await writeFileStream(
       path.join(baseDir, `${staticPath}${RSC_POSTFIX}`),
-      rsc
+      result.rsc
     )
   }
 }
