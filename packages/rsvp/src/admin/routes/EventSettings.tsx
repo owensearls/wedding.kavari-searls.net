@@ -7,7 +7,11 @@ import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Table } from '../../components/ui/Table'
-import { listEvents, saveEvent, type AdminEventRecord } from '../api'
+import {
+  listEvents,
+  saveEvent,
+  type AdminEventRecord,
+} from '../../server/admin/events'
 import { formatForDisplay } from '../lib/dateHelpers'
 import { EditEventForm } from './EditEventForm'
 import type { AdminEventInput } from 'schema/admin'

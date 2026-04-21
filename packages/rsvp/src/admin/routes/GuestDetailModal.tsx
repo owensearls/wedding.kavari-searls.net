@@ -7,7 +7,7 @@ import { Modal } from '../../components/ui/Modal'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import { Table } from '../../components/ui/Table'
-import { getGuest } from '../api'
+import { getGuest } from '../../server/admin/guests'
 import styles from './GuestList.module.css'
 import type { AdminGuestDetail } from 'schema/admin'
 

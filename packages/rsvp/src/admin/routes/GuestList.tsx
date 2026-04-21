@@ -8,14 +8,16 @@ import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Table } from '../../components/ui/Table'
 import {
+  listEvents,
+  type AdminEventRecord,
+} from '../../server/admin/events'
+import {
   deleteGroup,
   getGroup,
-  listEvents,
   listGroups,
-  listResponses,
   saveGroup,
-  type AdminEventRecord,
-} from '../api'
+} from '../../server/admin/groups'
+import { listResponses } from '../../server/admin/responses'
 import { downloadCsv, responsesToCsv } from '../lib/rsvpCsv'
 import { EditGroupForm } from './EditGroupForm'
 import { GroupBlock } from './GroupBlock'

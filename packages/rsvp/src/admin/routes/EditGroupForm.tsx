@@ -17,7 +17,7 @@ import { FormGrid } from '../../components/ui/FormGrid'
 import { RemoveButton } from '../../components/ui/RemoveButton'
 import { SectionLabel } from '../../components/ui/SectionLabel'
 import styles from './EditGroupForm.module.css'
-import type { AdminEventRecord } from '../api'
+import type { AdminEventRecord } from '../../server/admin/events'
 
 const blankGuest = (): AdminGuestInput => ({
   firstName: '',

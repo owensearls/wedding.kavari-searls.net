@@ -8,7 +8,7 @@ import { EditFormShell } from '../../components/ui/EditFormShell'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { SectionLabel } from '../../components/ui/SectionLabel'
 import { Table } from '../../components/ui/Table'
-import { importRows, type ImportResult } from '../api'
+import { importRows, type ImportResult } from '../../server/admin/import'
 import styles from './Import.module.css'
 
 const EXAMPLE = `groupLabel,firstName,lastName,email,phone,events
