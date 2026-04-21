@@ -14,10 +14,10 @@ database_id = "REPLACE_ME_WITH_REAL_ID"
 [assets]
 directory = "./dist/client"
 binding = "ASSETS"
-# Worker owns 404 handling (see src/entry.worker.ts) so the /@rsc/ request path can
-# short-circuit to the RSC handler before the asset fetcher runs. With the
-# built-in SPA fallback on, /@rsc/ requests would be rewritten to index.html
-# instead of reaching our handler.
+# Only RSC endpoints hit the Worker. Everything else is served directly from the
+# edge — no Worker invocation, no billing. The two patterns mirror the namespace
+# prefixes declared in src/rsc-functions.ts (`public` at /, `admin` at /admin/).
+run_worker_first = ["/@rsc-public/*", "/admin/@rsc-admin/*"]
 not_found_handling = "none"
 
 # Production injection path: before `wrangler deploy`, either

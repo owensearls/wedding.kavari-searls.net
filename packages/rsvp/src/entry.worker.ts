@@ -2,7 +2,6 @@ import { createRscHandlers } from 'rsc-utils/functions/server'
 import {
   getStaticPaths,
   handleRequest,
-  serveStaticPage,
 } from 'rsc-utils/static-pages/server'
 import { functionsConfig } from './rsc-functions'
 import { runWithEnv } from './server/shared/context'
@@ -23,7 +22,7 @@ export default {
     return runWithEnv(env, async () => {
       const rscResponse = await handle(request)
       if (rscResponse) return rscResponse
-      return serveStaticPage(request, env.ASSETS)
+      return env.ASSETS.fetch(request)
     })
   },
 } satisfies ExportedHandler<Env>

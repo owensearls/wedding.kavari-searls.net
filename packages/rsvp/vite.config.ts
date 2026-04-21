@@ -28,7 +28,7 @@ export default defineConfig({
       build: {
         outDir: 'dist/client/admin',
         rolldownOptions: {
-          input: { index: './src/entry.client.tsx' },
+          input: { index: './src/entry.client.ts' },
         },
       },
     },
