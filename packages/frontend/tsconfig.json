@@ -8,7 +8,6 @@
     "types": [
       "vite/client",
       "node",
-      "@cloudflare/workers-types",
       "@vitejs/plugin-rsc/types",
       "rsc-utils/types"
     ],
