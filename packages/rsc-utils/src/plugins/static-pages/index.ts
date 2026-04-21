@@ -87,5 +87,33 @@ export function rscStaticPages(options: RscStaticPagesOptions): Plugin[] {
       },
     },
     virtualModulesPlugin({ getPages, getBase }),
+    rewriteWranglerAssetsDir(),
   ]
+}
+
+// @cloudflare/vite-plugin force-sets assets.directory to the client outDir, double-prefixing Vite's base on disk lookups. Strip the trailing base segment so the binding's URL-root sits one level up. See workers-sdk#9885.
+function rewriteWranglerAssetsDir(): Plugin {
+  return {
+    name: 'rsc-utils:static-pages:rewrite-wrangler-assets-dir',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      const base = this.environment.config.base
+      if (!base || base === '/') return
+      const file = bundle['wrangler.json']
+      if (!file || file.type !== 'asset') return
+      const source =
+        typeof file.source === 'string'
+          ? file.source
+          : Buffer.from(file.source).toString('utf-8')
+      const config = JSON.parse(source)
+      if (typeof config.assets?.directory !== 'string') return
+      const suffix = base.replace(/^\/|\/$/g, '')
+      const stripped = config.assets.directory.replace(
+        new RegExp(`/${suffix}$`),
+        ''
+      )
+      config.assets.directory = stripped || '.'
+      file.source = JSON.stringify(config)
+    },
+  }
 }

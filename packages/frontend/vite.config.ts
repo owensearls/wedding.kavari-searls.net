@@ -5,7 +5,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [
-    rsc({ serverHandler: false }),
+    rsc({ serverHandler: false, loadModuleDevProxy: true }),
     react(),
     rscStaticPages({
       pages: {
@@ -26,8 +26,5 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
-  },
-  build: {
-    outDir: 'dist',
   },
 })

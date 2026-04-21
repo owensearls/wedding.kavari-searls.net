@@ -6,7 +6,7 @@ import {
 import { functionsConfig } from './rsc-functions'
 import { runWithEnv } from './server/shared/context'
 
-export { runWithEnv, getStaticPaths, handleRequest }
+export { getStaticPaths, handleRequest }
 
 export interface Env {
   DB: D1Database
@@ -22,7 +22,11 @@ export default {
     return runWithEnv(env, async () => {
       const rscResponse = await handle(request)
       if (rscResponse) return rscResponse
-      return env.ASSETS.fetch(request)
+      const rendered = await handleRequest(request)
+      if (!rendered) return new Response('Not Found', { status: 404 })
+      return new Response(rendered.html, {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      })
     })
   },
 } satisfies ExportedHandler<Env>

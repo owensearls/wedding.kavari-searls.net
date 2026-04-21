@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream'
-import type { ViteDevServer } from 'vite'
-import { isRunnableDevEnvironment } from 'vite'
+import type { DevEnvironment, ViteDevServer } from 'vite'
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { PageEntry } from './page-discovery.js'
 import { RSC_ENTRY_ID } from './virtual-modules.js'
 
@@ -15,20 +15,29 @@ type RscEntry = {
   handleRequest: (request: Request) => Promise<RenderResult | null>
 }
 
+type InvokePayload = {
+  type: 'custom'
+  event: 'vite:invoke'
+  data: { name: string; id: string; data: unknown[] }
+}
+
 export function installDevMiddleware(
   server: ViteDevServer,
   getPages: () => PageEntry[],
   getBase: () => string
 ): void {
-  // Plugin-rsc registers its loadModuleDevProxy handler at
-  // /__vite_rsc_load_module_dev_proxy, but its RPC client derives the
-  // endpoint from server.resolvedUrls (which includes Vite's base). When
-  // base !== '/', the client calls /<base>/__vite_rsc_load_module_dev_proxy
-  // and 404s. Prepend a rewrite so those calls reach the real handler.
+  // Plugin-rsc's loadModuleDevProxy RPC client derives its endpoint from
+  // server.resolvedUrls (which includes Vite's base), but plugin-rsc
+  // registers the handler at the base-less path. Rewrite so those RPC
+  // calls reach the real handler when base !== '/'.
   const rpcSuffix = '__vite_rsc_load_module_dev_proxy'
   const rewriteStack = server.middlewares.stack as Array<{
     route: string
-    handle: (req: IncomingMessageLike, res: unknown, next: (err?: unknown) => void) => void
+    handle: (
+      req: IncomingMessageLike,
+      res: unknown,
+      next: (err?: unknown) => void
+    ) => void
   }>
   rewriteStack.unshift({
     route: '',
@@ -41,11 +50,58 @@ export function installDevMiddleware(
     },
   })
 
+  // Secondary Node-side module runner against the rsc environment's transform
+  // pipeline. Bypasses `createServerModuleRunner` because Cloudflare's custom
+  // hot channel is incompatible with Vite's default runner transport. Our
+  // transport handles the two `invoke` names ModuleRunner actually needs
+  // (`fetchModule`, `getBuiltins`) by delegating straight to the environment.
+  const rscEnv = server.environments.rsc
+  const runner = new ModuleRunner(
+    {
+      transport: {
+        async invoke(payload) {
+          const { name, data: args } = (payload as InvokePayload).data
+          try {
+            if (name === 'fetchModule') {
+              const [id, importer, options] = args as [
+                string,
+                string | undefined,
+                Parameters<DevEnvironment['fetchModule']>[2],
+              ]
+              return { result: await rscEnv.fetchModule(id, importer, options) }
+            }
+            if (name === 'getBuiltins') {
+              return {
+                result: rscEnv.config.resolve.builtins.map((b) =>
+                  typeof b === 'string'
+                    ? { type: 'string' as const, value: b }
+                    : {
+                        type: 'RegExp' as const,
+                        source: b.source,
+                        flags: b.flags,
+                      }
+                ),
+              }
+            }
+            throw new Error(`unsupported invoke: ${name}`)
+          } catch (error) {
+            const e = error as Error
+            return {
+              error: { name: e.name, message: e.message, stack: e.stack },
+            }
+          }
+        },
+      },
+      hmr: false,
+      sourcemapInterceptor: false,
+    },
+    new ESModulesEvaluator()
+  )
+
   server.middlewares.use(async (req, res, next) => {
     if (req.method !== 'GET') return next()
     const host = req.headers.host ?? 'localhost'
     const url = new URL(req.url ?? '/', `http://${host}`)
-
     const base = getBase()
     const basePath = stripBase(url.pathname, base)
     const pages = getPages()
@@ -54,11 +110,8 @@ export function installDevMiddleware(
     )
     if (!match) return next()
 
-    const rscEnv = server.environments.rsc
-    if (!rscEnv || !isRunnableDevEnvironment(rscEnv)) return next()
-
     try {
-      const mod = (await rscEnv.runner.import(RSC_ENTRY_ID)) as RscEntry
+      const mod = (await runner.import(RSC_ENTRY_ID)) as RscEntry
       const result = await mod.handleRequest(
         new Request(new URL(url.pathname, `http://${host}`), { method: 'GET' })
       )
