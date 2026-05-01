@@ -176,7 +176,7 @@ export function RsvpFull() {
   const primaryGuestId = data?.guests[0]?.id
 
   return (
-    <div className={`${styles.page} ${styles.background}`}>
+    <div className={styles.page}>
       <div className={styles.content}>
         <a href="/" className={styles.backLink}>
           ← Back to home

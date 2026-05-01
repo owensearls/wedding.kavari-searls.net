@@ -1,25 +1,6 @@
 .container {
   width: 100%;
-  background-color: white;
   position: relative;
-  /* scroll-snap-type: y proximity; */
-}
-
-.container::before {
-  content: '';
-  position: fixed;
-  top: calc(-1 * env(safe-area-inset-top, 0px));
-  left: 0;
-  width: 100%;
-  height: calc(
-    100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)
-  );
-  background-image: url('/background.jpg');
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
-  z-index: 0;
-  pointer-events: none;
 }
 
 .content {
@@ -32,34 +13,7 @@
   z-index: 4;
 }
 
-.navBackground {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 44px;
-  z-index: 2;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.navBackground::before {
-  content: '';
-  position: absolute;
-  top: calc(-1 * env(safe-area-inset-top, 0px));
-  left: 0;
-  right: 0;
-  height: calc(
-    100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)
-  );
-  background-image: url('/background.jpg');
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
-}
-
 .navContent {
-  position: relative;
   display: flex;
   gap: 15px;
   justify-content: center;
@@ -75,13 +29,10 @@
   border-bottom: #6e6b60 solid 1px;
 }
 
-.navDivider {
-  color: #6e6b60;
-}
-
 .contentInner {
   position: relative;
   z-index: 1;
+  timeline-scope: --home-view;
 }
 
 .footerContent {
@@ -104,6 +55,7 @@
 
 .footerImage {
   width: 100%;
+  height: auto;
   max-height: 50dvh;
   object-fit: cover;
   object-position: top;
@@ -113,17 +65,27 @@
   transform: translateX(-50%);
 }
 
-.scrollbarOverlay {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 20px;
-  z-index: 100;
-  pointer-events: none;
-  background: linear-gradient(
-    to left,
-    rgba(255, 255, 255, 0.01) 0%,
-    transparent 100%
-  );
+:global(section[data-anchor='']) {
+  view-timeline-name: --home-view;
+  view-timeline-axis: block;
+}
+
+@keyframes mountainParallax {
+  0% {
+    max-height: 0dvh;
+  }
+  50% {
+    max-height: 50dvh;
+  }
+  100% {
+    max-height: 250dvh;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .footerImage {
+    animation: mountainParallax linear both;
+    animation-timeline: --home-view;
+    animation-range: cover 0% cover 100%;
+  }
 }

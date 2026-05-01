@@ -1,7 +1,3 @@
-html {
-  scroll-behavior: smooth;
-}
-
 :root {
   font-family:
     Baskerville, 'Baskerville Old Face', 'Goudy Old Style', Garamond,
@@ -11,12 +7,64 @@ html {
 
   color-scheme: light;
   color: #213547;
-  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 44px;
+  background-color: #e4e7e2;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: transparent;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
+    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
+  background-image: url('/background.jpg');
+  background-image: image-set(
+    url('/background.avif') 1x type('image/avif'),
+    url('/background.jpg') 1x type('image/jpeg')
+  );
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  z-index: -1;
+  pointer-events: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(110, 107, 96, 0.45);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(110, 107, 96, 0.7);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#root {
+  width: 100%;
 }
 
 a {
@@ -26,18 +74,6 @@ a {
 }
 a:hover {
   color: #535bf2;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100dvh;
-  background-color: white;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-#root {
-  width: 100%;
 }
 
 button {
