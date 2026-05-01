@@ -16,10 +16,6 @@
       "types": "./dist/plugins/functions/browser.d.ts",
       "default": "./dist/plugins/functions/browser.js"
     },
-    "./functions/namespace": {
-      "types": "./dist/plugins/functions/namespace.d.ts",
-      "default": "./dist/plugins/functions/namespace.js"
-    },
     "./static-pages/client": {
       "types": "./dist/plugins/static-pages/client.d.ts",
       "default": "./dist/plugins/static-pages/client.js"

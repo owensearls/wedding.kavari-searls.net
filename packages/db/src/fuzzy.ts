@@ -4,7 +4,7 @@ export function normalize(s: string): string {
   return s
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // strip accents
+    .replace(/[̀-ͯ]/g, '') // strip accents
     .replace(/[^a-z0-9@.\s'-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()

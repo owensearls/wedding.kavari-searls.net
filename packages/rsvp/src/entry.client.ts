@@ -1,6 +1,6 @@
-import { setupNamespaceCallback } from 'rsc-utils/functions/namespace'
+import { setupServerCallback } from 'rsc-utils/functions/browser'
 import { hydrateStaticPages } from 'rsc-utils/static-pages/client'
 
-setupNamespaceCallback('admin')
+setupServerCallback()
 
 hydrateStaticPages()

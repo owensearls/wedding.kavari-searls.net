@@ -1,9 +1,9 @@
 declare module 'virtual:rsc-utils/functions/modules' {
-  export const modules: Record<string, Record<string, Record<string, unknown>>>
+  export const modules: Record<string, Record<string, unknown>>
 }
 
 declare module 'virtual:rsc-utils/functions/config' {
-  export const endpoints: Record<string, string>
+  export const endpoint: string
 }
 
 declare module 'virtual:rsc-utils/static-pages/manifest' {

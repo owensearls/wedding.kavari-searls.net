@@ -1,10 +1,9 @@
 import type { Plugin } from 'vite'
-import type { FunctionsConfig } from '../../types.js'
 
 const VIRTUAL_ID = 'virtual:rsc-utils/functions/config'
 const RESOLVED_ID = `\0${VIRTUAL_ID}`
 
-export function configVirtualPlugin(config: FunctionsConfig): Plugin {
+export function configVirtualPlugin(): Plugin {
   let viteBase = '/'
 
   return {
@@ -17,12 +16,9 @@ export function configVirtualPlugin(config: FunctionsConfig): Plugin {
     },
     load(id) {
       if (id !== RESOLVED_ID) return
-      const endpoints: Record<string, string> = {}
-      for (const ns of config.namespaces) {
-        const base = normalizeBase(ns.basename ?? viteBase)
-        endpoints[ns.name] = `${base}@rsc-${ns.name}/`
-      }
-      return `export const endpoints = ${JSON.stringify(endpoints)}\n`
+      const base = normalizeBase(viteBase)
+      const endpoint = `${base}@rsc/`
+      return `export const endpoint = ${JSON.stringify(endpoint)}\n`
     },
   }
 }

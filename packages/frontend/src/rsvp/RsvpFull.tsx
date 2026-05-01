@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ErrorMessage } from '../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../components/ui/LoadingIndicator'
+import { getRsvpGroup, submitRsvp } from '../server/rsvp'
 import { EventCardEditor } from './EventCardEditor'
 import {
   buildInitialRsvpFormState,
@@ -41,8 +42,7 @@ export function RsvpFull() {
     let cancelled = false
     setLoading(true)
     setLoadError(null)
-    import('rsvp/api/public')
-      .then((m) => m.getRsvpGroup(code))
+    getRsvpGroup(code)
       .then((res) => {
         if (cancelled) return
         setData(res)
@@ -162,7 +162,6 @@ export function RsvpFull() {
           }
         }),
       }
-      const { submitRsvp } = await import('rsvp/api/public')
       await submitRsvp(code, submission)
       setSubmitted(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })

@@ -3,12 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "exports": {
-    "./api/public": {
-      "types": "./src/client-api/public.d.ts",
-      "default": "./dist/client-api/public.js"
-    }
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -18,11 +12,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local --persist-to ../../.wrangler/state",
     "db:migrate:prod": "wrangler d1 migrations apply DB --remote",
-    "db:console:local": "wrangler d1 execute DB --local --command",
+    "db:console:local": "wrangler d1 execute DB --local --persist-to ../../.wrangler/state --command",
     "db:console:prod": "wrangler d1 execute DB --remote --command"
   },
   "dependencies": {
@@ -30,6 +24,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
     "@hookform/resolvers": "^3.10.0",
+    "db": "workspace:*",
     "papaparse": "^5.5.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

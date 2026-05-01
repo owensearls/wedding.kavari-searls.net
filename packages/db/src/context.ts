@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import type { Database } from './lib/schema'
+import type { Database } from './schema'
 import type { Kysely } from 'kysely'
 
 export type ServerEnv =

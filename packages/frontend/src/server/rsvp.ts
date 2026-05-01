@@ -1,17 +1,16 @@
 'use server'
 
+import { aggregateLookupMatches, getDb, newId, nowIso } from 'db'
+import { getEnv } from 'db/context'
 import {
   lookupQuerySchema,
   rsvpSubmissionSchema,
-  type LookupResponse,
   type EventDetails,
   type Guest,
+  type LookupResponse,
   type RsvpGroupResponse,
   type RsvpSubmission,
 } from 'schema/rsvp'
-import { getEnv } from '../shared/context'
-import { getDb, newId, nowIso } from '../shared/lib/db'
-import { aggregateLookupMatches } from '../shared/lib/fuzzy'
 
 function getDbConn() {
   return getDb(getEnv().DB)

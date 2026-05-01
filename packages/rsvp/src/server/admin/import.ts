@@ -1,8 +1,8 @@
 'use server'
 
 import { adminImportSchema } from 'schema/admin'
-import { getEnv } from '../shared/context'
-import { getDb, newId, newInviteCode, nowIso } from '../shared/lib/db'
+import { getDb, newId, newInviteCode, nowIso } from 'db'
+import { getEnv } from 'db/context'
 
 function getDbConn() {
   return getDb(getEnv().DB)

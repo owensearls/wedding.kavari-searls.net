@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "wrangler dev",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -16,20 +16,27 @@
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
+    "db": "workspace:*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.55.0",
+    "rsc-html-stream": "^0.0.7",
     "rsc-utils": "workspace:*",
-    "rsvp": "workspace:*",
     "schema": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.32.3",
+    "@cloudflare/workers-types": "^4.20250410.0",
+    "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitejs/plugin-rsc": "~0.5.24",
+    "kysely": "^0.27.5",
+    "kysely-d1": "^0.3.0",
     "typescript": "~5.9.3",
-    "vite": "^8.0.8"
+    "vite": "^8.0.8",
+    "wrangler": "^4.83.0"
   }
 }

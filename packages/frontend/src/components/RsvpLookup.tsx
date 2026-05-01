@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { lookupGuests } from '../server/rsvp'
 import styles from './RsvpLookup.module.css'
 import type { LookupMatch } from 'schema/rsvp'
 
@@ -17,7 +18,6 @@ export function RsvpLookup() {
     setError(null)
     setMatches(null)
     try {
-      const { lookupGuests } = await import('rsvp/api/public')
       const res = await lookupGuests(query.trim())
       if (res.matches.length === 0) {
         setError(

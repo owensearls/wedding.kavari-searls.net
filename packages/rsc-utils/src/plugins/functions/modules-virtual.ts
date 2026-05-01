@@ -12,11 +12,8 @@ export function modulesVirtualPlugin(config: FunctionsConfig): Plugin {
     },
     load(id) {
       if (id !== RESOLVED_ID) return
-      const entries = config.namespaces.map((ns) => {
-        const glob = normalizeGlob(ns.glob)
-        return `  ${JSON.stringify(ns.name)}: import.meta.glob(${JSON.stringify(glob)}, { eager: true })`
-      })
-      return `export const modules = {\n${entries.join(',\n')}\n}\n`
+      const glob = normalizeGlob(config.glob)
+      return `export const modules = import.meta.glob(${JSON.stringify(glob)}, { eager: true })\n`
     },
   }
 }

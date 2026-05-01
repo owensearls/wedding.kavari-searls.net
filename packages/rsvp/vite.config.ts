@@ -11,6 +11,10 @@ export default defineConfig({
     cloudflare({
       viteEnvironment: { name: 'rsc' },
       configPath: './wrangler.toml',
+      // Share local Miniflare/D1 state with the frontend worker so both apps
+      // hit the same on-disk D1 in `pnpm dev`. Path is relative to this
+      // package's vite root and points at the workspace-level `.wrangler/`.
+      persistState: { path: '../../.wrangler/state' },
     }),
     rsc({ serverHandler: false, loadModuleDevProxy: true }),
     react(),

@@ -3,8 +3,9 @@ import {
   encodeReply,
   setServerCallback,
 } from '@vitejs/plugin-rsc/browser'
+import { endpoint } from 'virtual:rsc-utils/functions/config'
 
-export function setupServerCallback(endpoint: string): void {
+export function setupServerCallback(): void {
   setServerCallback(async (id, args) => {
     const body = await encodeReply(args)
     const response = fetch(`${endpoint}${encodeURIComponent(id)}`, {
