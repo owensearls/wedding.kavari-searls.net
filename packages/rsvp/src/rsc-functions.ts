@@ -1,5 +1,0 @@
-import type { FunctionsConfig } from 'rsc-utils'
-
-export const functionsConfig = {
-  glob: 'src/server/admin/*.ts',
-} satisfies FunctionsConfig

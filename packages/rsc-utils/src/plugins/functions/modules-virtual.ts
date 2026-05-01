@@ -1,10 +1,9 @@
-import type { FunctionsConfig } from '../../types.js'
 import type { Plugin } from 'vite'
 
 const VIRTUAL_ID = 'virtual:rsc-utils/functions/modules'
 const RESOLVED_ID = `\0${VIRTUAL_ID}`
 
-export function modulesVirtualPlugin(config: FunctionsConfig): Plugin {
+export function modulesVirtualPlugin(include: string[]): Plugin {
   return {
     name: 'rsc-utils:functions-modules',
     resolveId(id) {
@@ -12,8 +11,8 @@ export function modulesVirtualPlugin(config: FunctionsConfig): Plugin {
     },
     load(id) {
       if (id !== RESOLVED_ID) return
-      const glob = normalizeGlob(config.glob)
-      return `export const modules = import.meta.glob(${JSON.stringify(glob)}, { eager: true })\n`
+      const globs = include.map(normalizeGlob)
+      return `export const modules = import.meta.glob(${JSON.stringify(globs)}, { eager: true })\n`
     },
   }
 }

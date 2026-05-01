@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react'
 import rsc from '@vitejs/plugin-rsc'
 import { rscFunctions, rscStaticPages } from 'rsc-utils'
 import { defineConfig } from 'vite'
-import { functionsConfig } from './src/rsc-functions'
 
 export default defineConfig({
   base: '/admin/',
@@ -18,7 +17,7 @@ export default defineConfig({
     }),
     rsc({ serverHandler: false, loadModuleDevProxy: true }),
     react(),
-    rscFunctions(functionsConfig),
+    rscFunctions(['src/server/admin/*.ts']),
     rscStaticPages({
       pages: {
         '/': './src/admin/index.tsx',
