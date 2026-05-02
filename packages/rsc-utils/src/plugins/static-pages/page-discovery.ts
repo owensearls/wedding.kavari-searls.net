@@ -19,9 +19,7 @@ export function discoverPages(options: DiscoverOptions): PageEntry[] {
   for (const [rawPath, modulePath] of Object.entries(options.pages)) {
     const pathname = normalizePathname(rawPath)
     if (seen.has(pathname)) {
-      throw new Error(
-        `[rsc-utils:static-pages] duplicate page URL ${pathname}`
-      )
+      throw new Error(`[rsc-utils:static-pages] duplicate page URL ${pathname}`)
     }
     seen.add(pathname)
     entries.push({

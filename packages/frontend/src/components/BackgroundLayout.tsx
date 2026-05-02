@@ -35,8 +35,7 @@ export function BackgroundLayout({
           )
           if (anchor === null) return
           setCurrentAnchor(anchor)
-          const newHash =
-            anchor === '' || anchor === 'home' ? '' : `#${anchor}`
+          const newHash = anchor === '' || anchor === 'home' ? '' : `#${anchor}`
           if (window.location.hash !== newHash) {
             window.history.replaceState(
               null,

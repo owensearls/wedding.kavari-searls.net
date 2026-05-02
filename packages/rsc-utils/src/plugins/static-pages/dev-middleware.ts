@@ -1,8 +1,8 @@
 import { Readable } from 'node:stream'
-import type { DevEnvironment, ViteDevServer } from 'vite'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
-import type { PageEntry } from './page-discovery.js'
 import { RSC_ENTRY_ID } from './virtual-modules.js'
+import type { PageEntry } from './page-discovery.js'
+import type { DevEnvironment, ViteDevServer } from 'vite'
 
 type IncomingMessageLike = { url?: string }
 
@@ -44,7 +44,7 @@ export function installDevMiddleware(
     handle(req, _res, next) {
       const base = getBase()
       if (base !== '/' && req.url?.startsWith(base + rpcSuffix)) {
-        req.url = '/' + req.url.slice(base.length)
+        req.url = `/${req.url.slice(base.length)}`
       }
       next()
     },
@@ -106,7 +106,7 @@ export function installDevMiddleware(
     const basePath = stripBase(url.pathname, base)
     const pages = getPages()
     const match = pages.find(
-      (p) => p.pathname === basePath || p.pathname === basePath + '/'
+      (p) => p.pathname === basePath || p.pathname === `${basePath}/`
     )
     if (!match) return next()
 
@@ -130,5 +130,5 @@ export function installDevMiddleware(
 
 function stripBase(pathname: string, base: string): string {
   if (base === '/' || !pathname.startsWith(base)) return pathname
-  return '/' + pathname.slice(base.length)
+  return `/${pathname.slice(base.length)}`
 }

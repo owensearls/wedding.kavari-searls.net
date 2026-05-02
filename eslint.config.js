@@ -76,13 +76,21 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
-  // Files that require default exports
+  // Files that require default exports.
+  // Page modules listed under `rscStaticPages` in each vite.config.ts must
+  // default-export their root component for the RSC plugin to load them —
+  // keep this list in sync with those configs.
   {
     files: [
       '**/src/entry.worker.ts',
       '**/vite.config.ts',
       '**/vitest.config.ts',
       '**/eslint.config.js',
+      'packages/frontend/src/index.tsx',
+      'packages/frontend/src/rsvp/index.tsx',
+      'packages/rsvp/src/admin/index.tsx',
+      'packages/rsvp/src/admin/events.tsx',
+      'packages/rsvp/src/admin/import.tsx',
     ],
     rules: {
       'import-x/no-default-export': 'off',

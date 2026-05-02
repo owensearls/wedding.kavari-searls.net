@@ -1,10 +1,4 @@
-export {
-  getDb,
-  newId,
-  newInviteCode,
-  nowIso,
-  type Db,
-} from './db'
+export { getDb, newId, newInviteCode, nowIso, type Db } from './db'
 export {
   aggregateLookupMatches,
   normalize,

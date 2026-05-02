@@ -1,9 +1,6 @@
 import { runWithEnv } from 'db/context'
 import { createRscHandlers } from 'rsc-utils/functions/server'
-import {
-  getStaticPaths,
-  handleRequest,
-} from 'rsc-utils/static-pages/server'
+import { getStaticPaths, handleRequest } from 'rsc-utils/static-pages/server'
 
 export { getStaticPaths, handleRequest }
 

@@ -1,11 +1,8 @@
 'use server'
 
-import {
-  adminEventInputSchema,
-  type AdminEventInput,
-} from 'schema/admin'
 import { getDb, newId } from 'db'
 import { getEnv } from 'db/context'
+import { adminEventInputSchema, type AdminEventInput } from 'schema/admin'
 
 function getDbConn() {
   return getDb(getEnv().DB)

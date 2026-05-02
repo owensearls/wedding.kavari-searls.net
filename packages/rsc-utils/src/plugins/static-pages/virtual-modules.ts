@@ -1,5 +1,5 @@
-import type { Plugin } from 'vite'
 import type { PageEntry } from './page-discovery.js'
+import type { Plugin } from 'vite'
 
 export const RSC_ENTRY_ID = 'virtual:rsc-utils/static-pages/rsc-entry'
 export const SSR_ENTRY_ID = 'virtual:rsc-utils/static-pages/ssr-entry'

@@ -21,8 +21,19 @@ Two static SPAs are served from this project: `/` (public) and `/admin/` (admin)
 - Rotate via `npx wrangler secret put ACCESS_AUD` / `npx wrangler secret put ACCESS_TEAM_DOMAIN`.
 - To set up fresh: Zero Trust → Access → Applications → Add an application → Self-hosted. Application domain: `wedding.kavari-searls.net/admin/*`. Add a policy: Action = Allow, Include = Emails of admins.
 
-## Deploying
+## CI / CD
 
-- Production target: Cloudflare Worker via `wrangler deploy` (CI workflow in `.github/workflows/deploy.yml`).
-- `wrangler.toml` `database_id` is a placeholder (`REPLACE_ME_WITH_REAL_ID`) — replace with the real D1 id before first deploy.
-- D1 migrations run via `wrangler d1 migrations apply DB --remote`.
+Three GitHub Actions workflows:
+
+- **`check.yml`** — runs on every PR and push to `main`: `lint`, `format:check`, `typecheck`, `test`, `build` in parallel.
+- **`deploy.yml`** — triggers on successful `Check` completion on `main` (via `workflow_run`). Applies D1 migrations, then deploys both workers (`rsvp` and `frontend`).
+- **`preview.yml`** — runs on PRs from same-repo branches. `wrangler versions upload --preview-alias pr-<n>` for each worker; sticky-comments the preview URLs on the PR. Skipped for forks.
+
+Required GitHub Actions secrets:
+
+- `CLOUDFLARE_API_TOKEN` — scoped token with `Workers Scripts:Edit` and `D1:Edit`.
+- `CLOUDFLARE_ACCOUNT_ID`.
+
+The D1 `database_id` is committed in `packages/{rsvp,frontend}/wrangler.toml`. Both workers point at the same D1 (account-scoped, `database_name = "wedding"`); migrations live in `packages/rsvp/migrations/` and only the `rsvp` workflow step applies them. Until the placeholder `REPLACE_ME_WITH_REAL_ID` is replaced with a real id (`wrangler d1 list`), the Deploy and Preview workflows fail; Check still passes.
+
+To deploy manually from a developer machine: `pnpm install && pnpm build && pnpm --filter rsvp exec wrangler d1 migrations apply DB --remote && pnpm --filter rsvp exec wrangler deploy && pnpm --filter frontend exec wrangler deploy`.

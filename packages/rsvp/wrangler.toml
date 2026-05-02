@@ -6,20 +6,12 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "wedding"
-# MUST be replaced with the real production D1 id before `wrangler deploy`.
-# For local `wrangler dev` / `pnpm run dev`, set CLOUDFLARE_DATABASE_ID or pass
-# --var in your local shell: `CLOUDFLARE_DATABASE_ID=<any-uuid>`.
+# Replace with the production D1 id from `wrangler d1 list`. Until set,
+# `wrangler deploy` (and the Deploy / Preview workflows) will fail loudly.
+# Local `wrangler dev` / `pnpm run dev` work without a real id thanks to
+# miniflare; tests use the local sqlite at `../../.wrangler/state`.
 database_id = "REPLACE_ME_WITH_REAL_ID"
 
 [assets]
 directory = "./dist/client"
 binding = "ASSETS"
-
-# Production injection path: before `wrangler deploy`, either
-#   1. Edit this file locally to paste the real D1 id (do not commit), OR
-#   2. Use `wrangler deploy --var DATABASE_ID=<id>` and migrate this config to
-#      read from that var, OR
-#   3. CI step rewrites `REPLACE_ME_WITH_REAL_ID` with the id from a secret
-#      (`sed -i "s/REPLACE_ME_WITH_REAL_ID/$PROD_DB_ID/" wrangler.toml`).
-# The placeholder deliberately fails any syntactic UUID check so an
-# un-injected deploy is caught loudly.

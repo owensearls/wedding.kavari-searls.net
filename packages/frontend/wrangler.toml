@@ -6,10 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "wedding"
-# MUST be replaced with the real production D1 id before `wrangler deploy`.
-# Shared with the rsvp (admin) worker — both bindings reference the same D1.
-# For local `wrangler dev` / `pnpm run dev`, set CLOUDFLARE_DATABASE_ID or pass
-# --var in your local shell: `CLOUDFLARE_DATABASE_ID=<any-uuid>`.
+# Same D1 as the rsvp worker; replace with the production id once known
+# (see packages/rsvp/wrangler.toml for details).
 database_id = "REPLACE_ME_WITH_REAL_ID"
 
 [assets]

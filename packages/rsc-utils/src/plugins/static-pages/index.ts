@@ -1,5 +1,4 @@
 import path from 'node:path'
-import type { Plugin } from 'vite'
 import { renderStatic } from './build-orchestrator.js'
 import { installDevMiddleware } from './dev-middleware.js'
 import { discoverPages, type PageEntry } from './page-discovery.js'
@@ -8,6 +7,7 @@ import {
   SSR_ENTRY_ID,
   virtualModulesPlugin,
 } from './virtual-modules.js'
+import type { Plugin } from 'vite'
 
 export type RscStaticPagesOptions = {
   pages: Record<string, string>
