@@ -3,7 +3,7 @@ import type { Database } from './schema'
 import type { Kysely } from 'kysely'
 
 export type ServerEnv =
-  | { DB: D1Database; ACCESS_AUD?: string; ACCESS_TEAM_DOMAIN?: string } // Worker env
+  | { DB: D1Database } // Worker env
   | { DB: Kysely<Database> } // Node env
 
 const envStorage = new AsyncLocalStorage<ServerEnv>()

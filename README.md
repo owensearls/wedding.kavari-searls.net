@@ -13,13 +13,10 @@ Two static SPAs are served from this project: `/` (public) and `/admin/` (admin)
 
 ## Admin access
 
-- Cloudflare Access Application covers `/admin/*` at the edge. No unauthenticated user can load the admin SPA.
-- Admin RPCs go through the shared `/@rsc/<id>` endpoint and are gated at the Worker by `verifyAccessJwt`, which validates the `Cf-Access-Jwt-Assertion` header.
-- Access Application audience (AUD) and team domain are injected as Worker secrets:
-  - `ACCESS_AUD` — AUD tag from the Access Application (find in Zero Trust → Access → Applications → [this app] → Overview).
-  - `ACCESS_TEAM_DOMAIN` — e.g. `your-team` (NOT `your-team.cloudflareaccess.com`).
-- Rotate via `npx wrangler secret put ACCESS_AUD` / `npx wrangler secret put ACCESS_TEAM_DOMAIN`.
-- To set up fresh: Zero Trust → Access → Applications → Add an application → Self-hosted. Application domain: `wedding.kavari-searls.net/admin/*`. Add a policy: Action = Allow, Include = Emails of admins.
+Admin protection is **edge-only** via Cloudflare Access — the worker itself does no auth check. Anything reaching the worker is assumed to be a request that already passed through Access.
+
+- Set up: Zero Trust → Access → Applications → Add an application → Self-hosted. Application domain covers the hostnames where admin should be reachable (e.g. `wedding.kavari-searls.net/admin/*` for production, and the workers.dev preview URLs if you want preview builds gated). Policy: Action = Allow, Include = your admin emails.
+- The workers.dev URL bypasses any Access policy that's only attached to the custom domain. Either add an Access Application for the workers.dev hostname too, or set `workers_dev = false` in `packages/rsvp/wrangler.toml` to disable that URL entirely.
 
 ## CI / CD
 

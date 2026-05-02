@@ -7,8 +7,6 @@ export { getStaticPaths, handleRequest }
 export interface Env {
   DB: D1Database
   ASSETS: Fetcher
-  ACCESS_AUD: string
-  ACCESS_TEAM_DOMAIN: string
 }
 
 const { handle } = createRscHandlers()
