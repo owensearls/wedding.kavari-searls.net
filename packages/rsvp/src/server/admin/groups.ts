@@ -2,6 +2,7 @@
 
 import { getDb, newId, newInviteCode, nowIso } from 'db'
 import { getEnv } from 'db/context'
+import { RscActionError } from 'rsc-utils/functions/server'
 import {
   adminGroupInputSchema,
   type AdminGroupInput,
@@ -121,7 +122,7 @@ export async function saveGroup(
   input: AdminGroupInput
 ): Promise<{ id: string }> {
   const parsed = adminGroupInputSchema.safeParse(input)
-  if (!parsed.success) throw new Error('Invalid group data')
+  if (!parsed.success) throw new RscActionError(400, 'Invalid group data')
   const data = parsed.data
 
   const db = getDbConn()
@@ -244,7 +245,7 @@ export async function saveGroup(
 export async function getGroup(
   id: string
 ): Promise<AdminGroupInput & { id: string }> {
-  if (!id) throw new Error('Missing id')
+  if (!id) throw new RscActionError(400, 'Missing id')
   const db = getDbConn()
 
   const leader = await db
@@ -253,7 +254,7 @@ export async function getGroup(
     .where('id', '=', id)
     .where('party_leader_id', 'is', null)
     .executeTakeFirst()
-  if (!leader) throw new Error('Not found')
+  if (!leader) throw new RscActionError(404, 'Not found')
 
   const members = await db
     .selectFrom('guest')
@@ -287,7 +288,7 @@ export async function getGroup(
 }
 
 export async function deleteGroup(id: string): Promise<{ ok: true }> {
-  if (!id) throw new Error('Missing id')
+  if (!id) throw new RscActionError(400, 'Missing id')
   const db = getDbConn()
   await db.deleteFrom('guest').where('id', '=', id).execute()
   return { ok: true }

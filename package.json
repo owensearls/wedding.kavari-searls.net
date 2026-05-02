@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm --filter rsvp build && pnpm --filter frontend build",
+    "pretest": "pnpm --filter rsvp db:migrate:local",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
@@ -10,9 +11,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "pnpm --filter rsvp build && pnpm --filter rsvp preview & sleep 3 && pnpm --filter frontend build && pnpm --filter frontend preview --port 4173",
-    "dev": "pnpm --filter rsvp build && pnpm -r --parallel dev",
+    "predev": "pnpm --filter rsvp db:migrate:local",
+    "dev": "pnpm --filter rsvp build && concurrently -k -n rsvp,frontend pnpm:dev:rsvp \"wait-on tcp:5173 && pnpm --filter frontend dev\"",
     "dev:rsvp": "pnpm --filter rsvp dev",
-    "dev:frontend": "pnpm --filter frontend dev"
+    "dev:frontend": "pnpm --filter frontend dev",
+    "clean": "rm -rf .wrangler/state"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -33,6 +37,7 @@
     "globals": "^16.5.0",
     "playwright": "^1.59.1",
     "prettier": "^3.8.1",
-    "typescript-eslint": "^8.46.4"
+    "typescript-eslint": "^8.46.4",
+    "wait-on": "^9.0.5"
   }
 }

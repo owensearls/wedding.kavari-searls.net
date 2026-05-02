@@ -2,6 +2,7 @@
 
 import { getDb } from 'db'
 import { getEnv } from 'db/context'
+import { RscActionError } from 'rsc-utils/functions/server'
 import type { AdminGuestDetail } from 'schema/admin'
 
 function getDbConn() {
@@ -9,7 +10,7 @@ function getDbConn() {
 }
 
 export async function getGuest(id: string): Promise<AdminGuestDetail> {
-  if (!id) throw new Error('Missing id')
+  if (!id) throw new RscActionError(400, 'Missing id')
   const db = getDbConn()
 
   const guest = await db
@@ -17,7 +18,7 @@ export async function getGuest(id: string): Promise<AdminGuestDetail> {
     .selectAll()
     .where('id', '=', id)
     .executeTakeFirst()
-  if (!guest) throw new Error('Guest not found')
+  if (!guest) throw new RscActionError(404, 'Guest not found')
 
   let groupLabel = guest.group_label ?? ''
   const leaderId = guest.party_leader_id ?? guest.id
