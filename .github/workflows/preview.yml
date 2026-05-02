@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: lts/*, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - name: Build rsc-utils (consumed via dist/ by rsvp + frontend)
+        run: pnpm --filter rsc-utils build
       - run: pnpm build
       - id: rsvp
         name: Upload rsvp preview

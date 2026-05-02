@@ -13,8 +13,13 @@ concurrency:
 permissions:
   contents: read
 
+# Skip pull_request runs whose head is in this same repo — `push` already
+# covered them. pull_request still runs for forks (where push doesn't fire
+# in the base repo). See:
+# https://github.com/orgs/community/discussions/26276
 jobs:
   lint:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -26,6 +31,7 @@ jobs:
       - run: pnpm lint
 
   format:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -37,6 +43,7 @@ jobs:
       - run: pnpm format:check
 
   typecheck:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -45,9 +52,12 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: lts/*, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - name: Build rsc-utils (consumed via dist/ by rsvp + frontend)
+        run: pnpm --filter rsc-utils build
       - run: pnpm typecheck
 
   test:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -61,6 +71,7 @@ jobs:
       - run: pnpm test
 
   build:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -69,4 +80,6 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: lts/*, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - name: Build rsc-utils (consumed via dist/ by rsvp + frontend)
+        run: pnpm --filter rsc-utils build
       - run: pnpm build
