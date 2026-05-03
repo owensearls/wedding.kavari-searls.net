@@ -7,10 +7,9 @@ import { EditFormShell } from '../../components/ui/EditFormShell'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { FieldGroup } from '../../components/ui/FieldGroup'
 import { FormGrid } from '../../components/ui/FormGrid'
-import { RemoveButton } from '../../components/ui/RemoveButton'
 import { SectionLabel } from '../../components/ui/SectionLabel'
 import { isoToLocalInput, localInputToIso } from '../lib/dateHelpers'
-import styles from './EditEventForm.module.css'
+import { CustomFieldsEditor } from './CustomFieldsEditor'
 import type { AdminEventInput } from '../../schema'
 
 interface EditEventFormProps {
@@ -30,24 +29,6 @@ export function EditEventForm({
   onSave,
   onCancel,
 }: EditEventFormProps) {
-  function updateMeal(idx: number, label: string) {
-    const next = [...event.mealOptions]
-    next[idx] = { ...next[idx], label }
-    onChange({ ...event, mealOptions: next })
-  }
-
-  function removeMeal(idx: number) {
-    const next = event.mealOptions.filter((_, i) => i !== idx)
-    onChange({ ...event, mealOptions: next })
-  }
-
-  function addMeal() {
-    onChange({
-      ...event,
-      mealOptions: [...event.mealOptions, { label: '', description: '' }],
-    })
-  }
-
   return (
     <EditFormShell
       title={event.id ? 'Edit event' : 'New event'}
@@ -146,39 +127,11 @@ export function EditEventForm({
       </EditFormSection>
 
       <EditFormSection>
-        <SectionLabel>Meal options</SectionLabel>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={event.requiresMealChoice}
-            onChange={(e) =>
-              onChange({ ...event, requiresMealChoice: e.target.checked })
-            }
-          />
-          Requires meal choice
-        </label>
-
-        {event.requiresMealChoice && (
-          <>
-            {event.mealOptions.map((m, idx) => (
-              <div className={styles.mealOptionRow} key={m.id ?? `new-${idx}`}>
-                <input
-                  className="admin-input"
-                  placeholder="Meal name"
-                  value={m.label}
-                  onChange={(e) => updateMeal(idx, e.target.value)}
-                />
-                <RemoveButton
-                  label="Remove meal option"
-                  onClick={() => removeMeal(idx)}
-                />
-              </div>
-            ))}
-            <Button variant="ghost" onClick={addMeal}>
-              + Add meal option
-            </Button>
-          </>
-        )}
+        <SectionLabel>Custom fields</SectionLabel>
+        <CustomFieldsEditor
+          fields={event.customFields}
+          onChange={(next) => onChange({ ...event, customFields: next })}
+        />
       </EditFormSection>
 
       <EditFormActions>
