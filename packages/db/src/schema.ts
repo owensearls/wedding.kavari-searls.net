@@ -1,7 +1,3 @@
-// Kysely Database type — kept in sync by hand with migrations in ./migrations.
-// Booleans and dates are stored as INTEGER (0/1) and TEXT (ISO strings) in
-// SQLite, so we type them as `number` and `string` here.
-
 export interface GuestTable {
   id: string
   party_leader_id: string | null
@@ -12,9 +8,6 @@ export interface GuestTable {
   phone: string | null
   invite_code: string
   group_label: string | null
-  dietary_restrictions: string | null
-  notes: string | null
-  notes_json: string | null
   created_at: string
   updated_at: string
 }
@@ -28,7 +21,6 @@ export interface EventTable {
   location_name: string | null
   address: string | null
   rsvp_deadline: string | null
-  requires_meal_choice: number
   sort_order: number
 }
 
@@ -38,20 +30,55 @@ export interface InvitationTable {
   event_id: string
 }
 
-export interface MealOptionTable {
+export interface EventCustomFieldTable {
   id: string
   event_id: string
+  key: string
   label: string
-  description: string | null
+  type: 'short_text' | 'single_select'
+  sort_order: number
 }
 
-export interface RsvpTable {
+export interface EventCustomFieldOptionTable {
+  id: string
+  field_id: string
+  label: string
+  description: string | null
+  sort_order: number
+}
+
+export interface GuestCustomFieldTable {
+  id: string
+  key: string
+  label: string
+  type: 'short_text' | 'single_select'
+  sort_order: number
+}
+
+export interface GuestCustomFieldOptionTable {
+  id: string
+  field_id: string
+  label: string
+  description: string | null
+  sort_order: number
+}
+
+export interface RsvpResponseTable {
   id: string
   guest_id: string
   event_id: string
-  status: 'pending' | 'attending' | 'declined'
-  meal_choice_id: string | null
-  responded_at: string | null
+  status: 'attending' | 'declined'
+  notes_json: string | null
+  responded_at: string
+  responded_by_guest_id: string | null
+}
+
+export interface GuestResponseTable {
+  id: string
+  guest_id: string
+  notes: string | null
+  notes_json: string | null
+  responded_at: string
   responded_by_guest_id: string | null
 }
 
@@ -59,6 +86,10 @@ export interface Database {
   guest: GuestTable
   event: EventTable
   invitation: InvitationTable
-  meal_option: MealOptionTable
-  rsvp: RsvpTable
+  event_custom_field: EventCustomFieldTable
+  event_custom_field_option: EventCustomFieldOptionTable
+  guest_custom_field: GuestCustomFieldTable
+  guest_custom_field_option: GuestCustomFieldOptionTable
+  rsvp_response: RsvpResponseTable
+  guest_response: GuestResponseTable
 }
