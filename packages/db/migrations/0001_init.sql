@@ -15,7 +15,6 @@ CREATE TABLE guest (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_guest_party_leader ON guest(party_leader_id);
-CREATE INDEX idx_guest_invite_code ON guest(invite_code);
 CREATE INDEX idx_guest_email ON guest(email);
 CREATE INDEX idx_guest_display_name ON guest(display_name);
 
@@ -97,6 +96,11 @@ CREATE TABLE rsvp_response (
 CREATE INDEX idx_rsvp_response_guest_event_at
   ON rsvp_response(guest_id, event_id, responded_at);
 
+-- One row per guest per public submit, when something changed.
+-- The `notes` column is the hardcoded long-text "anything else?" field
+-- on the public form; `notes_json` holds answers for admin-configured
+-- custom fields. Asymmetric vs. rsvp_response (which has no `notes`)
+-- because there's no equivalent free-text field in the per-event RSVP UI.
 CREATE TABLE guest_response (
   id TEXT PRIMARY KEY,
   guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
