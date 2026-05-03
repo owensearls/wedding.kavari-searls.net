@@ -3,7 +3,7 @@
 import { getDb } from 'db'
 import { getEnv } from 'db/context'
 import { RscActionError } from 'rsc-utils/functions/server'
-import type { AdminGuestDetail } from 'schema/admin'
+import type { AdminGuestDetail } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)

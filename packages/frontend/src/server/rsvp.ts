@@ -11,7 +11,7 @@ import {
   type LookupResponse,
   type RsvpGroupResponse,
   type RsvpSubmission,
-} from 'schema/rsvp'
+} from '../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)

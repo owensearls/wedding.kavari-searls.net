@@ -5,7 +5,7 @@ import {
   adminGuestInputSchema,
   adminImportRowSchema,
   adminImportSchema,
-} from './admin'
+} from './schema'
 
 describe('adminGuestInputSchema', () => {
   it('coerces blank email/phone/dietary to null', () => {
@@ -88,7 +88,6 @@ describe('adminImportRowSchema', () => {
   })
 
   it('coerces blank optional cells to undefined', () => {
-    // This mirrors what papaparse produces for blank cells under header:true.
     const parsed = adminImportRowSchema.parse({
       groupLabel: 'Smiths',
       firstName: 'Alice',

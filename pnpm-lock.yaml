@@ -90,9 +90,6 @@ importers:
       rsc-utils:
         specifier: workspace:*
         version: link:../rsc-utils
-      schema:
-        specifier: workspace:*
-        version: link:../schema
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -199,9 +196,6 @@ importers:
       rsc-utils:
         specifier: workspace:*
         version: link:../rsc-utils
-      schema:
-        specifier: workspace:*
-        version: link:../schema
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -251,19 +245,6 @@ importers:
       wrangler:
         specifier: ^4.83.0
         version: 4.83.0(@cloudflare/workers-types@4.20260418.1)
-
-  packages/schema:
-    dependencies:
-      zod:
-        specifier: ^3.24.2
-        version: 3.25.76
-    devDependencies:
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.10.9)(lightningcss@1.32.0)
 
 packages:
 

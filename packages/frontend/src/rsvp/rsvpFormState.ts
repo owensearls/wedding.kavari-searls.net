@@ -1,4 +1,4 @@
-import type { RsvpGroupResponse, RsvpStatus } from 'schema/rsvp'
+import type { RsvpGroupResponse, RsvpStatus } from '../schema'
 
 export type RsvpKey = `${string}::${string}` // guestId::eventId
 

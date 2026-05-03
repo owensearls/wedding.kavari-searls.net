@@ -8,6 +8,7 @@ binding = "DB"
 database_name = "wedding-kavari-searls"
 # Shared D1 between frontend and rsvp
 database_id = "72251762-9df1-4281-8ccb-4039a763839d"
+migrations_dir = "../db/migrations"
 
 [assets]
 directory = "./dist/client"

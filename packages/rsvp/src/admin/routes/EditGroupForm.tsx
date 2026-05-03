@@ -2,11 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
-import {
-  adminGroupInputSchema,
-  type AdminGroupInput,
-  type AdminGuestInput,
-} from 'schema/admin'
 import { Button } from '../../components/ui/Button'
 import { EditFormActions } from '../../components/ui/EditFormActions'
 import { EditFormSection } from '../../components/ui/EditFormSection'
@@ -16,6 +11,11 @@ import { FieldGroup } from '../../components/ui/FieldGroup'
 import { FormGrid } from '../../components/ui/FormGrid'
 import { RemoveButton } from '../../components/ui/RemoveButton'
 import { SectionLabel } from '../../components/ui/SectionLabel'
+import {
+  adminGroupInputSchema,
+  type AdminGroupInput,
+  type AdminGuestInput,
+} from '../../schema'
 import styles from './EditGroupForm.module.css'
 import type { AdminEventRecord } from '../../server/admin/events'
 

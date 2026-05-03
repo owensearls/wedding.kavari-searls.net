@@ -1,15 +1,23 @@
 import { z } from 'zod'
-import { notesJsonSchema } from './rsvp'
 
-// Trim-empty-string to undefined. Keeps "0" and whitespace-only-but-non-empty
-// cells behaving sensibly; blank CSV / form cells become undefined so optional
-// and default-wrapped schemas work as callers expect.
 const blankToUndef = (v: unknown) =>
   typeof v === 'string' && v.trim() === '' ? undefined : v
 
-// Same, but for fields stored as `null` (nullable DB columns).
 const blankToNull = (v: unknown) =>
   typeof v === 'string' && v.trim() === '' ? null : v
+
+const notesJsonSchema = z
+  .object({
+    songRequest: z
+      .object({
+        title: z.string().min(1).max(200),
+        artist: z.string().max(200).nullable().optional(),
+      })
+      .optional(),
+  })
+  .passthrough()
+  .nullable()
+  .optional()
 
 export const adminGuestInputSchema = z.object({
   id: z.string().optional(),
@@ -93,7 +101,6 @@ export const adminEventInputSchema = z.object({
 })
 export type AdminEventInput = z.infer<typeof adminEventInputSchema>
 
-// Per-event RSVP status for a single guest, as returned by the admin list.
 export const adminGuestEventStatusSchema = z.object({
   eventId: z.string(),
   status: z.enum(['pending', 'attending', 'declined', 'not-invited']),
@@ -124,8 +131,6 @@ export const adminGroupListItemSchema = z.object({
 })
 export type AdminGroupListItem = z.infer<typeof adminGroupListItemSchema>
 
-// Full submission details for a single guest, used by the click-in modal on
-// the guest list.
 export const adminGuestDetailSchema = z.object({
   id: z.string(),
   displayName: z.string(),

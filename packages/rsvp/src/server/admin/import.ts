@@ -3,7 +3,7 @@
 import { getDb, newId, newInviteCode, nowIso } from 'db'
 import { getEnv } from 'db/context'
 import { RscActionError } from 'rsc-utils/functions/server'
-import { adminImportSchema } from 'schema/admin'
+import { adminImportSchema } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)

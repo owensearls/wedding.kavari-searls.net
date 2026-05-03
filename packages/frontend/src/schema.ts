@@ -56,7 +56,6 @@ export const rsvpSubmissionSchema = z.object({
 })
 export type RsvpSubmission = z.infer<typeof rsvpSubmissionSchema>
 
-// Read shape — what getRsvpGroup returns for a given invite code.
 export const guestSchema = z.object({
   id: z.string(),
   firstName: z.string(),

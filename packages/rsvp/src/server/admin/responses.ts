@@ -2,7 +2,7 @@
 
 import { getDb } from 'db'
 import { getEnv } from 'db/context'
-import type { AdminResponseRow } from 'schema/admin'
+import type { AdminResponseRow } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)

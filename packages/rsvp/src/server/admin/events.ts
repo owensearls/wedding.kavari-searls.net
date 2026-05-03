@@ -3,7 +3,7 @@
 import { getDb, newId } from 'db'
 import { getEnv } from 'db/context'
 import { RscActionError } from 'rsc-utils/functions/server'
-import { adminEventInputSchema, type AdminEventInput } from 'schema/admin'
+import { adminEventInputSchema, type AdminEventInput } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)

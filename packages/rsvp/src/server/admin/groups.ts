@@ -8,7 +8,7 @@ import {
   type AdminGroupInput,
   type AdminGroupListItem,
   type AdminGuestEventStatus,
-} from 'schema/admin'
+} from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)

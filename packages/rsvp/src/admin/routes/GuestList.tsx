@@ -23,7 +23,7 @@ import type {
   AdminGroupInput,
   AdminGroupListItem,
   AdminGuestInput,
-} from 'schema/admin'
+} from '../../schema'
 
 const blankGuest = (): AdminGuestInput => ({
   firstName: '',

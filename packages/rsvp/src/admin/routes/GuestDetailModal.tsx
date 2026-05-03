@@ -9,7 +9,7 @@ import { statusClassName } from '../../components/ui/statusHelpers'
 import { Table } from '../../components/ui/Table'
 import { getGuest } from '../../server/admin/guests'
 import styles from './GuestList.module.css'
-import type { AdminGuestDetail } from 'schema/admin'
+import type { AdminGuestDetail } from '../../schema'
 
 interface GuestDetailModalProps {
   guestId: string

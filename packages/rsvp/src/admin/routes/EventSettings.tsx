@@ -14,7 +14,7 @@ import {
 } from '../../server/admin/events'
 import { formatForDisplay } from '../lib/dateHelpers'
 import { EditEventForm } from './EditEventForm'
-import type { AdminEventInput } from 'schema/admin'
+import type { AdminEventInput } from '../../schema'
 
 const blankEvent = (): AdminEventInput => ({
   name: '',

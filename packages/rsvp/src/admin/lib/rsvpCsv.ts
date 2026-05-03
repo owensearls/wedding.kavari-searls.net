@@ -1,4 +1,4 @@
-import type { AdminResponseRow } from 'schema/admin'
+import type { AdminResponseRow } from '../../schema'
 
 const HEADER = [
   'groupLabel',

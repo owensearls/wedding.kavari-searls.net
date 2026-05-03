@@ -11,7 +11,7 @@ import { RemoveButton } from '../../components/ui/RemoveButton'
 import { SectionLabel } from '../../components/ui/SectionLabel'
 import { isoToLocalInput, localInputToIso } from '../lib/dateHelpers'
 import styles from './EditEventForm.module.css'
-import type { AdminEventInput } from 'schema/admin'
+import type { AdminEventInput } from '../../schema'
 
 interface EditEventFormProps {
   event: AdminEventInput

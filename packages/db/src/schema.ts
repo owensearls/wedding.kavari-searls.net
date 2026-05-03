@@ -1,4 +1,4 @@
-// Kysely Database type — kept in sync by hand with migrations.
+// Kysely Database type — kept in sync by hand with migrations in ./migrations.
 // Booleans and dates are stored as INTEGER (0/1) and TEXT (ISO strings) in
 // SQLite, so we type them as `number` and `string` here.
 
