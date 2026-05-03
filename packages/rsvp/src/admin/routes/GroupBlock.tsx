@@ -57,7 +57,7 @@ export function GroupBlock({
           <td>{guest.displayName}</td>
           <td>
             <a
-              href={`/rsvp/${encodeURIComponent(guest.inviteCode)}`}
+              href={`${import.meta.env.VITE_FRONTEND_URL}/rsvp/${encodeURIComponent(guest.inviteCode)}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}

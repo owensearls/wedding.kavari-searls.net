@@ -52,7 +52,7 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
             <div className={styles.detailLabel}>Invite code</div>
             <div>
               <a
-                href={`/rsvp/${encodeURIComponent(data.inviteCode)}`}
+                href={`${import.meta.env.VITE_FRONTEND_URL}/rsvp/${encodeURIComponent(data.inviteCode)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.codeLink}

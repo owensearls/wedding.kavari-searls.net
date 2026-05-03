@@ -34,6 +34,8 @@ jobs:
       # environment. Pre-script auto-run requires enable-pre-post-scripts=true
       # in .npmrc.
       - name: Deploy rsvp worker
+        env:
+          VITE_FRONTEND_URL: https://wedding.kavari-searls.net
         run: pnpm --filter rsvp run deploy
       - name: Deploy frontend worker
         run: pnpm --filter frontend run deploy
