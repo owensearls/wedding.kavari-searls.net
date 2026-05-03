@@ -19,10 +19,12 @@ import { downloadCsv, responsesToCsv } from '../lib/rsvpCsv'
 import { EditGroupForm } from './EditGroupForm'
 import { GroupBlock } from './GroupBlock'
 import { GuestDetailModal } from './GuestDetailModal'
+import styles from './GuestList.module.css'
 import type {
   AdminGroupInput,
   AdminGroupListItem,
   AdminGuestInput,
+  CustomFieldConfig,
 } from '../../schema'
 
 const blankGuest = (): AdminGuestInput => ({
@@ -41,6 +43,7 @@ const blankGroup = (): AdminGroupInput => ({
 export function GuestList() {
   const [groups, setGroups] = useState<AdminGroupListItem[]>([])
   const [events, setEvents] = useState<AdminEventRecord[]>([])
+  const [guestCustomFields, setGuestCustomFields] = useState<CustomFieldConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<AdminGroupInput | null>(null)
@@ -53,6 +56,7 @@ export function GuestList() {
     try {
       const [g, e] = await Promise.all([listGroups(), listEvents()])
       setGroups(g.groups)
+      setGuestCustomFields(g.guestCustomFields)
       setEvents(e.events)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load')
@@ -134,7 +138,8 @@ export function GuestList() {
     if (ao !== bo) return ao - bo
     return a.name.localeCompare(b.name)
   })
-  const colCount = 2 + eventColumns.length + 2 // name + code + events + notes + edit
+  const colCount = 2 + eventColumns.length + 1 + guestCustomFields.length + 1
+  // name + code + events + notes + custom + edit
 
   return (
     <div>
@@ -180,6 +185,14 @@ export function GuestList() {
                 <th key={ev.id}>{ev.name}</th>
               ))}
               <th>Notes</th>
+              {guestCustomFields.map((f, i) => (
+                <th
+                  key={f.id}
+                  className={i === 0 ? styles.customDivider : undefined}
+                >
+                  {f.label}
+                </th>
+              ))}
               <th></th>
             </tr>
           </thead>
@@ -189,6 +202,7 @@ export function GuestList() {
                 key={g.id}
                 group={g}
                 eventColumns={eventColumns}
+                guestCustomFields={guestCustomFields}
                 colCount={colCount}
                 onEdit={() => startEdit(g.id)}
                 onOpenGuest={(guestId) => setDetailGuestId(guestId)}

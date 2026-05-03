@@ -1,12 +1,17 @@
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
+import { renderCustomFieldValue } from '../lib/customFieldRender'
 import styles from './GuestList.module.css'
-import type { AdminGroupListItem } from '../../schema'
+import type {
+  AdminGroupListItem,
+  CustomFieldConfig,
+} from '../../schema'
 import type { AdminEventRecord } from '../../server/admin/events'
 
 interface GroupBlockProps {
   group: AdminGroupListItem
   eventColumns: AdminEventRecord[]
+  guestCustomFields: CustomFieldConfig[]
   colCount: number
   onEdit: () => void
   onOpenGuest: (guestId: string) => void
@@ -15,6 +20,7 @@ interface GroupBlockProps {
 export function GroupBlock({
   group,
   eventColumns,
+  guestCustomFields,
   colCount,
   onEdit,
   onOpenGuest,
@@ -71,17 +77,21 @@ export function GroupBlock({
             return (
               <td key={ev.id} className={statusClassName(s?.status)}>
                 <StatusBadge status={s?.status} />
-                {s?.mealLabel ? (
-                  <span className={styles.mealHint}> · {s.mealLabel}</span>
-                ) : null}
               </td>
             )
           })}
-          <td className={styles.notesCell}>
-            {[guest.dietaryRestrictions, guest.notes]
-              .filter(Boolean)
-              .join(' · ')}
-          </td>
+          <td>{guest.notes ?? ''}</td>
+          {guestCustomFields.map((f, i) => {
+            const value = renderCustomFieldValue(f, guest.notesJson)
+            return (
+              <td
+                key={f.id}
+                className={i === 0 ? styles.customDivider : undefined}
+              >
+                {value ?? ''}
+              </td>
+            )
+          })}
           <td className={styles.editCell}>
             <button
               type="button"
