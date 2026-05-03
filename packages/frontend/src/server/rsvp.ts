@@ -1,6 +1,18 @@
 'use server'
 
-import { aggregateLookupMatches, getDb, newId, nowIso } from 'db'
+import {
+  aggregateLookupMatches,
+  diffGuestResponse,
+  diffRsvpResponse,
+  getDb,
+  latestGuestResponses,
+  latestRsvpResponses,
+  loadEventCustomFields,
+  loadGuestCustomFields,
+  newId,
+  nowIso,
+  validateNotesJson,
+} from 'db'
 import { getEnv } from 'db/context'
 import { RscActionError } from 'rsc-utils/functions/server'
 import {
@@ -9,12 +21,24 @@ import {
   type EventDetails,
   type Guest,
   type LookupResponse,
+  type NotesJson,
   type RsvpGroupResponse,
+  type RsvpRecord,
   type RsvpSubmission,
 } from '../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
+}
+
+function parseNotesJson(raw: string | null): NotesJson {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
 }
 
 export async function lookupGuests(query: string): Promise<LookupResponse> {
@@ -46,7 +70,7 @@ export async function lookupGuests(query: string): Promise<LookupResponse> {
     firstName: r.firstName,
     lastName: r.lastName,
     email: r.email,
-    inviteCode: r.inviteCode,
+    inviteCode: r.inviteCode ?? '',
     partyLeaderId: r.partyLeaderId ?? r.guestId,
     groupLabel: r.groupLabel ?? '',
   }))
@@ -82,6 +106,7 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
     .where('party_leader_id', '=', leaderId)
     .execute()
   const allGuests = [leader, ...members]
+  const guestIds = allGuests.map((g) => g.id)
 
   const invitations = await db
     .selectFrom('invitation')
@@ -99,24 +124,12 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
         .execute()
     : []
 
-  const mealOptions = eventIds.length
-    ? await db
-        .selectFrom('meal_option')
-        .selectAll()
-        .where('event_id', 'in', eventIds)
-        .execute()
-    : []
+  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
+  const guestCustomFields = await loadGuestCustomFields(db)
+  const latestRsvps = await latestRsvpResponses(db, { guestIds, eventIds })
+  const latestGuests = await latestGuestResponses(db, { guestIds })
 
-  const guestIds = allGuests.map((g) => g.id)
-  const rsvps = guestIds.length
-    ? await db
-        .selectFrom('rsvp')
-        .selectAll()
-        .where('guest_id', 'in', guestIds)
-        .execute()
-    : []
-
-  const eventResponse: EventDetails[] = events.map((e) => ({
+  const eventsResponse: EventDetails[] = events.map((e) => ({
     id: e.id,
     name: e.name,
     slug: e.slug,
@@ -125,55 +138,43 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
     locationName: e.location_name,
     address: e.address,
     rsvpDeadline: e.rsvp_deadline,
-    requiresMealChoice: !!e.requires_meal_choice,
     sortOrder: e.sort_order,
     invitedGuestIds: guestIds,
-    mealOptions: mealOptions
-      .filter((m) => m.event_id === e.id)
-      .map((m) => ({
-        id: m.id,
-        label: m.label,
-        description: m.description,
-      })),
+    customFields: eventCustomFieldsByEvent.get(e.id) ?? [],
   }))
 
-  function parseNotesJson(raw: string | null) {
-    if (!raw) return null
-    try {
-      return JSON.parse(raw)
-    } catch {
-      return null
-    }
-  }
+  const latestGuestByGuestId = new Map(latestGuests.map((r) => [r.guestId, r]))
 
-  const guestResponse: Guest[] = allGuests.map((g) => ({
-    id: g.id,
-    firstName: g.first_name,
-    lastName: g.last_name,
-    displayName: g.display_name,
-    email: g.email,
-    phone: g.phone,
-    inviteCode: g.invite_code,
-    dietaryRestrictions: g.dietary_restrictions,
-    notes: g.notes,
-    notesJson: parseNotesJson(g.notes_json),
+  const guestsResponse: Guest[] = allGuests.map((g) => {
+    const lr = latestGuestByGuestId.get(g.id)
+    return {
+      id: g.id,
+      firstName: g.first_name,
+      lastName: g.last_name,
+      displayName: g.display_name,
+      email: g.email,
+      phone: g.phone,
+      inviteCode: g.invite_code ?? '',
+      notes: lr?.notes ?? null,
+      notesJson: parseNotesJson(lr?.notesJson ?? null),
+    }
+  })
+
+  const rsvps: RsvpRecord[] = latestRsvps.map((r) => ({
+    guestId: r.guestId,
+    eventId: r.eventId,
+    status: r.status,
+    notesJson: parseNotesJson(r.notesJson),
+    respondedAt: r.respondedAt,
   }))
 
   return {
-    group: {
-      id: leaderId,
-      label: leader.group_label ?? '',
-    },
+    group: { id: leaderId, label: leader.group_label ?? '' },
     actingGuestId: actingGuest.id,
-    guests: guestResponse,
-    events: eventResponse,
-    rsvps: rsvps.map((r) => ({
-      guestId: r.guest_id,
-      eventId: r.event_id,
-      status: r.status,
-      mealChoiceId: r.meal_choice_id,
-      respondedAt: r.responded_at,
-    })),
+    guests: guestsResponse,
+    events: eventsResponse,
+    rsvps,
+    guestCustomFields,
   }
 }
 
@@ -188,6 +189,7 @@ export async function submitRsvp(
   const data = parsed.data
 
   const db = getDbConn()
+
   const actingGuest = await db
     .selectFrom('guest')
     .select(['id', 'party_leader_id'])
@@ -212,21 +214,17 @@ export async function submitRsvp(
 
   const invitations = await db
     .selectFrom('invitation')
-    .select(['id', 'event_id'])
+    .select(['event_id'])
     .where('guest_id', '=', leaderId)
     .execute()
   const invitedEventIds = new Set(invitations.map((i) => i.event_id))
 
-  const eventIds = invitations.map((i) => i.event_id)
-  const mealOptions = eventIds.length
-    ? await db
-        .selectFrom('meal_option')
-        .select(['id', 'event_id'])
-        .where('event_id', 'in', eventIds)
-        .execute()
-    : []
-  const mealEventByMealId = new Map(mealOptions.map((m) => [m.id, m.event_id]))
+  const eventIds = [...invitedEventIds]
+  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
+  const guestCustomFields = await loadGuestCustomFields(db)
 
+  // Validate per-event submissions.
+  const sanitizedRsvpNotes = new Map<string, NotesJson>()
   for (const r of data.rsvps) {
     if (!allowedGuestIds.has(r.guestId)) {
       throw new RscActionError(400, `Guest ${r.guestId} is not in this group`)
@@ -237,61 +235,98 @@ export async function submitRsvp(
         `Group is not invited to event ${r.eventId}`
       )
     }
-    if (r.mealChoiceId) {
-      const mealEvent = mealEventByMealId.get(r.mealChoiceId)
-      if (mealEvent !== r.eventId) {
-        throw new RscActionError(
-          400,
-          `Meal choice ${r.mealChoiceId} does not belong to event ${r.eventId}`
-        )
-      }
+    if (r.status === 'attending' || r.status === 'declined') {
+      const config = eventCustomFieldsByEvent.get(r.eventId) ?? []
+      const v = validateNotesJson(r.notesJson, config)
+      if (!v.ok) throw new RscActionError(400, v.error)
+      sanitizedRsvpNotes.set(`${r.guestId}::${r.eventId}`, v.value)
     }
   }
+
+  // Validate per-guest submissions.
+  const sanitizedGuestNotes = new Map<string, NotesJson>()
+  for (const u of data.guestUpdates) {
+    if (!allowedGuestIds.has(u.guestId)) continue
+    const v = validateNotesJson(u.notesJson, guestCustomFields)
+    if (!v.ok) throw new RscActionError(400, v.error)
+    sanitizedGuestNotes.set(u.guestId, v.value)
+  }
+
+  const guestIdsTouched = Array.from(
+    new Set([
+      ...data.rsvps.map((r) => r.guestId),
+      ...data.guestUpdates.map((u) => u.guestId),
+    ])
+  )
+
+  const latestRsvps = await latestRsvpResponses(db, {
+    guestIds: guestIdsTouched,
+    eventIds: data.rsvps.map((r) => r.eventId),
+  })
+  const latestRsvpKey = (g: string, e: string) => `${g}::${e}`
+  const latestRsvpMap = new Map(
+    latestRsvps.map((r) => [latestRsvpKey(r.guestId, r.eventId), r])
+  )
+
+  const latestGuests = await latestGuestResponses(db, {
+    guestIds: guestIdsTouched,
+  })
+  const latestGuestMap = new Map(latestGuests.map((r) => [r.guestId, r]))
 
   const now = nowIso()
 
   for (const r of data.rsvps) {
+    if (r.status === 'pending') continue
+    const sanitized = sanitizedRsvpNotes.get(`${r.guestId}::${r.eventId}`)
+    if (!sanitized) continue
+    const latest = latestRsvpMap.get(latestRsvpKey(r.guestId, r.eventId))
+    const diff = diffRsvpResponse({
+      latest: latest
+        ? { status: latest.status, notesJson: latest.notesJson }
+        : null,
+      submitted: { status: r.status, notesJson: sanitized },
+    })
+    if (!diff.insert) continue
     await db
-      .insertInto('rsvp')
+      .insertInto('rsvp_response')
       .values({
-        id: newId('rsvp'),
+        id: newId('rresp'),
         guest_id: r.guestId,
         event_id: r.eventId,
         status: r.status,
-        meal_choice_id: r.mealChoiceId ?? null,
+        notes_json: diff.notesJson,
         responded_at: now,
         responded_by_guest_id: data.respondedByGuestId,
       })
-      .onConflict((oc) =>
-        oc.columns(['guest_id', 'event_id']).doUpdateSet({
-          status: r.status,
-          meal_choice_id: r.mealChoiceId ?? null,
-          responded_at: now,
-          responded_by_guest_id: data.respondedByGuestId,
-        })
-      )
       .execute()
   }
 
-  for (const update of data.guestUpdates ?? []) {
-    if (!allowedGuestIds.has(update.guestId)) continue
+  for (const u of data.guestUpdates) {
+    if (!allowedGuestIds.has(u.guestId)) continue
+    const sanitized = sanitizedGuestNotes.get(u.guestId)
+    if (!sanitized) continue
+    const latest = latestGuestMap.get(u.guestId)
+    const submittedNotes =
+      typeof u.notes === 'string' ? u.notes : (u.notes ?? null)
+    const diff = diffGuestResponse({
+      latest: latest
+        ? { notes: latest.notes, notesJson: latest.notesJson }
+        : null,
+      submitted: { notes: submittedNotes, notesJson: sanitized },
+    })
+    if (!diff.insert) continue
     await db
-      .updateTable('guest')
-      .set({
-        dietary_restrictions: update.dietaryRestrictions ?? null,
-        notes: update.notes ?? null,
-        notes_json: update.notesJson ? JSON.stringify(update.notesJson) : null,
-        updated_at: now,
+      .insertInto('guest_response')
+      .values({
+        id: newId('gresp'),
+        guest_id: u.guestId,
+        notes: diff.notes,
+        notes_json: diff.notesJson,
+        responded_at: now,
+        responded_by_guest_id: data.respondedByGuestId,
       })
-      .where('id', '=', update.guestId)
       .execute()
   }
-
-  await db
-    .updateTable('guest')
-    .set({ updated_at: now })
-    .where('id', '=', leaderId)
-    .execute()
 
   return { ok: true, respondedAt: now }
 }
