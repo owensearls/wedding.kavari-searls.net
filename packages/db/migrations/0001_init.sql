@@ -1,14 +1,6 @@
--- Initial schema (consolidated). Single migration representing the launch
--- state of the database. Pre-deployment, so the prior step-by-step
--- migrations have been squashed into this file.
+-- Initial schema (consolidated). Pre-launch single migration.
 
 -- ── Guests ──────────────────────────────────────────────────────────────
--- A guest is either a party leader (party_leader_id IS NULL) or a member
--- of a party (party_leader_id references the leader's row). The leader's
--- `group_label` is the party label shown in the admin UI; member rows
--- mirror it for denormalized reads. `invite_code` is unique per guest —
--- any code resolves to its party's full RSVP form, so sharing remains
--- per-person while RSVPing stays group-wide.
 CREATE TABLE guest (
   id TEXT PRIMARY KEY,
   party_leader_id TEXT REFERENCES guest(id) ON DELETE CASCADE,
@@ -19,21 +11,15 @@ CREATE TABLE guest (
   phone TEXT,
   invite_code TEXT UNIQUE,
   group_label TEXT,
-  dietary_restrictions TEXT,
-  notes TEXT,
-  notes_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
 CREATE INDEX idx_guest_party_leader ON guest(party_leader_id);
 CREATE INDEX idx_guest_invite_code ON guest(invite_code);
 CREATE INDEX idx_guest_email ON guest(email);
 CREATE INDEX idx_guest_display_name ON guest(display_name);
 
 -- ── Events ──────────────────────────────────────────────────────────────
--- Weekend events (ceremony, reception, brunch, etc). `requires_meal_choice`
--- drives whether the RSVP form shows a meal picker for attending guests.
 CREATE TABLE event (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -43,51 +29,86 @@ CREATE TABLE event (
   location_name TEXT,
   address TEXT,
   rsvp_deadline TEXT,
-  requires_meal_choice INTEGER NOT NULL DEFAULT 0,
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
 -- ── Invitations ─────────────────────────────────────────────────────────
--- An invitation links a party (by its leader guest_id) to an event. One
--- row covers the whole party — individual member RSVPs live in the rsvp
--- table.
 CREATE TABLE invitation (
   id TEXT PRIMARY KEY,
   guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
   event_id TEXT NOT NULL REFERENCES event(id) ON DELETE CASCADE,
   UNIQUE (guest_id, event_id)
 );
-
 CREATE INDEX idx_invitation_guest ON invitation(guest_id);
 CREATE INDEX idx_invitation_event ON invitation(event_id);
 
--- ── Meal options ────────────────────────────────────────────────────────
--- Per-event meal choices. Admin maintains the list; RSVPs reference a
--- specific meal_option by id via rsvp.meal_choice_id.
-CREATE TABLE meal_option (
+-- ── Custom field configuration ──────────────────────────────────────────
+CREATE TABLE event_custom_field (
   id TEXT PRIMARY KEY,
   event_id TEXT NOT NULL REFERENCES event(id) ON DELETE CASCADE,
+  key TEXT NOT NULL,
   label TEXT NOT NULL,
-  description TEXT
+  type TEXT NOT NULL CHECK (type IN ('short_text', 'single_select')),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (event_id, key)
 );
+CREATE INDEX idx_event_custom_field_event
+  ON event_custom_field(event_id, sort_order);
 
-CREATE INDEX idx_meal_option_event ON meal_option(event_id);
+CREATE TABLE event_custom_field_option (
+  id TEXT PRIMARY KEY,
+  field_id TEXT NOT NULL REFERENCES event_custom_field(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  description TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_event_custom_field_option_field
+  ON event_custom_field_option(field_id, sort_order);
 
--- ── RSVPs ───────────────────────────────────────────────────────────────
--- One row per (guest, event) once that guest has been responded for.
--- Submissions happen on behalf of the whole party from any member's
--- invite code; responded_by_guest_id records who submitted the change.
-CREATE TABLE rsvp (
+CREATE TABLE guest_custom_field (
+  id TEXT PRIMARY KEY,
+  key TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('short_text', 'single_select')),
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_guest_custom_field_sort ON guest_custom_field(sort_order);
+
+CREATE TABLE guest_custom_field_option (
+  id TEXT PRIMARY KEY,
+  field_id TEXT NOT NULL REFERENCES guest_custom_field(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  description TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_guest_custom_field_option_field
+  ON guest_custom_field_option(field_id, sort_order);
+
+-- ── Append-only response tables ─────────────────────────────────────────
+CREATE TABLE rsvp_response (
   id TEXT PRIMARY KEY,
   guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
   event_id TEXT NOT NULL REFERENCES event(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'attending', 'declined')),
-  meal_choice_id TEXT REFERENCES meal_option(id) ON DELETE SET NULL,
-  responded_at TEXT,
-  responded_by_guest_id TEXT REFERENCES guest(id) ON DELETE SET NULL,
-  UNIQUE (guest_id, event_id)
+  status TEXT NOT NULL CHECK (status IN ('attending', 'declined')),
+  notes_json TEXT,
+  responded_at TEXT NOT NULL,
+  responded_by_guest_id TEXT REFERENCES guest(id) ON DELETE SET NULL
 );
+CREATE INDEX idx_rsvp_response_guest_event_at
+  ON rsvp_response(guest_id, event_id, responded_at);
 
-CREATE INDEX idx_rsvp_guest ON rsvp(guest_id);
-CREATE INDEX idx_rsvp_event ON rsvp(event_id);
+CREATE TABLE guest_response (
+  id TEXT PRIMARY KEY,
+  guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
+  notes TEXT,
+  notes_json TEXT,
+  responded_at TEXT NOT NULL,
+  responded_by_guest_id TEXT REFERENCES guest(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_guest_response_guest_at
+  ON guest_response(guest_id, responded_at);
 
+-- ── Seeds ────────────────────────────────────────────────────────────────
+INSERT INTO guest_custom_field (id, key, label, type, sort_order) VALUES
+  ('gcf_dietary',      'dietary_restrictions', 'Dietary restrictions or allergies', 'short_text', 0),
+  ('gcf_song_request', 'song_request',         'Song request',                       'short_text', 1);
