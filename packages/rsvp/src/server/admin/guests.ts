@@ -1,15 +1,37 @@
 'use server'
 
-import { getDb } from 'db'
+import {
+  getDb,
+  latestGuestResponses,
+  latestRsvpResponses,
+  loadEventCustomFields,
+  loadGuestCustomFields,
+  type CustomFieldConfig as DbCustomFieldConfig,
+} from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
-import type { AdminGuestDetail } from '../../schema'
+import type { AdminGuestDetail, CustomFieldConfig } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
 }
 
-export async function getGuest(id: string): Promise<AdminGuestDetail> {
+function parseNotesJson(raw: string | null): Record<string, string | null> {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+export async function getGuest(id: string): Promise<
+  AdminGuestDetail & {
+    guestCustomFields: CustomFieldConfig[]
+    eventCustomFieldsByEvent: Record<string, CustomFieldConfig[]>
+  }
+> {
   if (!id) throw new RscFunctionError(400, 'Missing id')
   const db = getDbConn()
 
@@ -36,7 +58,6 @@ export async function getGuest(id: string): Promise<AdminGuestDetail> {
     .selectFrom('invitation')
     .innerJoin('event', 'event.id', 'invitation.event_id')
     .select([
-      'invitation.id as invitationId',
       'invitation.event_id as eventId',
       'event.name as eventName',
       'event.sort_order as sortOrder',
@@ -45,55 +66,67 @@ export async function getGuest(id: string): Promise<AdminGuestDetail> {
     .orderBy('event.sort_order')
     .execute()
 
-  const rsvps = await db
-    .selectFrom('rsvp')
-    .leftJoin('meal_option', 'meal_option.id', 'rsvp.meal_choice_id')
-    .leftJoin(
-      'guest as responder',
-      'responder.id',
-      'rsvp.responded_by_guest_id'
+  const eventIds = invitations.map((i) => i.eventId)
+
+  const latestRsvps = await latestRsvpResponses(db, {
+    guestIds: [id],
+    eventIds,
+  })
+  const latestGuests = await latestGuestResponses(db, { guestIds: [id] })
+  const lg = latestGuests[0]
+
+  const responderIds = Array.from(
+    new Set(
+      latestRsvps
+        .map((r) => r.respondedByGuestId)
+        .filter((x): x is string => !!x)
     )
-    .select([
-      'rsvp.event_id as eventId',
-      'rsvp.status as status',
-      'rsvp.responded_at as respondedAt',
-      'meal_option.label as mealLabel',
-      'responder.display_name as respondedByDisplayName',
-    ])
-    .where('rsvp.guest_id', '=', id)
-    .execute()
+  )
+  const responders = responderIds.length
+    ? await db
+        .selectFrom('guest')
+        .select(['id', 'display_name'])
+        .where('id', 'in', responderIds)
+        .execute()
+    : []
+  const responderName = new Map(responders.map((r) => [r.id, r.display_name]))
 
-  function parseNotesJson(raw: string | null) {
-    if (!raw) return null
-    try {
-      return JSON.parse(raw)
-    } catch {
-      return null
-    }
-  }
+  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
+  const guestCustomFields = await loadGuestCustomFields(db)
 
-  const events: AdminGuestDetail['events'] = invitations.map((inv) => {
-    const rsvp = rsvps.find((r) => r.eventId === inv.eventId)
+  const events = invitations.map((inv) => {
+    const r = latestRsvps.find((x) => x.eventId === inv.eventId)
     return {
       eventId: inv.eventId,
       eventName: inv.eventName,
-      status: rsvp?.status ?? 'pending',
-      mealLabel: rsvp?.mealLabel ?? null,
-      respondedAt: rsvp?.respondedAt ?? null,
-      respondedByDisplayName: rsvp?.respondedByDisplayName ?? null,
+      status: r?.status ?? ('pending' as const),
+      notesJson: parseNotesJson(r?.notesJson ?? null),
+      respondedAt: r?.respondedAt ?? null,
+      respondedByDisplayName: r?.respondedByGuestId
+        ? (responderName.get(r.respondedByGuestId) ?? null)
+        : null,
     }
   })
+
+  // db's CustomFieldConfig is structurally identical to the admin schema's.
+  const toAdminCfg = (c: DbCustomFieldConfig): CustomFieldConfig => c
 
   return {
     id: guest.id,
     displayName: guest.display_name,
     email: guest.email,
     phone: guest.phone,
-    inviteCode: guest.invite_code,
-    dietaryRestrictions: guest.dietary_restrictions,
-    notes: guest.notes,
-    notesJson: parseNotesJson(guest.notes_json),
+    inviteCode: guest.invite_code ?? '',
+    notes: lg?.notes ?? null,
+    notesJson: parseNotesJson(lg?.notesJson ?? null),
     groupLabel,
     events,
+    guestCustomFields: guestCustomFields.map(toAdminCfg),
+    eventCustomFieldsByEvent: Object.fromEntries(
+      [...eventCustomFieldsByEvent.entries()].map(([k, v]) => [
+        k,
+        v.map(toAdminCfg),
+      ])
+    ),
   }
 }
