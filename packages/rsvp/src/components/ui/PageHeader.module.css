@@ -39,3 +39,24 @@
     gap: 8px;
   }
 }
+
+/* Three header buttons (e.g. Import / Export / New on Guests) fit one row
+   down to ~414px at the default 16px/8px-16px scale; below that we shrink
+   the chrome so they don't wrap. */
+@media (max-width: 414px) {
+  .actions > button {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .actions {
+    gap: 6px;
+  }
+
+  .actions > button {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+}
