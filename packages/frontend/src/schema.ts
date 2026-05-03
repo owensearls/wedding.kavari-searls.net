@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const rsvpStatusSchema = z.enum(['pending', 'attending', 'declined'])
+export const rsvpStatusSchema = z.enum(['attending', 'declined'])
 export type RsvpStatus = z.infer<typeof rsvpStatusSchema>
 
 export const lookupQuerySchema = z.object({
@@ -21,32 +21,37 @@ export const lookupResponseSchema = z.object({
 })
 export type LookupResponse = z.infer<typeof lookupResponseSchema>
 
-export const notesJsonSchema = z
-  .object({
-    songRequest: z
-      .object({
-        title: z.string().min(1).max(200),
-        artist: z.string().max(200).nullable().optional(),
-      })
-      .optional(),
-  })
-  .passthrough()
-  .nullable()
-  .optional()
+export const customFieldOptionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  description: z.string().nullable(),
+})
+export type CustomFieldOption = z.infer<typeof customFieldOptionSchema>
+
+export const customFieldConfigSchema = z.object({
+  id: z.string(),
+  key: z.string(),
+  label: z.string(),
+  type: z.enum(['short_text', 'single_select']),
+  sortOrder: z.number(),
+  options: z.array(customFieldOptionSchema),
+})
+export type CustomFieldConfig = z.infer<typeof customFieldConfigSchema>
+
+export const notesJsonSchema = z.record(z.string(), z.string().nullable())
 export type NotesJson = z.infer<typeof notesJsonSchema>
 
 export const guestRsvpSchema = z.object({
   guestId: z.string(),
   eventId: z.string(),
-  status: rsvpStatusSchema,
-  mealChoiceId: z.string().nullable().optional(),
+  status: z.enum(['pending', 'attending', 'declined']),
+  notesJson: notesJsonSchema.optional().default({}),
 })
 
 export const guestUpdateSchema = z.object({
   guestId: z.string(),
-  dietaryRestrictions: z.string().max(500).nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
-  notesJson: notesJsonSchema,
+  notesJson: notesJsonSchema.optional().default({}),
 })
 
 export const rsvpSubmissionSchema = z.object({
@@ -64,18 +69,10 @@ export const guestSchema = z.object({
   email: z.string().nullable(),
   phone: z.string().nullable(),
   inviteCode: z.string(),
-  dietaryRestrictions: z.string().nullable(),
   notes: z.string().nullable(),
   notesJson: notesJsonSchema,
 })
 export type Guest = z.infer<typeof guestSchema>
-
-export const mealOptionSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  description: z.string().nullable(),
-})
-export type MealOption = z.infer<typeof mealOptionSchema>
 
 export const eventSchema = z.object({
   id: z.string(),
@@ -86,9 +83,8 @@ export const eventSchema = z.object({
   locationName: z.string().nullable(),
   address: z.string().nullable(),
   rsvpDeadline: z.string().nullable(),
-  requiresMealChoice: z.boolean(),
   sortOrder: z.number(),
-  mealOptions: z.array(mealOptionSchema),
+  customFields: z.array(customFieldConfigSchema),
   invitedGuestIds: z.array(z.string()),
 })
 export type EventDetails = z.infer<typeof eventSchema>
@@ -97,7 +93,7 @@ export const rsvpRecordSchema = z.object({
   guestId: z.string(),
   eventId: z.string(),
   status: rsvpStatusSchema,
-  mealChoiceId: z.string().nullable(),
+  notesJson: notesJsonSchema,
   respondedAt: z.string().nullable(),
 })
 export type RsvpRecord = z.infer<typeof rsvpRecordSchema>
@@ -111,5 +107,6 @@ export const rsvpGroupResponseSchema = z.object({
   guests: z.array(guestSchema),
   events: z.array(eventSchema),
   rsvps: z.array(rsvpRecordSchema),
+  guestCustomFields: z.array(customFieldConfigSchema),
 })
 export type RsvpGroupResponse = z.infer<typeof rsvpGroupResponseSchema>
