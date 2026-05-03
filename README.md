@@ -33,4 +33,4 @@ Required GitHub Actions secrets:
 
 The D1 `database_id` is committed in `packages/{rsvp,frontend}/wrangler.toml`. Both workers point at the same D1 (account-scoped, `database_name = "wedding"`); migrations live in `packages/rsvp/migrations/` and only the `rsvp` workflow step applies them. Until the placeholder `REPLACE_ME_WITH_REAL_ID` is replaced with a real id (`wrangler d1 list`), the Deploy and Preview workflows fail; Check still passes.
 
-To deploy manually from a developer machine: `pnpm install && pnpm build && pnpm --filter rsvp exec wrangler d1 migrations apply DB --remote && pnpm --filter rsvp exec wrangler deploy && pnpm --filter frontend exec wrangler deploy`.
+To deploy manually from a developer machine: `pnpm install && pnpm --filter rsvp exec wrangler d1 migrations apply DB --remote && pnpm --filter rsvp run deploy && pnpm --filter frontend run deploy`. Each `deploy` script's `predeploy` rebuilds `rsc-utils` and the app via `pnpm --filter '<pkg>...' build` (topological), so no separate build step is needed. This relies on `enable-pre-post-scripts=true` in `.npmrc`.

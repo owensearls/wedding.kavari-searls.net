@@ -2,8 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter rsvp build && pnpm --filter frontend build",
-    "pretest": "pnpm --filter rsvp db:migrate:local",
+    "build": "pnpm -r build",
+    "pretest": "pnpm --filter rsc-utils build && pnpm --filter rsvp db:migrate:local",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
