@@ -126,34 +126,79 @@ Admin is **not** a writer of either append-only table. `saveGroup` (`packages/rs
 
 `getGuest` (`packages/rsvp/src/server/admin/guests.ts`) reads `dietaryRestrictions`/`notes`/`notesJson` from latest `guest_response` for the GuestDetailModal display.
 
+## Custom-field display rule
+
+A "custom" field is any value stored inside a `notes_json` blob. A "core" field is a top-level SQL column. Custom fields are the seam for future per-event-type customization (the goal stated in the brief), so admin views must:
+
+- Render every known custom field, not just the ones that exist today.
+- Place custom columns to the right of all core columns.
+- Visually separate core from custom with a divider — implemented as a stronger left border on the first custom column (CSS class `customDivider` on the first `<th>`/`<td>` in the custom group). Same treatment in every surface that uses a table.
+
+Today's known custom fields:
+
+- `rsvp_response.notes_json` → `mealChoiceId` (rendered as a "Meal" column resolving the id via `meal_option.label`).
+- `guest_response.notes_json` → `dietary`, `songRequest` (rendered as "Dietary" and "Song request" columns; song request shows `title` plus optional `artist`).
+
+These are declared once as constants in `packages/rsvp/src/admin/lib/customFields.ts`:
+
+```ts
+export const RSVP_CUSTOM_FIELDS = [
+  {
+    key: 'mealChoiceId',
+    header: 'Meal',
+    render: (notesJson, ctx) => ctx.mealLabelById.get(notesJson?.mealChoiceId) ?? null,
+  },
+] as const
+
+export const GUEST_CUSTOM_FIELDS = [
+  { key: 'dietary', header: 'Dietary', render: (j) => j?.dietary ?? null },
+  {
+    key: 'songRequest',
+    header: 'Song request',
+    render: (j) =>
+      j?.songRequest
+        ? j.songRequest.artist
+          ? `${j.songRequest.title} — ${j.songRequest.artist}`
+          : j.songRequest.title
+        : null,
+  },
+] as const
+```
+
+Adding a new custom field in the future = one entry in the appropriate array. The columns and divider follow automatically. Storage already supports it (passthrough keys in `notes_json`).
+
 ## Admin "Log" tab
 
 Top nav becomes `Guests | Events | Log`. New route `/admin/log/` rendered by `packages/rsvp/src/admin/log.tsx` (mirrors the `events.tsx` / `import.tsx` entry-file pattern), wrapped in `AdminShell` with `current="log"`. The `AdminShellProps['current']` union grows to `'guests' | 'events' | 'log'`.
 
 Page layout (`packages/rsvp/src/admin/routes/Log.tsx`): two tables stacked, newest-first.
 
-**RSVP responses table.** Columns:
-- Timestamp (`responded_at`)
-- Guest name (joined `guest.display_name`)
-- Event name (joined `event.name`)
-- Status (`attending`/`declined`)
-- Meal label (resolved via `meal_option` lookup of `notes_json.mealChoiceId`)
-- Responded by (joined `guest.display_name` of `responded_by_guest_id`)
+**RSVP responses table.**
+- Core columns: Timestamp (`responded_at`), Guest name, Event name, Status (`attending`/`declined`), Responded by (`guest.display_name` of `responded_by_guest_id`).
+- Divider.
+- Custom columns: every entry from `RSVP_CUSTOM_FIELDS` (today: Meal).
 
-**Guest responses table.** Columns:
-- Timestamp (`responded_at`)
-- Guest name (joined `guest.display_name`)
-- Dietary (`notes_json.dietary`)
-- Song request (`notes_json.songRequest.title` plus optional artist)
-- Notes (free-text column)
-- Responded by
+**Guest responses table.**
+- Core columns: Timestamp, Guest name, Notes (free-text top-level column), Responded by.
+- Divider.
+- Custom columns: every entry from `GUEST_CUSTOM_FIELDS` (today: Dietary, Song request).
 
 Server actions in `packages/rsvp/src/server/admin/responses.ts`:
 
-- `listRsvpResponseLog()` — every `rsvp_response` row, joined to guest/event/meal_option/responder, ordered by `responded_at DESC`. Returns a typed `AdminRsvpResponseLogRow[]`.
-- `listGuestResponseLog()` — every `guest_response` row, joined to guest/responder, ordered by `responded_at DESC`. Returns `AdminGuestResponseLogRow[]`.
+- `listRsvpResponseLog()` — every `rsvp_response` row, joined to guest/event/responder. Includes `notesJson` parsed and a `mealLabelById` lookup payload (or denormalized meal label) so the renderer functions don't need their own queries. Ordered by `responded_at DESC`. Returns a typed `AdminRsvpResponseLogRow[]`.
+- `listGuestResponseLog()` — every `guest_response` row, joined to guest/responder. Includes parsed `notesJson`. Ordered by `responded_at DESC`. Returns `AdminGuestResponseLogRow[]`.
 
 The existing `listResponses` (used by the CSV exporter) is kept and rewritten to use `latestRsvpResponses` so the export still represents current state, not the full log.
+
+## Other surfaces showing custom fields
+
+The same custom-field rule (right-aligned, divider, driven by `RSVP_CUSTOM_FIELDS` / `GUEST_CUSTOM_FIELDS`) applies wherever admin renders response data:
+
+- **`GuestDetailModal.tsx` events table** (`packages/rsvp/src/admin/routes/GuestDetailModal.tsx:90-124`) — drop the hard-coded `Meal` column. Core: Event, Status, Responded, By. Divider. Custom: iterated from `RSVP_CUSTOM_FIELDS`. The `getGuest` server action returns `notesJson` per event so renderers can read it.
+- **`GuestDetailModal.tsx` profile detail-grid** — the existing free-form display of Dietary and Song-request below the events table is replaced by a single per-guest custom-fields block driven by `GUEST_CUSTOM_FIELDS`. Notes (free-text) and structural fields (group, invite code, email, phone) stay in the core block.
+- **`GroupBlock.tsx` per-event status cells** (`packages/rsvp/src/admin/routes/GroupBlock.tsx:69-79`) — drop the inline ` · {mealLabel}` hint. The Guests page is a quick scan view; meal/custom values are visible in the new Log tab and the Guest detail modal. Keeping the per-event grid uncluttered avoids fighting the divider rule on a non-tabular surface.
+
+This keeps a single source of truth for "what custom fields exist and how they render" — the two arrays in `customFields.ts`.
 
 ## Routing wiring
 
@@ -193,8 +238,9 @@ Today's `saveGroup` writes `dietary_restrictions=null, notes=null` on every admi
 1. Migration + `Database` type + helper functions (`latestRsvpResponses`, `latestGuestResponses`) with their unit tests.
 2. Rewrite `submitRsvp` and `getRsvpGroup` against the new tables; update wire-shape glue if any. Tests pass on the public path.
 3. Update admin read paths (`listGroups`, `getGroup`, `getGuest`, `listResponses`) to use the latest helpers; trim `saveGroup` and `adminGuestInputSchema`; clean `EditGroupForm` defaults.
-4. Add `/admin/log/` route, `Log.tsx` page, `listRsvpResponseLog` / `listGuestResponseLog` server actions, nav entry in `AdminShell`.
-5. Smoke-run `pnpm dev`, walk through: public RSVP → see row in Log; edit → second row in Log; admin save group → no rows added to either log table; CSV export still reflects current state.
+4. Add `customFields.ts` and apply the core/custom + divider rule to `GuestDetailModal` (events table and profile block); drop the inline meal hint from `GroupBlock`. `getGuest` returns per-event `notesJson` for the renderers.
+5. Add `/admin/log/` route, `Log.tsx` page, `listRsvpResponseLog` / `listGuestResponseLog` server actions, nav entry in `AdminShell`. Tables consume `customFields.ts` so they follow the same rule.
+6. Smoke-run `pnpm dev`, walk through: public RSVP → see row in Log; edit → second row in Log; admin save group → no rows added to either log table; CSV export still reflects current state. Visually confirm the divider sits between core and custom columns in the Log tables and the Guest detail modal.
 
 ## Failure modes
 
