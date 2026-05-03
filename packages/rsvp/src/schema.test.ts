@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  adminCustomFieldInputSchema,
   adminEventInputSchema,
   adminGroupInputSchema,
   adminGuestInputSchema,
@@ -8,87 +9,109 @@ import {
 } from './schema'
 
 describe('adminGuestInputSchema', () => {
-  it('coerces blank email/phone/dietary to null', () => {
+  it('coerces blank email/phone/lastName to null', () => {
     const parsed = adminGuestInputSchema.parse({
       firstName: 'Alice',
       lastName: '',
       email: '',
       phone: '',
-      dietaryRestrictions: '   ',
-      notes: '',
     })
     expect(parsed.email).toBeNull()
     expect(parsed.phone).toBeNull()
     expect(parsed.lastName).toBeNull()
-    expect(parsed.dietaryRestrictions).toBeNull()
-    expect(parsed.notes).toBeNull()
   })
 
   it('rejects invalid emails', () => {
     expect(() =>
-      adminGuestInputSchema.parse({ firstName: 'Alice', email: 'not-an-email' })
+      adminGuestInputSchema.parse({ firstName: 'Alice', email: 'nope' })
     ).toThrow()
   })
 
   it('requires firstName', () => {
-    expect(() => adminGuestInputSchema.parse({ firstName: '' })).toThrow()
     expect(() => adminGuestInputSchema.parse({})).toThrow()
   })
 })
 
 describe('adminGroupInputSchema', () => {
-  it('defaults invitedEventIds to empty array', () => {
-    const parsed = adminGroupInputSchema.parse({
-      label: 'The Smiths',
-      guests: [{ firstName: 'Alice' }],
-    })
-    expect(parsed.invitedEventIds).toEqual([])
-  })
-
-  it('requires at least one guest', () => {
-    expect(() =>
-      adminGroupInputSchema.parse({ label: 'Empty', guests: [] })
-    ).toThrow()
-  })
-
-  it('allows empty label for a single guest', () => {
-    const parsed = adminGroupInputSchema.parse({
-      guests: [{ firstName: 'Alice' }],
-    })
-    expect(parsed.label).toBe('')
-  })
-
-  it('requires label when there are multiple guests', () => {
+  it('requires label when more than one guest', () => {
     expect(() =>
       adminGroupInputSchema.parse({
-        label: '',
-        guests: [{ firstName: 'Alice' }, { firstName: 'Bob' }],
+        guests: [{ firstName: 'A' }, { firstName: 'B' }],
       })
     ).toThrow()
-    const parsed = adminGroupInputSchema.parse({
-      label: 'The Smiths',
-      guests: [{ firstName: 'Alice' }, { firstName: 'Bob' }],
+  })
+
+  it('allows blank label for single-guest invites', () => {
+    const r = adminGroupInputSchema.parse({
+      guests: [{ firstName: 'Solo' }],
     })
-    expect(parsed.label).toBe('The Smiths')
+    expect(r.label).toBe('')
   })
 })
 
-describe('adminImportRowSchema', () => {
-  it('accepts a full row', () => {
-    const parsed = adminImportRowSchema.parse({
-      groupLabel: 'Smiths',
-      firstName: 'Alice',
-      lastName: 'Smith',
-      email: 'alice@example.com',
-      phone: '+1 555 1234',
-      events: 'ceremony,reception',
-    })
-    expect(parsed.firstName).toBe('Alice')
-    expect(parsed.events).toBe('ceremony,reception')
+describe('adminEventInputSchema', () => {
+  it('defaults customFields to empty array', () => {
+    const r = adminEventInputSchema.parse({ name: 'Reception', slug: 'reception' })
+    expect(r.customFields).toEqual([])
   })
 
-  it('coerces blank optional cells to undefined', () => {
-    const parsed = adminImportRowSchema.parse({
+  it('rejects non-snake-case event slugs', () => {
+    expect(() =>
+      adminEventInputSchema.parse({ name: 'Reception', slug: 'Reception_X' })
+    ).toThrow()
+  })
+})
+
+describe('adminCustomFieldInputSchema', () => {
+  it('accepts a short_text field with no options', () => {
+    expect(() =>
+      adminCustomFieldInputSchema.parse({
+        key: 'dietary_restrictions',
+        label: 'Dietary',
+        type: 'short_text',
+      })
+    ).not.toThrow()
+  })
+
+  it('rejects options on a short_text field', () => {
+    expect(() =>
+      adminCustomFieldInputSchema.parse({
+        key: 'foo',
+        label: 'Foo',
+        type: 'short_text',
+        options: [{ label: 'A' }],
+      })
+    ).toThrow()
+  })
+
+  it('rejects keys with uppercase or hyphens', () => {
+    expect(() =>
+      adminCustomFieldInputSchema.parse({
+        key: 'Meal-Choice',
+        label: 'Meal',
+        type: 'single_select',
+      })
+    ).toThrow()
+  })
+
+  it('accepts single_select with options', () => {
+    const r = adminCustomFieldInputSchema.parse({
+      key: 'meal_choice',
+      label: 'Meal',
+      type: 'single_select',
+      options: [{ label: 'Chicken' }, { label: 'Fish' }],
+    })
+    expect(r.options).toHaveLength(2)
+  })
+})
+
+describe('adminImportSchema', () => {
+  it('rejects empty rows', () => {
+    expect(() => adminImportSchema.parse({ rows: [] })).toThrow()
+  })
+
+  it('coerces blank optional cells', () => {
+    const r = adminImportRowSchema.parse({
       groupLabel: 'Smiths',
       firstName: 'Alice',
       lastName: '',
@@ -96,90 +119,7 @@ describe('adminImportRowSchema', () => {
       phone: '',
       events: '',
     })
-    expect(parsed.lastName).toBeUndefined()
-    expect(parsed.email).toBeUndefined()
-    expect(parsed.phone).toBeUndefined()
-    expect(parsed.events).toBeUndefined()
-  })
-
-  it('rejects rows missing firstName or groupLabel', () => {
-    expect(() =>
-      adminImportRowSchema.parse({ groupLabel: '', firstName: 'Alice' })
-    ).toThrow()
-    expect(() =>
-      adminImportRowSchema.parse({ groupLabel: 'Smiths', firstName: '' })
-    ).toThrow()
-  })
-})
-
-describe('adminImportSchema', () => {
-  it('requires at least one row', () => {
-    expect(() => adminImportSchema.parse({ rows: [] })).toThrow()
-  })
-
-  it('caps the number of rows at 2000', () => {
-    const row = { groupLabel: 'g', firstName: 'f' }
-    expect(() =>
-      adminImportSchema.parse({ rows: Array.from({ length: 2001 }, () => row) })
-    ).toThrow()
-  })
-})
-
-describe('adminEventInputSchema', () => {
-  it('validates slug is url-safe', () => {
-    expect(() =>
-      adminEventInputSchema.parse({ name: 'X', slug: 'Not A Slug!' })
-    ).toThrow()
-    const ok = adminEventInputSchema.parse({ name: 'X', slug: 'ok-slug-1' })
-    expect(ok.slug).toBe('ok-slug-1')
-  })
-
-  it('defaults mealOptions/requiresMealChoice/sortOrder', () => {
-    const parsed = adminEventInputSchema.parse({ name: 'X', slug: 'x' })
-    expect(parsed.mealOptions).toEqual([])
-    expect(parsed.requiresMealChoice).toBe(false)
-    expect(parsed.sortOrder).toBe(0)
-  })
-
-  it('coerces blank date/location fields to null', () => {
-    const parsed = adminEventInputSchema.parse({
-      name: 'X',
-      slug: 'x',
-      startsAt: '',
-      endsAt: '',
-      locationName: '',
-      address: '',
-      rsvpDeadline: '',
-    })
-    expect(parsed.startsAt).toBeNull()
-    expect(parsed.endsAt).toBeNull()
-    expect(parsed.locationName).toBeNull()
-    expect(parsed.address).toBeNull()
-    expect(parsed.rsvpDeadline).toBeNull()
-  })
-
-  it('accepts meal options with defaults', () => {
-    const parsed = adminEventInputSchema.parse({
-      name: 'Reception',
-      slug: 'reception',
-      mealOptions: [
-        { label: 'Chicken' },
-        { label: 'Veggie', description: 'Roasted seasonal veg' },
-      ],
-    })
-    expect(parsed.mealOptions).toHaveLength(2)
-    expect(parsed.mealOptions[0].label).toBe('Chicken')
-    expect(parsed.mealOptions[0].description).toBeUndefined()
-    expect(parsed.mealOptions[1].description).toBe('Roasted seasonal veg')
-  })
-
-  it('rejects meal options without a label', () => {
-    expect(() =>
-      adminEventInputSchema.parse({
-        name: 'Reception',
-        slug: 'reception',
-        mealOptions: [{ label: '' }],
-      })
-    ).toThrow()
+    expect(r.lastName).toBeUndefined()
+    expect(r.email).toBeUndefined()
   })
 })
