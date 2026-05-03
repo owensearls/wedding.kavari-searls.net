@@ -6,7 +6,7 @@ export interface GuestTable {
   display_name: string
   email: string | null
   phone: string | null
-  invite_code: string
+  invite_code: string | null
   group_label: string | null
   created_at: string
   updated_at: string
