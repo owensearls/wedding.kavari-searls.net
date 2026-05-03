@@ -5,12 +5,12 @@ import styles from './AdminShell.module.css'
 
 interface AdminShellProps {
   title: string
-  current?: 'guests' | 'events'
+  current?: 'guests' | 'events' | 'log'
   children: ReactNode
 }
 
 export function AdminShell({ title, current, children }: AdminShellProps) {
-  const navLinkClass = (name: 'guests' | 'events') =>
+  const navLinkClass = (name: 'guests' | 'events' | 'log') =>
     `${styles.navLink} ${current === name ? styles.navLinkActive : ''}`
 
   return (
@@ -39,6 +39,9 @@ export function AdminShell({ title, current, children }: AdminShellProps) {
               </a>
               <a href="/admin/events/" className={navLinkClass('events')}>
                 Events
+              </a>
+              <a href="/admin/log/" className={navLinkClass('log')}>
+                Log
               </a>
             </nav>
           </header>
