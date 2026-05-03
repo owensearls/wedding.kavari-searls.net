@@ -79,9 +79,6 @@ export async function importRows(rows: unknown[]): Promise<ImportResult> {
           phone: row.phone ?? null,
           invite_code: inviteCode,
           group_label: label,
-          dietary_restrictions: null,
-          notes: null,
-          notes_json: null,
           created_at: now,
           updated_at: now,
         })
