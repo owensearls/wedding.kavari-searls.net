@@ -2,6 +2,7 @@ export interface CustomFieldOption {
   id: string
   label: string
   description: string | null
+  sortOrder: number
 }
 
 export interface CustomFieldConfig {

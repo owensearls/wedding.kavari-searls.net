@@ -1,6 +1,6 @@
 'use server'
 
-import { getDb, newId } from 'db'
+import { getDb, loadEventCustomFields, newId } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
 import { adminEventInputSchema, type AdminEventInput } from '../../schema'
@@ -20,7 +20,11 @@ export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
     .selectAll()
     .orderBy('sort_order')
     .execute()
-  const meals = await db.selectFrom('meal_option').selectAll().execute()
+  if (events.length === 0) return { events: [] }
+  const customFieldsByEvent = await loadEventCustomFields(
+    db,
+    events.map((e) => e.id)
+  )
   return {
     events: events.map((e) => ({
       id: e.id,
@@ -31,15 +35,8 @@ export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
       locationName: e.location_name,
       address: e.address,
       rsvpDeadline: e.rsvp_deadline,
-      requiresMealChoice: !!e.requires_meal_choice,
       sortOrder: e.sort_order,
-      mealOptions: meals
-        .filter((m) => m.event_id === e.id)
-        .map((m) => ({
-          id: m.id,
-          label: m.label,
-          description: m.description,
-        })),
+      customFields: customFieldsByEvent.get(e.id) ?? [],
     })),
   }
 }
@@ -54,7 +51,6 @@ export async function saveEvent(
   const db = getDbConn()
   const id = data.id ?? newId('evt')
   const sortOrder = data.sortOrder ?? 0
-  const mealOptions = data.mealOptions ?? []
 
   if (data.id) {
     await db
@@ -67,7 +63,6 @@ export async function saveEvent(
         location_name: data.locationName ?? null,
         address: data.address ?? null,
         rsvp_deadline: data.rsvpDeadline ?? null,
-        requires_meal_choice: data.requiresMealChoice ? 1 : 0,
         sort_order: sortOrder,
       })
       .where('id', '=', data.id)
@@ -78,7 +73,8 @@ export async function saveEvent(
       .select(['id'])
       .where('slug', '=', data.slug)
       .executeTakeFirst()
-    if (slugConflict) throw new RscFunctionError(409, 'Event slug already exists')
+    if (slugConflict)
+      throw new RscFunctionError(409, 'Event slug already exists')
     await db
       .insertInto('event')
       .values({
@@ -90,24 +86,105 @@ export async function saveEvent(
         location_name: data.locationName ?? null,
         address: data.address ?? null,
         rsvp_deadline: data.rsvpDeadline ?? null,
-        requires_meal_choice: data.requiresMealChoice ? 1 : 0,
         sort_order: sortOrder,
       })
       .execute()
   }
 
-  await db.deleteFrom('meal_option').where('event_id', '=', id).execute()
-  for (const m of mealOptions) {
-    await db
-      .insertInto('meal_option')
-      .values({
-        id: m.id ?? newId('meal'),
-        event_id: id,
-        label: m.label,
-        description: m.description ?? null,
-      })
+  // Diff custom fields: delete any not in submission, upsert the rest.
+  const submittedFieldIds = new Set(
+    data.customFields.map((f) => f.id).filter((x): x is string => !!x)
+  )
+  const existing = await db
+    .selectFrom('event_custom_field')
+    .select(['id'])
+    .where('event_id', '=', id)
+    .execute()
+  for (const ex of existing) {
+    if (!submittedFieldIds.has(ex.id)) {
+      await db
+        .deleteFrom('event_custom_field')
+        .where('id', '=', ex.id)
+        .execute()
+    }
+  }
+
+  for (const f of data.customFields) {
+    const fieldId = f.id ?? newId('ecf')
+    if (f.id) {
+      await db
+        .updateTable('event_custom_field')
+        .set({
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          sort_order: f.sortOrder,
+        })
+        .where('id', '=', f.id)
+        .execute()
+    } else {
+      await db
+        .insertInto('event_custom_field')
+        .values({
+          id: fieldId,
+          event_id: id,
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          sort_order: f.sortOrder,
+        })
+        .execute()
+    }
+
+    // Diff options for single_select fields.
+    const submittedOptionIds = new Set(
+      f.options.map((o) => o.id).filter((x): x is string => !!x)
+    )
+    const existingOptions = await db
+      .selectFrom('event_custom_field_option')
+      .select(['id'])
+      .where('field_id', '=', fieldId)
       .execute()
+    for (const eo of existingOptions) {
+      if (!submittedOptionIds.has(eo.id)) {
+        await db
+          .deleteFrom('event_custom_field_option')
+          .where('id', '=', eo.id)
+          .execute()
+      }
+    }
+    for (const o of f.options) {
+      if (o.id) {
+        await db
+          .updateTable('event_custom_field_option')
+          .set({
+            label: o.label,
+            description: o.description ?? null,
+            sort_order: o.sortOrder,
+          })
+          .where('id', '=', o.id)
+          .execute()
+      } else {
+        await db
+          .insertInto('event_custom_field_option')
+          .values({
+            id: newId('ecfo'),
+            field_id: fieldId,
+            label: o.label,
+            description: o.description ?? null,
+            sort_order: o.sortOrder,
+          })
+          .execute()
+      }
+    }
   }
 
   return { id }
+}
+
+export async function deleteEvent(id: string): Promise<{ ok: true }> {
+  if (!id) throw new RscFunctionError(400, 'Missing id')
+  const db = getDbConn()
+  await db.deleteFrom('event').where('id', '=', id).execute()
+  return { ok: true }
 }
