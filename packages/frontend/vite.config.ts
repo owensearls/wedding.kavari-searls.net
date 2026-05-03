@@ -4,13 +4,19 @@ import rsc from '@vitejs/plugin-rsc'
 import { rscFunctions, rscStaticPages } from 'rsc-utils'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+// `childEnvironments: ['ssr']` makes ssr a Cloudflare-runtime sibling of rsc
+// so the deployed Worker bundles both module graphs in one upload. In dev
+// that turns ssr into a CloudflareDevEnvironment with no Node-side runner,
+// which breaks plugin-rsc's `loadModuleDevProxy` (it RPCs into
+// `server.environments.ssr.runner.import(...)`). Limit the embed to the
+// build pass so dev keeps ssr as a default Vite RunnableDevEnvironment.
+export default defineConfig(({ command }) => ({
   plugins: [
     cloudflare({
-      // Embed the `ssr` environment as a child of `rsc` so the deployed
-      // Worker contains both module graphs in a single upload.
-      // See https://developers.cloudflare.com/workers/vite-plugin/reference/api/
-      viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
+      viteEnvironment:
+        command === 'build'
+          ? { name: 'rsc', childEnvironments: ['ssr'] }
+          : { name: 'rsc' },
       configPath: './wrangler.toml',
       // Share local Miniflare/D1 state with the rsvp worker so both apps
       // hit the same on-disk D1 in `pnpm dev`. Path is relative to this
@@ -58,4 +64,4 @@ export default defineConfig({
     port: 5174,
     strictPort: true,
   },
-})
+}))
