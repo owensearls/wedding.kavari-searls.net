@@ -6,8 +6,8 @@ const HEADER = [
   'guestName',
   'eventName',
   'status',
-  'mealLabel',
-  'dietaryRestrictions',
+  'customAnswers',
+  'notes',
   'respondedAt',
 ] as const
 
@@ -15,8 +15,6 @@ function escapeCsv(v: string | null): string {
   return v === null ? '' : `"${v.replace(/"/g, '""')}"`
 }
 
-// Turn admin response rows into a CSV string that mirrors the column order
-// clients expect (old Responses page).
 export function responsesToCsv(rows: AdminResponseRow[]): string {
   return [
     HEADER.join(','),
@@ -27,8 +25,8 @@ export function responsesToCsv(rows: AdminResponseRow[]): string {
         r.guestName,
         r.eventName,
         r.status,
-        r.mealLabel,
-        r.dietaryRestrictions,
+        r.customAnswers,
+        r.notes,
         r.respondedAt,
       ]
         .map(escapeCsv)
