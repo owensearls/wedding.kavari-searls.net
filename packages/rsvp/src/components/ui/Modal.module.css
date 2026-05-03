@@ -60,3 +60,17 @@
     transform: translateY(0);
   }
 }
+
+@media (max-width: 640px) {
+  .backdrop {
+    padding: 16px 12px;
+  }
+
+  .modal {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+}

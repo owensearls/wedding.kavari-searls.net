@@ -154,18 +154,22 @@ export function EditGroupForm({
                     <div className={styles.guestRow}>
                       <input
                         className={`admin-input ${fieldError(`guests.${idx}.firstName`) ? styles.inputError : ''}`}
+                        placeholder="First name"
                         {...register(`guests.${idx}.firstName`)}
                       />
                       <input
                         className="admin-input"
+                        placeholder="Last name"
                         {...register(`guests.${idx}.lastName`)}
                       />
                       <input
                         className={`admin-input ${fieldError(`guests.${idx}.email`) ? styles.inputError : ''}`}
+                        placeholder="Email"
                         {...register(`guests.${idx}.email`)}
                       />
                       <input
                         className="admin-input"
+                        placeholder="Phone"
                         {...register(`guests.${idx}.phone`)}
                       />
                       <RemoveButton

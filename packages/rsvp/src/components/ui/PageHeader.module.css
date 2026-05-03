@@ -22,3 +22,20 @@
   gap: 10px;
   flex-wrap: wrap;
 }
+
+@media (max-width: 640px) {
+  .pageHeader {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+
+  .title {
+    font-size: 20px;
+    flex-basis: 100%;
+  }
+
+  .actions {
+    flex-basis: 100%;
+    gap: 8px;
+  }
+}

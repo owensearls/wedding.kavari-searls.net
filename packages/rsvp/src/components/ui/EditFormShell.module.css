@@ -39,4 +39,27 @@
   border: 1px solid #6e6b60;
   border-top: none;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .section {
+    padding: 14px 16px;
+  }
+
+  .actions {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
 }

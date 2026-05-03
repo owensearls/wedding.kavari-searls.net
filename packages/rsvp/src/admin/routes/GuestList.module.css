@@ -121,3 +121,24 @@
   color: #4a4842;
   border-color: #6e6b60;
 }
+
+@media (max-width: 640px) {
+  .detailGrid {
+    grid-template-columns: 1fr;
+    row-gap: 2px;
+    column-gap: 0;
+  }
+
+  .detailLabel {
+    margin-top: 8px;
+    padding-top: 0;
+  }
+
+  .detailGrid > .detailLabel:first-child {
+    margin-top: 0;
+  }
+
+  .notesCell {
+    max-width: 160px;
+  }
+}
