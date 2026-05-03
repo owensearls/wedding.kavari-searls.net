@@ -27,6 +27,7 @@ export function RsvpFull() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [savedThisSession, setSavedThisSession] = useState(false)
 
   useEffect(() => {
     setCode(new URLSearchParams(window.location.search).get('code'))
@@ -163,6 +164,7 @@ export function RsvpFull() {
         }),
       }
       await submitRsvp(code, submission)
+      setSavedThisSession(true)
       setSubmitted(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
@@ -173,6 +175,9 @@ export function RsvpFull() {
   }
 
   const primaryGuestId = data?.guests[0]?.id
+  const hasPriorRsvp =
+    data?.rsvps.some((r) => r.respondedAt !== null) ?? false
+  const showSaveLabel = hasPriorRsvp || savedThisSession
 
   return (
     <div className={styles.page}>
@@ -268,7 +273,13 @@ export function RsvpFull() {
                 onClick={onSubmit}
                 disabled={submitting}
               >
-                {submitting ? 'Sending…' : 'Send RSVP'}
+                {submitting
+                  ? showSaveLabel
+                    ? 'Saving…'
+                    : 'Sending…'
+                  : showSaveLabel
+                    ? 'Save RSVP'
+                    : 'Send RSVP'}
               </button>
             </div>
             <ErrorMessage>{submitError}</ErrorMessage>
@@ -282,6 +293,9 @@ export function RsvpFull() {
               We've recorded your RSVP. You can return to this page any time
               before the deadline to change it.
             </p>
+            <button type="button" onClick={() => setSubmitted(false)}>
+              Edit RSVP
+            </button>
             <a href="/" className={styles.backLink}>
               ← Back to home
             </a>
