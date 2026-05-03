@@ -1,6 +1,15 @@
 'use server'
 
-import { getDb, newId, newInviteCode, nowIso } from 'db'
+import {
+  getDb,
+  latestGuestResponses,
+  latestRsvpResponses,
+  loadGuestCustomFields,
+  newId,
+  newInviteCode,
+  nowIso,
+  type CustomFieldConfig,
+} from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
 import {
@@ -14,7 +23,20 @@ function getDbConn() {
   return getDb(getEnv().DB)
 }
 
-export async function listGroups(): Promise<{ groups: AdminGroupListItem[] }> {
+function parseNotesJson(raw: string | null): Record<string, string | null> {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+export async function listGroups(): Promise<{
+  groups: AdminGroupListItem[]
+  guestCustomFields: CustomFieldConfig[]
+}> {
   const db = getDbConn()
 
   const leaders = await db
@@ -23,8 +45,9 @@ export async function listGroups(): Promise<{ groups: AdminGroupListItem[] }> {
     .where('party_leader_id', 'is', null)
     .orderBy('group_label')
     .execute()
-  if (leaders.length === 0) return { groups: [] }
-
+  if (leaders.length === 0) {
+    return { groups: [], guestCustomFields: await loadGuestCustomFields(db) }
+  }
   const leaderIds = leaders.map((l) => l.id)
 
   const members = await db
@@ -37,8 +60,6 @@ export async function listGroups(): Promise<{ groups: AdminGroupListItem[] }> {
       'first_name',
       'last_name',
       'invite_code',
-      'dietary_restrictions',
-      'notes',
     ])
     .where('party_leader_id', 'in', leaderIds)
     .orderBy('first_name')
@@ -52,19 +73,14 @@ export async function listGroups(): Promise<{ groups: AdminGroupListItem[] }> {
 
   const allGuestIds = [...leaderIds, ...members.map((m) => m.id)]
 
-  const rsvps = allGuestIds.length
-    ? await db
-        .selectFrom('rsvp')
-        .leftJoin('meal_option', 'meal_option.id', 'rsvp.meal_choice_id')
-        .select([
-          'rsvp.guest_id as guestId',
-          'rsvp.event_id as eventId',
-          'rsvp.status as status',
-          'meal_option.label as mealLabel',
-        ])
-        .where('rsvp.guest_id', 'in', allGuestIds)
-        .execute()
-    : []
+  const latestRsvps = await latestRsvpResponses(db, { guestIds: allGuestIds })
+  const latestGuests = await latestGuestResponses(db, { guestIds: allGuestIds })
+  const latestRsvpKey = (g: string, e: string) => `${g}::${e}`
+  const latestRsvpMap = new Map(
+    latestRsvps.map((r) => [latestRsvpKey(r.guestId, r.eventId), r])
+  )
+  const latestGuestMap = new Map(latestGuests.map((r) => [r.guestId, r]))
+  const guestCustomFields = await loadGuestCustomFields(db)
 
   const items: AdminGroupListItem[] = leaders.map((leader) => {
     const groupMembers = members.filter((m) => m.party_leader_id === leader.id)
@@ -74,13 +90,11 @@ export async function listGroups(): Promise<{ groups: AdminGroupListItem[] }> {
         display_name: leader.display_name,
         email: leader.email,
         invite_code: leader.invite_code,
-        dietary_restrictions: leader.dietary_restrictions,
-        notes: leader.notes,
       },
       ...groupMembers,
     ]
     const groupGuestIds = new Set(allGroupGuests.map((g) => g.id))
-    const groupRsvps = rsvps.filter((r) => groupGuestIds.has(r.guestId))
+    const groupRsvps = latestRsvps.filter((r) => groupGuestIds.has(r.guestId))
     const groupInvitations = invitations.filter((i) => i.guest_id === leader.id)
 
     return {
@@ -89,33 +103,33 @@ export async function listGroups(): Promise<{ groups: AdminGroupListItem[] }> {
       guestCount: allGroupGuests.length,
       attendingCount: groupRsvps.filter((r) => r.status === 'attending').length,
       declinedCount: groupRsvps.filter((r) => r.status === 'declined').length,
-      pendingCount: groupRsvps.filter((r) => r.status === 'pending').length,
+      pendingCount:
+        allGroupGuests.length * groupInvitations.length - groupRsvps.length,
       updatedAt: leader.updated_at,
       guests: allGroupGuests.map((gst) => {
         const eventStatuses: AdminGuestEventStatus[] = []
         for (const inv of groupInvitations) {
-          const rsvp = groupRsvps.find(
-            (r) => r.guestId === gst.id && r.eventId === inv.event_id
-          )
+          const r = latestRsvpMap.get(latestRsvpKey(gst.id, inv.event_id))
           eventStatuses.push({
             eventId: inv.event_id,
-            status: rsvp?.status ?? 'pending',
-            mealLabel: rsvp?.mealLabel ?? null,
+            status: r?.status ?? 'pending',
+            notesJson: parseNotesJson(r?.notesJson ?? null),
           })
         }
+        const lg = latestGuestMap.get(gst.id)
         return {
           id: gst.id,
           displayName: gst.display_name,
           email: gst.email,
-          inviteCode: gst.invite_code,
-          dietaryRestrictions: gst.dietary_restrictions,
-          notes: gst.notes,
+          inviteCode: gst.invite_code ?? '',
+          notes: lg?.notes ?? null,
+          notesJson: parseNotesJson(lg?.notesJson ?? null),
           eventStatuses,
         }
       }),
     }
   })
-  return { groups: items }
+  return { groups: items, guestCustomFields }
 }
 
 export async function saveGroup(
@@ -127,7 +141,6 @@ export async function saveGroup(
 
   const db = getDbConn()
   const now = nowIso()
-
   const leaderId = data.id ?? newId('gst')
   const isUpdate = !!data.id
 
@@ -136,7 +149,6 @@ export async function saveGroup(
       .updateTable('guest')
       .set({
         group_label: data.label,
-        notes: data.notes ?? null,
         updated_at: now,
       })
       .where('id', '=', leaderId)
@@ -156,9 +168,6 @@ export async function saveGroup(
         phone: first.phone ?? null,
         invite_code: newInviteCode(),
         group_label: data.label,
-        dietary_restrictions: first.dietaryRestrictions ?? null,
-        notes: first.notes ?? null,
-        notes_json: null,
         created_at: now,
         updated_at: now,
       })
@@ -198,8 +207,6 @@ export async function saveGroup(
           email: g.email ? g.email : null,
           phone: g.phone ?? null,
           group_label: data.label,
-          dietary_restrictions: g.dietaryRestrictions ?? null,
-          notes: g.notes ?? null,
           updated_at: now,
         })
         .where('id', '=', g.id)
@@ -217,9 +224,6 @@ export async function saveGroup(
           phone: g.phone ?? null,
           invite_code: newInviteCode(),
           group_label: data.label,
-          dietary_restrictions: g.dietaryRestrictions ?? null,
-          notes: g.notes ?? null,
-          notes_json: null,
           created_at: now,
           updated_at: now,
         })
@@ -272,7 +276,6 @@ export async function getGroup(
   return {
     id: leader.id,
     label: leader.group_label ?? '',
-    notes: leader.notes,
     invitedEventIds: invitations.map((i) => i.event_id),
     guests: allGuests.map((g) => ({
       id: g.id,
@@ -280,9 +283,6 @@ export async function getGroup(
       lastName: g.last_name,
       email: g.email,
       phone: g.phone,
-      inviteCode: g.invite_code,
-      dietaryRestrictions: g.dietary_restrictions,
-      notes: g.notes,
     })),
   }
 }
