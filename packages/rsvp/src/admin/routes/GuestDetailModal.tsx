@@ -8,26 +8,32 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import { Table } from '../../components/ui/Table'
 import { getGuest } from '../../server/admin/guests'
+import {
+  formatCustomAnswers,
+  renderCustomFieldValue,
+} from '../lib/customFieldRender'
 import styles from './GuestList.module.css'
-import type { AdminGuestDetail } from '../../schema'
+import type { AdminGuestDetail, CustomFieldConfig } from '../../schema'
+
+type GuestDetailWithFields = AdminGuestDetail & {
+  guestCustomFields: CustomFieldConfig[]
+  eventCustomFieldsByEvent: Record<string, CustomFieldConfig[]>
+}
 
 interface GuestDetailModalProps {
   guestId: string
   onClose: () => void
 }
 
-// Click-in submission detail for a single guest. Fetches its own data and
-// shows a spinner until it resolves; the caller should key={guestId} when
-// swapping targets so we get a clean re-mount and avoid flash of stale data.
 export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
-  const [data, setData] = useState<AdminGuestDetail | null>(null)
+  const [data, setData] = useState<GuestDetailWithFields | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
     getGuest(guestId)
       .then((d) => {
-        if (!cancelled) setData(d)
+        if (!cancelled) setData(d as GuestDetailWithFields)
       })
       .catch((err: unknown) => {
         if (!cancelled)
@@ -72,12 +78,6 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
                 <div>{data.phone}</div>
               </>
             )}
-            {data.dietaryRestrictions && (
-              <>
-                <div className={styles.detailLabel}>Dietary</div>
-                <div>{data.dietaryRestrictions}</div>
-              </>
-            )}
             {data.notes && (
               <>
                 <div className={styles.detailLabel}>Notes</div>
@@ -86,15 +86,32 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
             )}
           </div>
 
+          {data.guestCustomFields.length > 0 && (
+            <div
+              className={`${styles.detailGrid} ${styles.customDivider}`}
+              style={{ marginTop: 12, paddingLeft: 12 }}
+            >
+              {data.guestCustomFields.map((f) => {
+                const v = renderCustomFieldValue(f, data.notesJson)
+                return (
+                  <div key={f.id} style={{ display: 'contents' }}>
+                    <div className={styles.detailLabel}>{f.label}</div>
+                    <div>{v ?? '—'}</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           <h3 className={styles.detailSubheading}>Events</h3>
           <Table>
             <thead>
               <tr>
                 <th>Event</th>
                 <th>Status</th>
-                <th>Meal</th>
                 <th>Responded</th>
                 <th>By</th>
+                <th className={styles.customDivider}>Custom answers</th>
               </tr>
             </thead>
             <tbody>
@@ -105,35 +122,43 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
                   </td>
                 </tr>
               )}
-              {data.events.map((e) => (
-                <tr key={e.eventId}>
-                  <td>{e.eventName}</td>
-                  <td className={statusClassName(e.status)}>
-                    <StatusBadge status={e.status} />
-                  </td>
-                  <td>{e.mealLabel ?? '—'}</td>
-                  <td>
-                    {e.respondedAt
-                      ? new Date(e.respondedAt).toLocaleString()
-                      : '—'}
-                  </td>
-                  <td>{e.respondedByDisplayName ?? '—'}</td>
-                </tr>
-              ))}
+              {data.events.map((e) => {
+                const fields =
+                  data.eventCustomFieldsByEvent[e.eventId] ?? []
+                const answers = formatCustomAnswers(fields, e.notesJson)
+                return (
+                  <tr key={e.eventId}>
+                    <td>{e.eventName}</td>
+                    <td className={statusClassName(e.status)}>
+                      <StatusBadge status={e.status} />
+                    </td>
+                    <td>
+                      {e.respondedAt
+                        ? new Date(e.respondedAt).toLocaleString()
+                        : '—'}
+                    </td>
+                    <td>{e.respondedByDisplayName ?? '—'}</td>
+                    <td className={styles.customDivider}>
+                      {answers.length === 0 ? (
+                        '—'
+                      ) : (
+                        <div className={styles.customCell}>
+                          {answers.map((a) => (
+                            <span key={a.label}>
+                              <span className={styles.customLabel}>
+                                {a.label}:
+                              </span>
+                              {a.value}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </Table>
-
-          {data.notesJson?.songRequest && (
-            <>
-              <h3 className={styles.detailSubheading}>Song request</h3>
-              <p>
-                {data.notesJson.songRequest.title}
-                {data.notesJson.songRequest.artist
-                  ? ` — ${data.notesJson.songRequest.artist}`
-                  : ''}
-              </p>
-            </>
-          )}
         </>
       )}
     </Modal>
