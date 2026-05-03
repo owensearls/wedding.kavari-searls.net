@@ -30,14 +30,14 @@ jobs:
         name: Upload rsvp preview
         run: |
           set -o pipefail
-          pnpm --filter rsvp exec wrangler versions upload --preview-alias "$ALIAS" 2>&1 | tee /tmp/rsvp.log
+          pnpm --filter rsvp exec wrangler versions upload -c dist/rsc/wrangler.json --preview-alias "$ALIAS" 2>&1 | tee /tmp/rsvp.log
           URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/rsvp.log | head -1)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
       - id: frontend
         name: Upload frontend preview
         run: |
           set -o pipefail
-          pnpm --filter frontend exec wrangler versions upload --preview-alias "$ALIAS" 2>&1 | tee /tmp/frontend.log
+          pnpm --filter frontend exec wrangler versions upload -c dist/rsc/wrangler.json --preview-alias "$ALIAS" 2>&1 | tee /tmp/frontend.log
           URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/frontend.log | head -1)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
       - uses: marocchino/sticky-pull-request-comment@v2

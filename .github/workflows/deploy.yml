@@ -29,7 +29,12 @@ jobs:
       - run: pnpm build
       - name: Apply D1 migrations
         run: pnpm --filter rsvp exec wrangler d1 migrations apply DB --remote
+      # Deploy from the build artifact's generated wrangler.json so the worker
+      # bundle's relative imports (rsc/index.js -> ../ssr/index.js, ../client/)
+      # resolve. Deploying from the source wrangler.toml hits "No such module
+      # '../ssr/index.js'" at runtime.
+      # See https://developers.cloudflare.com/workers/vite-plugin/reference/api/
       - name: Deploy rsvp worker
-        run: pnpm --filter rsvp exec wrangler deploy
+        run: pnpm --filter rsvp exec wrangler deploy -c dist/rsc/wrangler.json
       - name: Deploy frontend worker
-        run: pnpm --filter frontend exec wrangler deploy
+        run: pnpm --filter frontend exec wrangler deploy -c dist/rsc/wrangler.json
