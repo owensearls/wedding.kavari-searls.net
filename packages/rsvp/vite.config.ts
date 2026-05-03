@@ -32,6 +32,7 @@ export default defineConfig(({ command }) => ({
         '/': './src/admin/index.tsx',
         '/events/': './src/admin/events.tsx',
         '/import/': './src/admin/import.tsx',
+        '/log/': './src/admin/log.tsx',
       },
     }),
   ],
