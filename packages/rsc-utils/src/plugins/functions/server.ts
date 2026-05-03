@@ -10,16 +10,16 @@ export type RscHandler = {
   handle: (request: Request) => Promise<Response | null>
 }
 
-// Throw from a server action to surface a controlled status + message to the
+// Throw from a server function to surface a controlled status + message to the
 // caller. Any other thrown value is treated as unexpected: the full error is
 // logged server-side and the client receives a sanitized fallback with 500.
-export class RscActionError extends Error {
+export class RscFunctionError extends Error {
   constructor(
     public readonly status: number,
     message: string
   ) {
     super(message)
-    this.name = 'RscActionError'
+    this.name = 'RscFunctionError'
   }
 }
 
@@ -57,7 +57,7 @@ export function createRscHandlers(): RscHandler {
           actionId,
           error: serializeError(err),
         })
-        if (err instanceof RscActionError) {
+        if (err instanceof RscFunctionError) {
           status = err.status
           result = rejectedPromise(err.message)
         } else {

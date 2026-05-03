@@ -2,7 +2,7 @@
 
 import { getDb, newId, newInviteCode, nowIso } from 'db'
 import { getEnv } from 'db/context'
-import { RscActionError } from 'rsc-utils/functions/server'
+import { RscFunctionError } from 'rsc-utils/functions/server'
 import { adminImportSchema } from '../../schema'
 
 function getDbConn() {
@@ -20,7 +20,7 @@ export interface ImportResult {
 
 export async function importRows(rows: unknown[]): Promise<ImportResult> {
   const parsed = adminImportSchema.safeParse({ rows })
-  if (!parsed.success) throw new RscActionError(400, 'Invalid import data')
+  if (!parsed.success) throw new RscFunctionError(400, 'Invalid import data')
 
   const db = getDbConn()
   const events = await db.selectFrom('event').select(['id', 'slug']).execute()

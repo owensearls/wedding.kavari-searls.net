@@ -2,7 +2,7 @@
 
 import { getDb, newId } from 'db'
 import { getEnv } from 'db/context'
-import { RscActionError } from 'rsc-utils/functions/server'
+import { RscFunctionError } from 'rsc-utils/functions/server'
 import { adminEventInputSchema, type AdminEventInput } from '../../schema'
 
 function getDbConn() {
@@ -48,7 +48,7 @@ export async function saveEvent(
   input: AdminEventInput
 ): Promise<{ id: string }> {
   const parsed = adminEventInputSchema.safeParse(input)
-  if (!parsed.success) throw new RscActionError(400, 'Invalid event data')
+  if (!parsed.success) throw new RscFunctionError(400, 'Invalid event data')
   const data = parsed.data
 
   const db = getDbConn()
@@ -78,7 +78,7 @@ export async function saveEvent(
       .select(['id'])
       .where('slug', '=', data.slug)
       .executeTakeFirst()
-    if (slugConflict) throw new RscActionError(409, 'Event slug already exists')
+    if (slugConflict) throw new RscFunctionError(409, 'Event slug already exists')
     await db
       .insertInto('event')
       .values({

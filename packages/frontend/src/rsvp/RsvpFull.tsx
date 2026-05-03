@@ -12,6 +12,7 @@ import {
 } from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type {
+  CustomFieldConfig,
   Guest,
   RsvpGroupResponse,
   RsvpStatus,
@@ -71,52 +72,43 @@ export function RsvpFull() {
     setState((s) => {
       if (!s) return s
       const k = rsvpKey(guestId, eventId)
-      const current = s.rsvps[k] ?? { status: 'pending', mealChoiceId: null }
+      const current = s.rsvps[k] ?? { status: 'pending', notesJson: {} }
+      const nextNotes = status === 'attending' ? current.notesJson : {}
       return {
         ...s,
-        rsvps: {
-          ...s.rsvps,
-          [k]: {
-            ...current,
-            status,
-            mealChoiceId: status === 'attending' ? current.mealChoiceId : null,
-          },
-        },
+        rsvps: { ...s.rsvps, [k]: { status, notesJson: nextNotes } },
       }
     })
   }
 
-  function setMeal(guestId: string, eventId: string, mealChoiceId: string) {
+  function setCustom(
+    guestId: string,
+    eventId: string,
+    fieldKey: string,
+    value: string
+  ) {
     setState((s) => {
       if (!s) return s
       const k = rsvpKey(guestId, eventId)
-      const current = s.rsvps[k] ?? { status: 'attending', mealChoiceId: null }
+      const current = s.rsvps[k] ?? { status: 'pending', notesJson: {} }
+      const nextNotes = { ...current.notesJson, [fieldKey]: value || null }
       return {
         ...s,
-        rsvps: {
-          ...s.rsvps,
-          [k]: { ...current, mealChoiceId: mealChoiceId || null },
-        },
+        rsvps: { ...s.rsvps, [k]: { ...current, notesJson: nextNotes } },
       }
     })
   }
 
-  function setDietary(guestId: string, value: string) {
-    setState((s) =>
-      s ? { ...s, dietary: { ...s.dietary, [guestId]: value } } : s
-    )
-  }
-
-  function setSong(guestId: string, field: 'title' | 'artist', value: string) {
+  function setGuestCustom(guestId: string, fieldKey: string, value: string) {
     setState((s) =>
       s
         ? {
             ...s,
-            songs: {
-              ...s.songs,
+            guestNotesJson: {
+              ...s.guestNotesJson,
               [guestId]: {
-                ...(s.songs[guestId] ?? { title: '', artist: '' }),
-                [field]: value,
+                ...(s.guestNotesJson[guestId] ?? {}),
+                [fieldKey]: value || null,
               },
             },
           }
@@ -124,8 +116,15 @@ export function RsvpFull() {
     )
   }
 
-  function setNotes(guestId: string, value: string) {
-    setState((s) => (s ? { ...s, notes: { ...s.notes, [guestId]: value } } : s))
+  function setGuestNotes(guestId: string, value: string) {
+    setState((s) =>
+      s
+        ? {
+            ...s,
+            guestNotes: { ...s.guestNotes, [guestId]: value },
+          }
+        : s
+    )
   }
 
   async function onSubmit() {
@@ -141,27 +140,14 @@ export function RsvpFull() {
             guestId,
             eventId,
             status: v.status,
-            mealChoiceId: v.mealChoiceId,
+            notesJson: v.notesJson,
           }
         }),
-        guestUpdates: data.guests.map((g) => {
-          const songTitle = state.songs[g.id]?.title?.trim()
-          const songArtist = state.songs[g.id]?.artist?.trim()
-          const notesJson = songTitle
-            ? {
-                songRequest: {
-                  title: songTitle,
-                  artist: songArtist || null,
-                },
-              }
-            : null
-          return {
-            guestId: g.id,
-            dietaryRestrictions: state.dietary[g.id]?.trim() || null,
-            notes: state.notes[g.id]?.trim() || null,
-            notesJson,
-          }
-        }),
+        guestUpdates: data.guests.map((g) => ({
+          guestId: g.id,
+          notes: state.guestNotes[g.id]?.trim() || null,
+          notesJson: state.guestNotesJson[g.id] ?? {},
+        })),
       }
       await submitRsvp(code, submission)
       setSavedThisSession(true)
@@ -175,8 +161,39 @@ export function RsvpFull() {
   }
 
   const primaryGuestId = data?.guests[0]?.id
-  const hasPriorRsvp = data?.rsvps.some((r) => r.respondedAt !== null) ?? false
+  const hasPriorRsvp =
+    data?.rsvps.some((r) => r.respondedAt !== null) ?? false
   const showSaveLabel = hasPriorRsvp || savedThisSession
+
+  function renderGuestCustomField(g: Guest, f: CustomFieldConfig) {
+    const v = state?.guestNotesJson[g.id]?.[f.key]
+    const value = typeof v === 'string' ? v : ''
+    if (f.type === 'single_select') {
+      return (
+        <select
+          className={styles.select}
+          value={value}
+          onChange={(e) => setGuestCustom(g.id, f.key, e.target.value)}
+        >
+          <option value="">Choose…</option>
+          {f.options.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      )
+    }
+    return (
+      <input
+        type="text"
+        className={styles.select}
+        maxLength={500}
+        value={value}
+        onChange={(e) => setGuestCustom(g.id, f.key, e.target.value)}
+      />
+    )
+  }
 
   return (
     <div className={styles.page}>
@@ -207,7 +224,7 @@ export function RsvpFull() {
                 state={state}
                 singleGuest={data.guests.length === 1}
                 onStatusChange={setStatus}
-                onMealChange={setMeal}
+                onCustomChange={setCustom}
               />
             ))}
 
@@ -215,51 +232,31 @@ export function RsvpFull() {
               <h2 className={styles.detailsHeading}>Other details</h2>
               {data.guests.map((g) => (
                 <div key={g.id}>
-                  <label className={styles.fieldLabel}>
-                    {g.displayName} — Dietary restrictions or allergies
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.select}
-                    value={state.dietary[g.id] ?? ''}
-                    onChange={(e) => setDietary(g.id, e.target.value)}
-                  />
+                  {data.guestCustomFields.map((f) => (
+                    <div key={f.id}>
+                      <label className={styles.fieldLabel}>
+                        {data.guests.length > 1
+                          ? `${g.displayName} — ${f.label}`
+                          : f.label}
+                      </label>
+                      {renderGuestCustomField(g, f)}
+                    </div>
+                  ))}
                 </div>
               ))}
 
               {primaryGuestId && (
                 <>
                   <label className={styles.fieldLabel}>
-                    Song request (optional)
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.select}
-                    placeholder="Song title"
-                    value={state.songs[primaryGuestId]?.title ?? ''}
-                    onChange={(e) =>
-                      setSong(primaryGuestId, 'title', e.target.value)
-                    }
-                  />
-                  <input
-                    type="text"
-                    className={styles.select}
-                    placeholder="Artist (optional)"
-                    style={{ marginTop: 8 }}
-                    value={state.songs[primaryGuestId]?.artist ?? ''}
-                    onChange={(e) =>
-                      setSong(primaryGuestId, 'artist', e.target.value)
-                    }
-                  />
-
-                  <label className={styles.fieldLabel}>
                     Anything else we should know?
                   </label>
                   <textarea
                     className={styles.textarea}
                     rows={3}
-                    value={state.notes[primaryGuestId] ?? ''}
-                    onChange={(e) => setNotes(primaryGuestId, e.target.value)}
+                    value={state.guestNotes[primaryGuestId] ?? ''}
+                    onChange={(e) =>
+                      setGuestNotes(primaryGuestId, e.target.value)
+                    }
                   />
                 </>
               )}

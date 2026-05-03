@@ -1,4 +1,9 @@
-import { formatRsvpDate, rsvpKey, type RsvpFormState } from './rsvpFormState'
+import {
+  defaultValueForField,
+  formatRsvpDate,
+  rsvpKey,
+  type RsvpFormState,
+} from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type { EventDetails, Guest, RsvpStatus } from '../schema'
 
@@ -8,7 +13,12 @@ interface EventCardEditorProps {
   state: RsvpFormState
   singleGuest: boolean
   onStatusChange: (guestId: string, eventId: string, status: RsvpStatus) => void
-  onMealChange: (guestId: string, eventId: string, mealChoiceId: string) => void
+  onCustomChange: (
+    guestId: string,
+    eventId: string,
+    fieldKey: string,
+    value: string
+  ) => void
 }
 
 export function EventCardEditor({
@@ -17,14 +27,71 @@ export function EventCardEditor({
   state,
   singleGuest,
   onStatusChange,
-  onMealChange,
+  onCustomChange,
 }: EventCardEditorProps) {
   const dateText = formatRsvpDate(event.startsAt)
 
+  function renderToggleAndCustom(guestId: string) {
+    const k = rsvpKey(guestId, event.id)
+    const current = state.rsvps[k] ?? { status: 'pending', notesJson: {} }
+    return (
+      <>
+        <div className={styles.toggleGroup}>
+          <button
+            type="button"
+            className={`${styles.toggleButton} ${current.status === 'attending' ? styles.toggleButtonActive : ''}`}
+            onClick={() => onStatusChange(guestId, event.id, 'attending')}
+          >
+            Attending
+          </button>
+          <button
+            type="button"
+            className={`${styles.toggleButton} ${current.status === 'declined' ? styles.toggleButtonActive : ''}`}
+            onClick={() => onStatusChange(guestId, event.id, 'declined')}
+          >
+            Can't make it
+          </button>
+        </div>
+        {current.status === 'attending' &&
+          event.customFields.map((f) => (
+            <div key={f.id} className={styles.mealRow}>
+              <label htmlFor={`f-${k}-${f.id}`}>{f.label}:</label>
+              {f.type === 'single_select' ? (
+                <select
+                  id={`f-${k}-${f.id}`}
+                  className={styles.select}
+                  value={defaultValueForField(f, current.notesJson)}
+                  onChange={(e) =>
+                    onCustomChange(guestId, event.id, f.key, e.target.value)
+                  }
+                >
+                  <option value="">Choose…</option>
+                  {f.options.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  id={`f-${k}-${f.id}`}
+                  type="text"
+                  className={styles.select}
+                  maxLength={500}
+                  value={defaultValueForField(f, current.notesJson)}
+                  onChange={(e) =>
+                    onCustomChange(guestId, event.id, f.key, e.target.value)
+                  }
+                />
+              )}
+            </div>
+          ))}
+      </>
+    )
+  }
+
   if (singleGuest) {
     const guestId = event.invitedGuestIds[0]
-    const k = rsvpKey(guestId, event.id)
-    const current = state.rsvps[k] ?? { status: 'pending', mealChoiceId: null }
     return (
       <div className={styles.eventCard}>
         <div className={styles.eventCardSingle}>
@@ -38,45 +105,8 @@ export function EventCardEditor({
               </div>
             )}
           </div>
-          <div className={styles.toggleGroup}>
-            <button
-              type="button"
-              className={`${styles.toggleButton} ${current.status === 'attending' ? styles.toggleButtonActive : ''}`}
-              onClick={() => onStatusChange(guestId, event.id, 'attending')}
-            >
-              Attending
-            </button>
-            <button
-              type="button"
-              className={`${styles.toggleButton} ${current.status === 'declined' ? styles.toggleButtonActive : ''}`}
-              onClick={() => onStatusChange(guestId, event.id, 'declined')}
-            >
-              Can't make it
-            </button>
-          </div>
+          {renderToggleAndCustom(guestId)}
         </div>
-        {event.requiresMealChoice &&
-          current.status === 'attending' &&
-          event.mealOptions.length > 0 && (
-            <div className={styles.mealRow}>
-              <label htmlFor={`meal-${k}`}>Meal:</label>
-              <select
-                id={`meal-${k}`}
-                className={styles.select}
-                value={current.mealChoiceId ?? ''}
-                onChange={(e) =>
-                  onMealChange(guestId, event.id, e.target.value)
-                }
-              >
-                <option value="">Choose…</option>
-                {event.mealOptions.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
       </div>
     )
   }
@@ -94,52 +124,10 @@ export function EventCardEditor({
       {event.invitedGuestIds.map((guestId) => {
         const g = guestById.get(guestId)
         if (!g) return null
-        const k = rsvpKey(guestId, event.id)
-        const current = state.rsvps[k] ?? {
-          status: 'pending',
-          mealChoiceId: null,
-        }
         return (
           <div key={guestId} className={styles.guestRow}>
             <div className={styles.guestName}>{g.displayName}</div>
-            <div className={styles.toggleGroup}>
-              <button
-                type="button"
-                className={`${styles.toggleButton} ${current.status === 'attending' ? styles.toggleButtonActive : ''}`}
-                onClick={() => onStatusChange(guestId, event.id, 'attending')}
-              >
-                Attending
-              </button>
-              <button
-                type="button"
-                className={`${styles.toggleButton} ${current.status === 'declined' ? styles.toggleButtonActive : ''}`}
-                onClick={() => onStatusChange(guestId, event.id, 'declined')}
-              >
-                Can't make it
-              </button>
-            </div>
-            {event.requiresMealChoice &&
-              current.status === 'attending' &&
-              event.mealOptions.length > 0 && (
-                <div className={styles.mealRow}>
-                  <label htmlFor={`meal-${k}`}>Meal:</label>
-                  <select
-                    id={`meal-${k}`}
-                    className={styles.select}
-                    value={current.mealChoiceId ?? ''}
-                    onChange={(e) =>
-                      onMealChange(guestId, event.id, e.target.value)
-                    }
-                  >
-                    <option value="">Choose…</option>
-                    {event.mealOptions.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+            {renderToggleAndCustom(guestId)}
           </div>
         )
       })}

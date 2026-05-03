@@ -14,7 +14,7 @@ import {
   validateNotesJson,
 } from 'db'
 import { getEnv } from 'db/context'
-import { RscActionError } from 'rsc-utils/functions/server'
+import { RscFunctionError } from 'rsc-utils/functions/server'
 import {
   lookupQuerySchema,
   rsvpSubmissionSchema,
@@ -44,7 +44,7 @@ function parseNotesJson(raw: string | null): NotesJson {
 export async function lookupGuests(query: string): Promise<LookupResponse> {
   const parsed = lookupQuerySchema.safeParse({ query })
   if (!parsed.success) {
-    throw new RscActionError(400, 'Missing or invalid query parameter')
+    throw new RscFunctionError(400, 'Missing or invalid query parameter')
   }
   const { query: q } = parsed.data
 
@@ -81,7 +81,7 @@ export async function lookupGuests(query: string): Promise<LookupResponse> {
 }
 
 export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
-  if (!code) throw new RscActionError(400, 'Missing invite code')
+  if (!code) throw new RscFunctionError(400, 'Missing invite code')
   const db = getDbConn()
 
   const actingGuest = await db
@@ -89,7 +89,7 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
     .select(['id', 'party_leader_id'])
     .where('invite_code', '=', code)
     .executeTakeFirst()
-  if (!actingGuest) throw new RscActionError(404, 'Invite code not found')
+  if (!actingGuest) throw new RscFunctionError(404, 'Invite code not found')
 
   const leaderId = actingGuest.party_leader_id ?? actingGuest.id
 
@@ -98,7 +98,7 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
     .selectAll()
     .where('id', '=', leaderId)
     .executeTakeFirst()
-  if (!leader) throw new RscActionError(404, 'Party leader not found')
+  if (!leader) throw new RscFunctionError(404, 'Party leader not found')
 
   const members = await db
     .selectFrom('guest')
@@ -182,10 +182,10 @@ export async function submitRsvp(
   code: string,
   submission: RsvpSubmission
 ): Promise<{ ok: true; respondedAt: string }> {
-  if (!code) throw new RscActionError(400, 'Missing invite code')
+  if (!code) throw new RscFunctionError(400, 'Missing invite code')
 
   const parsed = rsvpSubmissionSchema.safeParse(submission)
-  if (!parsed.success) throw new RscActionError(400, 'Invalid submission data')
+  if (!parsed.success) throw new RscFunctionError(400, 'Invalid submission data')
   const data = parsed.data
 
   const db = getDbConn()
@@ -195,7 +195,7 @@ export async function submitRsvp(
     .select(['id', 'party_leader_id'])
     .where('invite_code', '=', code)
     .executeTakeFirst()
-  if (!actingGuest) throw new RscActionError(404, 'Invite code not found')
+  if (!actingGuest) throw new RscFunctionError(404, 'Invite code not found')
 
   const leaderId = actingGuest.party_leader_id ?? actingGuest.id
 
@@ -209,7 +209,7 @@ export async function submitRsvp(
   const allowedGuestIds = new Set(partyGuests.map((g) => g.id))
 
   if (!allowedGuestIds.has(data.respondedByGuestId)) {
-    throw new RscActionError(400, 'respondedByGuestId is not in this group')
+    throw new RscFunctionError(400, 'respondedByGuestId is not in this group')
   }
 
   const invitations = await db
@@ -227,10 +227,10 @@ export async function submitRsvp(
   const sanitizedRsvpNotes = new Map<string, NotesJson>()
   for (const r of data.rsvps) {
     if (!allowedGuestIds.has(r.guestId)) {
-      throw new RscActionError(400, `Guest ${r.guestId} is not in this group`)
+      throw new RscFunctionError(400, `Guest ${r.guestId} is not in this group`)
     }
     if (!invitedEventIds.has(r.eventId)) {
-      throw new RscActionError(
+      throw new RscFunctionError(
         400,
         `Group is not invited to event ${r.eventId}`
       )
@@ -238,7 +238,7 @@ export async function submitRsvp(
     if (r.status === 'attending' || r.status === 'declined') {
       const config = eventCustomFieldsByEvent.get(r.eventId) ?? []
       const v = validateNotesJson(r.notesJson, config)
-      if (!v.ok) throw new RscActionError(400, v.error)
+      if (!v.ok) throw new RscFunctionError(400, v.error)
       sanitizedRsvpNotes.set(`${r.guestId}::${r.eventId}`, v.value)
     }
   }
@@ -248,7 +248,7 @@ export async function submitRsvp(
   for (const u of data.guestUpdates) {
     if (!allowedGuestIds.has(u.guestId)) continue
     const v = validateNotesJson(u.notesJson, guestCustomFields)
-    if (!v.ok) throw new RscActionError(400, v.error)
+    if (!v.ok) throw new RscFunctionError(400, v.error)
     sanitizedGuestNotes.set(u.guestId, v.value)
   }
 

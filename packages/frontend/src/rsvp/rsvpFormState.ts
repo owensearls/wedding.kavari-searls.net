@@ -1,12 +1,19 @@
-import type { RsvpGroupResponse, RsvpStatus } from '../schema'
+import type {
+  CustomFieldConfig,
+  NotesJson,
+  RsvpGroupResponse,
+  RsvpStatus,
+} from '../schema'
 
-export type RsvpKey = `${string}::${string}` // guestId::eventId
+export type RsvpKey = `${string}::${string}`
 
 export interface RsvpFormState {
-  rsvps: Record<RsvpKey, { status: RsvpStatus; mealChoiceId: string | null }>
-  dietary: Record<string, string>
-  notes: Record<string, string>
-  songs: Record<string, { title: string; artist: string }>
+  rsvps: Record<
+    RsvpKey,
+    { status: RsvpStatus | 'pending'; notesJson: NotesJson }
+  >
+  guestNotesJson: Record<string, NotesJson>
+  guestNotes: Record<string, string>
   respondedByGuestId: string
 }
 
@@ -41,27 +48,28 @@ export function buildInitialRsvpFormState(
       )
       rsvps[rsvpKey(guestId, ev.id)] = {
         status: existing?.status ?? 'pending',
-        mealChoiceId: existing?.mealChoiceId ?? null,
+        notesJson: existing?.notesJson ?? {},
       }
     }
   }
-  const dietary: RsvpFormState['dietary'] = {}
-  const notes: RsvpFormState['notes'] = {}
-  const songs: RsvpFormState['songs'] = {}
+  const guestNotesJson: Record<string, NotesJson> = {}
+  const guestNotes: Record<string, string> = {}
   for (const g of data.guests) {
-    dietary[g.id] = g.dietaryRestrictions ?? ''
-    notes[g.id] = g.notes ?? ''
-    const sr = g.notesJson?.songRequest
-    songs[g.id] = {
-      title: sr?.title ?? '',
-      artist: sr?.artist ?? '',
-    }
+    guestNotesJson[g.id] = g.notesJson ?? {}
+    guestNotes[g.id] = g.notes ?? ''
   }
   return {
     rsvps,
-    dietary,
-    notes,
-    songs,
+    guestNotesJson,
+    guestNotes,
     respondedByGuestId: data.actingGuestId || data.guests[0]?.id || '',
   }
+}
+
+export function defaultValueForField(
+  field: CustomFieldConfig,
+  current: NotesJson
+): string {
+  const v = current[field.key]
+  return typeof v === 'string' ? v : ''
 }
