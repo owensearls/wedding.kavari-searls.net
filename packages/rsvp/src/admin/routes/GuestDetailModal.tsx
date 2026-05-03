@@ -123,8 +123,7 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
                 </tr>
               )}
               {data.events.map((e) => {
-                const fields =
-                  data.eventCustomFieldsByEvent[e.eventId] ?? []
+                const fields = data.eventCustomFieldsByEvent[e.eventId] ?? []
                 const answers = formatCustomAnswers(fields, e.notesJson)
                 return (
                   <tr key={e.eventId}>

@@ -117,9 +117,7 @@ export function Log() {
             {guestCustomFields.map((f, i) => (
               <th
                 key={f.id}
-                className={
-                  i === 0 ? guestListStyles.customDivider : undefined
-                }
+                className={i === 0 ? guestListStyles.customDivider : undefined}
               >
                 {f.label}
               </th>

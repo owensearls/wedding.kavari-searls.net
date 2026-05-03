@@ -43,7 +43,9 @@ const blankGroup = (): AdminGroupInput => ({
 export function GuestList() {
   const [groups, setGroups] = useState<AdminGroupListItem[]>([])
   const [events, setEvents] = useState<AdminEventRecord[]>([])
-  const [guestCustomFields, setGuestCustomFields] = useState<CustomFieldConfig[]>([])
+  const [guestCustomFields, setGuestCustomFields] = useState<
+    CustomFieldConfig[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<AdminGroupInput | null>(null)

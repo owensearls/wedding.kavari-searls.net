@@ -110,7 +110,12 @@ export async function loadEventCustomFields(
   const optionsByField = new Map<string, CustomFieldConfig['options']>()
   for (const o of options) {
     const arr = optionsByField.get(o.field_id) ?? []
-    arr.push({ id: o.id, label: o.label, description: o.description, sortOrder: o.sort_order })
+    arr.push({
+      id: o.id,
+      label: o.label,
+      description: o.description,
+      sortOrder: o.sort_order,
+    })
     optionsByField.set(o.field_id, arr)
   }
   for (const f of fields) {
@@ -147,7 +152,12 @@ export async function loadGuestCustomFields(
   const optionsByField = new Map<string, CustomFieldConfig['options']>()
   for (const o of options) {
     const arr = optionsByField.get(o.field_id) ?? []
-    arr.push({ id: o.id, label: o.label, description: o.description, sortOrder: o.sort_order })
+    arr.push({
+      id: o.id,
+      label: o.label,
+      description: o.description,
+      sortOrder: o.sort_order,
+    })
     optionsByField.set(o.field_id, arr)
   }
   return fields.map((f) => ({

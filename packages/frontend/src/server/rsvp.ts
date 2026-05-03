@@ -185,7 +185,8 @@ export async function submitRsvp(
   if (!code) throw new RscFunctionError(400, 'Missing invite code')
 
   const parsed = rsvpSubmissionSchema.safeParse(submission)
-  if (!parsed.success) throw new RscFunctionError(400, 'Invalid submission data')
+  if (!parsed.success)
+    throw new RscFunctionError(400, 'Invalid submission data')
   const data = parsed.data
 
   const db = getDbConn()

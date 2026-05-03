@@ -51,7 +51,10 @@ describe('adminGroupInputSchema', () => {
 
 describe('adminEventInputSchema', () => {
   it('defaults customFields to empty array', () => {
-    const r = adminEventInputSchema.parse({ name: 'Reception', slug: 'reception' })
+    const r = adminEventInputSchema.parse({
+      name: 'Reception',
+      slug: 'reception',
+    })
     expect(r.customFields).toEqual([])
   })
 

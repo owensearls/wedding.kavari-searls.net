@@ -161,8 +161,7 @@ export function RsvpFull() {
   }
 
   const primaryGuestId = data?.guests[0]?.id
-  const hasPriorRsvp =
-    data?.rsvps.some((r) => r.respondedAt !== null) ?? false
+  const hasPriorRsvp = data?.rsvps.some((r) => r.respondedAt !== null) ?? false
   const showSaveLabel = hasPriorRsvp || savedThisSession
 
   function renderGuestCustomField(g: Guest, f: CustomFieldConfig) {

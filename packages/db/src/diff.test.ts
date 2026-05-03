@@ -23,8 +23,8 @@ const select: CustomFieldConfig = {
   type: 'single_select',
   sortOrder: 0,
   options: [
-    { id: 'opt_a', label: 'Chicken', description: null },
-    { id: 'opt_b', label: 'Fish', description: null },
+    { id: 'opt_a', label: 'Chicken', description: null, sortOrder: 0 },
+    { id: 'opt_b', label: 'Fish', description: null, sortOrder: 1 },
   ],
 }
 
@@ -81,10 +81,9 @@ describe('validateNotesJson', () => {
   })
 
   it('rejects short_text longer than 500 chars', () => {
-    const r = validateNotesJson(
-      { dietary_restrictions: 'x'.repeat(501) },
-      [shortText]
-    )
+    const r = validateNotesJson({ dietary_restrictions: 'x'.repeat(501) }, [
+      shortText,
+    ])
     expect(r.ok).toBe(false)
   })
 })

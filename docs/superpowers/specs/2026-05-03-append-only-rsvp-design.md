@@ -9,7 +9,7 @@ The public-facing RSVP API becomes the only mutator of guest answers, and it is 
 - Latest row wins for current-state reads.
 - Per-event custom fields (today's "meal options" generalized) and global guest-level custom fields (today's dietary/song request generalized) are admin-configurable, with a uniform `{ short_text, single_select }` model.
 - `notes_json` on each response table stores answers keyed by the field's `key`. The frontend renders the form purely from the config.
-- Free-text `notes` (the "Anything else we should know?" textarea) stays as a hardcoded long-text column on `guest_response.notes`. It is *not* a custom field.
+- Free-text `notes` (the "Anything else we should know?" textarea) stays as a hardcoded long-text column on `guest_response.notes`. It is _not_ a custom field.
 - Admin gains a "Log" tab; admin views render custom fields to the right of core columns separated by a visual divider.
 
 ## Out of scope
@@ -131,7 +131,7 @@ Replace `RsvpTable` and `MealOptionTable`. Add `RsvpResponseTable`, `GuestRespon
 Driven by configuration; not a fixed shape:
 
 ```ts
-type NotesJsonValue = string | null  // option id for single_select, raw text for short_text
+type NotesJsonValue = string | null // option id for single_select, raw text for short_text
 type NotesJson = Record<string /* field.key */, NotesJsonValue>
 ```
 
@@ -168,23 +168,23 @@ export interface CustomFieldOption {
 
 export interface CustomFieldConfig {
   id: string
-  key: string                              // snake_case, notes_json key
+  key: string // snake_case, notes_json key
   label: string
   type: 'short_text' | 'single_select'
   sortOrder: number
-  options: CustomFieldOption[]             // empty for short_text
+  options: CustomFieldOption[] // empty for short_text
 }
 
 // extend EventDetails (frontend schema)
 export interface EventDetails {
   // ... existing fields
-  customFields: CustomFieldConfig[]        // replaces mealOptions + requiresMealChoice
+  customFields: CustomFieldConfig[] // replaces mealOptions + requiresMealChoice
 }
 
 // extend RsvpGroupResponse
 export interface RsvpGroupResponse {
   // ... existing fields
-  guestCustomFields: CustomFieldConfig[]   // global guest-level config
+  guestCustomFields: CustomFieldConfig[] // global guest-level config
 }
 ```
 
@@ -257,21 +257,30 @@ Admin schema (`packages/rsvp/src/schema.ts`):
 export const adminCustomFieldOptionInputSchema = z.object({
   id: z.string().optional(),
   label: z.string().min(1).max(200),
-  description: z.preprocess(blankToNull, z.string().max(500).nullable().optional()),
+  description: z.preprocess(
+    blankToNull,
+    z.string().max(500).nullable().optional()
+  ),
   sortOrder: z.number().int().default(0),
 })
 
-export const adminCustomFieldInputSchema = z.object({
-  id: z.string().optional(),
-  key: z.string().min(1).max(80).regex(/^[a-z0-9_]+$/),
-  label: z.string().min(1).max(200),
-  type: z.enum(['short_text', 'single_select']),
-  sortOrder: z.number().int().default(0),
-  options: z.array(adminCustomFieldOptionInputSchema).default([]),
-}).refine(
-  (d) => d.type === 'single_select' || d.options.length === 0,
-  { message: 'Options only allowed for single_select fields', path: ['options'] }
-)
+export const adminCustomFieldInputSchema = z
+  .object({
+    id: z.string().optional(),
+    key: z
+      .string()
+      .min(1)
+      .max(80)
+      .regex(/^[a-z0-9_]+$/),
+    label: z.string().min(1).max(200),
+    type: z.enum(['short_text', 'single_select']),
+    sortOrder: z.number().int().default(0),
+    options: z.array(adminCustomFieldOptionInputSchema).default([]),
+  })
+  .refine((d) => d.type === 'single_select' || d.options.length === 0, {
+    message: 'Options only allowed for single_select fields',
+    path: ['options'],
+  })
 ```
 
 ### 2. Per-event custom fields (inside the event edit form)
@@ -303,25 +312,25 @@ Pre-launch wipe + recreate. After re-running migrations, an admin recreates meal
 
 ## Admin UI ↔ DB mapping (after refactor)
 
-| Surface / element | Source |
-|---|---|
-| **GuestList outer table** | |
-| Name | `guest.display_name` |
-| Invite code (link) | `guest.invite_code` |
-| Per-event status badge | latest `rsvp_response.status` for (guest, event) |
-| Notes column (core) | latest `guest_response.notes` |
-| Per-guest custom columns (after divider) | latest `guest_response.notes_json[field.key]`, one column per `guest_custom_field` |
-| Edit icon | opens `EditGroupForm` (structural only) |
-| **GuestDetailModal header** | |
-| Group / Invite / Email / Phone | `guest.{group_label of leader, invite_code, email, phone}` |
-| Notes (core) | latest `guest_response.notes` |
-| Per-guest custom rows (after divider) | latest `guest_response.notes_json[field.key]`, one row per `guest_custom_field` |
-| **GuestDetailModal events table** | |
-| Event / Status / Responded / By | `event.name`, latest `rsvp_response.{status, responded_at, responded_by_guest_id→display_name}` |
-| Per-event custom cell (after divider) | latest `rsvp_response.notes_json` rendered against that event's `event_custom_field` config (dynamic per row) |
-| **Log RSVP table** | every `rsvp_response`; core columns + divider + dynamic custom cell per row |
-| **Log Guest table** | every `guest_response`; core columns + divider + one column per `guest_custom_field` |
-| **Events admin page** | `event.*` (no `requires_meal_choice`); Custom fields section sources from `event_custom_field` + `event_custom_field_option`; Guest profile fields section sources from `guest_custom_field` + `guest_custom_field_option` |
+| Surface / element                        | Source                                                                                                                                                                                                                     |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **GuestList outer table**                |                                                                                                                                                                                                                            |
+| Name                                     | `guest.display_name`                                                                                                                                                                                                       |
+| Invite code (link)                       | `guest.invite_code`                                                                                                                                                                                                        |
+| Per-event status badge                   | latest `rsvp_response.status` for (guest, event)                                                                                                                                                                           |
+| Notes column (core)                      | latest `guest_response.notes`                                                                                                                                                                                              |
+| Per-guest custom columns (after divider) | latest `guest_response.notes_json[field.key]`, one column per `guest_custom_field`                                                                                                                                         |
+| Edit icon                                | opens `EditGroupForm` (structural only)                                                                                                                                                                                    |
+| **GuestDetailModal header**              |                                                                                                                                                                                                                            |
+| Group / Invite / Email / Phone           | `guest.{group_label of leader, invite_code, email, phone}`                                                                                                                                                                 |
+| Notes (core)                             | latest `guest_response.notes`                                                                                                                                                                                              |
+| Per-guest custom rows (after divider)    | latest `guest_response.notes_json[field.key]`, one row per `guest_custom_field`                                                                                                                                            |
+| **GuestDetailModal events table**        |                                                                                                                                                                                                                            |
+| Event / Status / Responded / By          | `event.name`, latest `rsvp_response.{status, responded_at, responded_by_guest_id→display_name}`                                                                                                                            |
+| Per-event custom cell (after divider)    | latest `rsvp_response.notes_json` rendered against that event's `event_custom_field` config (dynamic per row)                                                                                                              |
+| **Log RSVP table**                       | every `rsvp_response`; core columns + divider + dynamic custom cell per row                                                                                                                                                |
+| **Log Guest table**                      | every `guest_response`; core columns + divider + one column per `guest_custom_field`                                                                                                                                       |
+| **Events admin page**                    | `event.*` (no `requires_meal_choice`); Custom fields section sources from `event_custom_field` + `event_custom_field_option`; Guest profile fields section sources from `guest_custom_field` + `guest_custom_field_option` |
 
 ## Custom-field display rule
 
@@ -360,11 +369,13 @@ rscStaticPages({
 Page layout (`packages/rsvp/src/admin/routes/Log.tsx`): two tables stacked, newest-first.
 
 **RSVP responses table** (heterogeneous per-event):
+
 - Core: Timestamp, Guest, Event, Status, Responded by.
 - Divider.
 - Custom answers (one cell per row, dynamic): vertical list of `<event-field-label>: <resolved value>` pairs.
 
 **Guest responses table** (uniform global config):
+
 - Core: Timestamp, Guest, Notes, Responded by.
 - Divider.
 - One column per `guest_custom_field`, rendering the resolved value.

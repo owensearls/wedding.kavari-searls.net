@@ -2,10 +2,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import { renderCustomFieldValue } from '../lib/customFieldRender'
 import styles from './GuestList.module.css'
-import type {
-  AdminGroupListItem,
-  CustomFieldConfig,
-} from '../../schema'
+import type { AdminGroupListItem, CustomFieldConfig } from '../../schema'
 import type { AdminEventRecord } from '../../server/admin/events'
 
 interface GroupBlockProps {

@@ -76,6 +76,7 @@
 ### Task 1: Rewrite the migration
 
 **Files:**
+
 - Modify: `packages/db/migrations/0001_init.sql`
 
 - [ ] **Step 1: Replace the file contents**
@@ -221,6 +222,7 @@ git commit -m "Rewrite 0001_init for append-only responses + custom fields"
 ### Task 2: Update the `Database` type to match
 
 **Files:**
+
 - Modify: `packages/db/src/schema.ts`
 
 - [ ] **Step 1: Replace the file contents**
@@ -339,6 +341,7 @@ git commit -m "Update Database type for new schema"
 ### Task 3: Pure helpers — `canonicalNotesJson` and `validateNotesJson`
 
 **Files:**
+
 - Create: `packages/db/src/diff.ts`
 - Create: `packages/db/src/diff.test.ts`
 
@@ -428,10 +431,9 @@ describe('validateNotesJson', () => {
   })
 
   it('rejects short_text longer than 500 chars', () => {
-    const r = validateNotesJson(
-      { dietary_restrictions: 'x'.repeat(501) },
-      [shortText]
-    )
+    const r = validateNotesJson({ dietary_restrictions: 'x'.repeat(501) }, [
+      shortText,
+    ])
     expect(r.ok).toBe(false)
   })
 })
@@ -498,7 +500,10 @@ export function validateNotesJson(
     if (field.type === 'short_text') {
       const trimmed = raw.trim()
       if (trimmed.length > SHORT_TEXT_MAX) {
-        return { ok: false, error: `Field ${key} exceeds ${SHORT_TEXT_MAX} chars` }
+        return {
+          ok: false,
+          error: `Field ${key} exceeds ${SHORT_TEXT_MAX} chars`,
+        }
       }
       out[key] = trimmed === '' ? null : trimmed
     } else {
@@ -549,6 +554,7 @@ git commit -m "Add notes_json diff helpers (canonical + validation)"
 ### Task 4: Pure helpers — `diffRsvpResponse` and `diffGuestResponse`
 
 **Files:**
+
 - Modify: `packages/db/src/diff.ts`
 - Modify: `packages/db/src/diff.test.ts`
 
@@ -711,6 +717,7 @@ git commit -m "Add diffRsvpResponse and diffGuestResponse helpers"
 ### Task 5: DB helpers — `latestRsvpResponses` / `latestGuestResponses` / config loaders
 
 **Files:**
+
 - Create: `packages/db/src/latest.ts`
 - Modify: `packages/db/src/index.ts`
 
@@ -942,6 +949,7 @@ git commit -m "Add latest-response and custom-field config db helpers"
 ### Task 6: Update frontend wire schema
 
 **Files:**
+
 - Modify: `packages/frontend/src/schema.ts`
 
 - [ ] **Step 1: Replace the file contents**
@@ -1081,6 +1089,7 @@ git commit -m "Generalize public wire shape for custom fields"
 ### Task 7: Rewrite `getRsvpGroup`
 
 **Files:**
+
 - Modify: `packages/frontend/src/server/rsvp.ts`
 
 - [ ] **Step 1: Replace the body of `getRsvpGroup`**
@@ -1254,6 +1263,7 @@ git commit -m "Rewrite getRsvpGroup over latest helpers + custom-field configs"
 ### Task 8: Rewrite `submitRsvp` with append-only diffing
 
 **Files:**
+
 - Modify: `packages/frontend/src/server/rsvp.ts`
 
 - [ ] **Step 1: Replace `submitRsvp`**
@@ -1432,6 +1442,7 @@ git commit -m "Rewrite submitRsvp as append-only with diff helpers"
 ### Task 9: Update `rsvpFormState`
 
 **Files:**
+
 - Modify: `packages/frontend/src/rsvp/rsvpFormState.ts`
 
 - [ ] **Step 1: Replace the file contents**
@@ -1534,12 +1545,18 @@ git commit -m "Generalize RsvpFormState for config-driven inputs"
 ### Task 10: Update `EventCardEditor` to render custom fields
 
 **Files:**
+
 - Modify: `packages/frontend/src/rsvp/EventCardEditor.tsx`
 
 - [ ] **Step 1: Replace the file contents**
 
 ```tsx
-import { defaultValueForField, rsvpKey, formatRsvpDate, type RsvpFormState } from './rsvpFormState'
+import {
+  defaultValueForField,
+  rsvpKey,
+  formatRsvpDate,
+  type RsvpFormState,
+} from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type { EventDetails, Guest, NotesJson, RsvpStatus } from '../schema'
 
@@ -1692,6 +1709,7 @@ git commit -m "Render event custom fields generically in EventCardEditor"
 ### Task 11: Update `RsvpFull` to pack the new submission shape
 
 **Files:**
+
 - Modify: `packages/frontend/src/rsvp/RsvpFull.tsx`
 
 - [ ] **Step 1: Replace the file contents**
@@ -1861,8 +1879,7 @@ export function RsvpFull() {
   }
 
   const primaryGuestId = data?.guests[0]?.id
-  const hasPriorRsvp =
-    data?.rsvps.some((r) => r.respondedAt !== null) ?? false
+  const hasPriorRsvp = data?.rsvps.some((r) => r.respondedAt !== null) ?? false
   const showSaveLabel = hasPriorRsvp || savedThisSession
 
   function renderGuestCustomField(g: Guest, f: CustomFieldConfig) {
@@ -2025,6 +2042,7 @@ git commit -m "Render guest custom fields generically in RsvpFull"
 ### Task 12: Update admin schemas
 
 **Files:**
+
 - Modify: `packages/rsvp/src/schema.ts`
 - Modify: `packages/rsvp/src/schema.test.ts`
 
@@ -2296,6 +2314,7 @@ git commit -m "Generalize admin schemas around customFields"
 ### Task 13: Update `saveEvent` / `listEvents`
 
 **Files:**
+
 - Modify: `packages/rsvp/src/server/admin/events.ts`
 
 - [ ] **Step 1: Replace the file**
@@ -2512,6 +2531,7 @@ git commit -m "Move events admin to custom-fields config writes"
 ### Task 14: Update `saveGroup` / `getGroup` / `listGroups`
 
 **Files:**
+
 - Modify: `packages/rsvp/src/server/admin/groups.ts`
 
 - [ ] **Step 1: Replace the file**
@@ -2622,8 +2642,7 @@ export async function listGroups(): Promise<{
       attendingCount: groupRsvps.filter((r) => r.status === 'attending').length,
       declinedCount: groupRsvps.filter((r) => r.status === 'declined').length,
       pendingCount:
-        allGroupGuests.length * groupInvitations.length -
-        groupRsvps.length,
+        allGroupGuests.length * groupInvitations.length - groupRsvps.length,
       updatedAt: leader.updated_at,
       guests: allGroupGuests.map((gst) => {
         const eventStatuses: AdminGuestEventStatus[] = []
@@ -2834,6 +2853,7 @@ git commit -m "Read groups from latest responses + drop dietary/notes writes"
 ### Task 15: Update `getGuest`
 
 **Files:**
+
 - Modify: `packages/rsvp/src/server/admin/guests.ts`
 
 - [ ] **Step 1: Replace the file**
@@ -3017,6 +3037,7 @@ git commit -m "Read guest detail from latest responses + custom field configs"
 ### Task 16: Update `responses.ts` (CSV current-state + new log endpoints)
 
 **Files:**
+
 - Modify: `packages/rsvp/src/server/admin/responses.ts`
 
 - [ ] **Step 1: Replace the file**
@@ -3033,10 +3054,7 @@ import {
   type CustomFieldConfig as DbCustomFieldConfig,
 } from 'db'
 import { getEnv } from 'db/context'
-import type {
-  AdminResponseRow,
-  CustomFieldConfig,
-} from '../../schema'
+import type { AdminResponseRow, CustomFieldConfig } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
@@ -3261,6 +3279,7 @@ git commit -m "Update CSV listResponses; add Log server actions"
 ### Task 17: `customFields.ts` server actions
 
 **Files:**
+
 - Create: `packages/rsvp/src/server/admin/customFields.ts`
 
 - [ ] **Step 1: Implement**
@@ -3404,6 +3423,7 @@ git commit -m "Add guest custom-field admin server actions"
 ### Task 18: `CustomFieldsEditor` shared component
 
 **Files:**
+
 - Create: `packages/rsvp/src/admin/routes/CustomFieldsEditor.tsx`
 - Create: `packages/rsvp/src/admin/routes/CustomFieldsEditor.module.css`
 
@@ -3631,6 +3651,7 @@ git commit -m "Add CustomFieldsEditor shared component"
 ### Task 19: Replace meal-options block in `EditEventForm`
 
 **Files:**
+
 - Modify: `packages/rsvp/src/admin/routes/EditEventForm.tsx`
 
 - [ ] **Step 1: Replace the file**
@@ -3809,6 +3830,7 @@ git commit -m "Replace meal-options UI with CustomFieldsEditor"
 ### Task 20: Add "Guest profile fields" section to `EventSettings`
 
 **Files:**
+
 - Modify: `packages/rsvp/src/admin/routes/EventSettings.tsx`
 
 - [ ] **Step 1: Read current file**
@@ -3836,7 +3858,9 @@ import type { AdminCustomFieldInput, CustomFieldConfig } from '../../schema'
 
 // Inside the component, alongside the existing event-list state:
 const [guestFields, setGuestFields] = useState<CustomFieldConfig[]>([])
-const [guestFieldsDraft, setGuestFieldsDraft] = useState<AdminCustomFieldInput[]>([])
+const [guestFieldsDraft, setGuestFieldsDraft] = useState<
+  AdminCustomFieldInput[]
+>([])
 const [guestFieldsDirty, setGuestFieldsDirty] = useState(false)
 const [guestFieldsError, setGuestFieldsError] = useState<string | null>(null)
 const [guestFieldsSaving, setGuestFieldsSaving] = useState(false)
@@ -3909,7 +3933,7 @@ async function saveGuestFields() {
 }
 
 // In the JSX, render a section before the events list:
-<section style={{ marginBottom: 24 }}>
+;<section style={{ marginBottom: 24 }}>
   <PageHeader title="Guest profile fields" />
   <ErrorMessage>{guestFieldsError}</ErrorMessage>
   <CustomFieldsEditor
@@ -3951,6 +3975,7 @@ git commit -m "Add Guest profile fields section to Events admin page"
 ### Task 21: Drop dietary/notes from `EditGroupForm` defaults
 
 **Files:**
+
 - Modify: `packages/rsvp/src/admin/routes/EditGroupForm.tsx`
 
 - [ ] **Step 1: Update `blankGuest`**
@@ -4011,6 +4036,7 @@ git commit -m "Drop dietary/notes blank-defaults from group editor"
 ### Task 22: Custom-field rendering helpers
 
 **Files:**
+
 - Create: `packages/rsvp/src/admin/lib/customFieldRender.ts`
 
 - [ ] **Step 1: Implement**
@@ -4077,6 +4103,7 @@ git commit -m "Add custom-field rendering helpers for admin views"
 ### Task 23: Add `customDivider` CSS
 
 **Files:**
+
 - Modify: `packages/rsvp/src/admin/routes/GuestList.module.css`
 
 - [ ] **Step 1: Append the rule**
@@ -4111,6 +4138,7 @@ git commit -m "Add customDivider/customCell styles"
 ### Task 24: Update `GroupBlock` (drop meal hint, add per-guest custom columns)
 
 **Files:**
+
 - Modify: `packages/rsvp/src/admin/routes/GroupBlock.tsx`
 - Modify: `packages/rsvp/src/admin/routes/GuestList.tsx`
 
@@ -4123,10 +4151,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import { renderCustomFieldValue } from '../lib/customFieldRender'
 import styles from './GuestList.module.css'
-import type {
-  AdminGroupListItem,
-  CustomFieldConfig,
-} from '../../schema'
+import type { AdminGroupListItem, CustomFieldConfig } from '../../schema'
 import type { AdminEventRecord } from '../../server/admin/events'
 
 interface GroupBlockProps {
@@ -4323,6 +4348,7 @@ git commit -m "Render guest custom fields in outer table with divider"
 ### Task 25: Update `GuestDetailModal` (header + events table + drop trailing song-request)
 
 **Files:**
+
 - Modify: `packages/rsvp/src/admin/routes/GuestDetailModal.tsx`
 
 - [ ] **Step 1: Replace the file**
@@ -4453,8 +4479,7 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
                 </tr>
               )}
               {data.events.map((e) => {
-                const fields =
-                  data.eventCustomFieldsByEvent[e.eventId] ?? []
+                const fields = data.eventCustomFieldsByEvent[e.eventId] ?? []
                 const answers = formatCustomAnswers(fields, e.notesJson)
                 return (
                   <tr key={e.eventId}>
@@ -4518,6 +4543,7 @@ git commit -m "Restructure GuestDetailModal around custom-field divider rule"
 ### Task 26: Add `Log.tsx` page
 
 **Files:**
+
 - Create: `packages/rsvp/src/admin/routes/Log.tsx`
 - Create: `packages/rsvp/src/admin/routes/Log.module.css`
 
@@ -4643,9 +4669,7 @@ export function Log() {
             {guestCustomFields.map((f, i) => (
               <th
                 key={f.id}
-                className={
-                  i === 0 ? guestListStyles.customDivider : undefined
-                }
+                className={i === 0 ? guestListStyles.customDivider : undefined}
               >
                 {f.label}
               </th>
@@ -4712,6 +4736,7 @@ git commit -m "Add Log page rendering both response tables"
 ### Task 27: Add Log entry-file and `AdminShell` nav
 
 **Files:**
+
 - Create: `packages/rsvp/src/admin/log.tsx`
 - Modify: `packages/rsvp/src/admin/AdminShell.tsx`
 - Modify: `packages/rsvp/src/admin/index.tsx`
@@ -4746,7 +4771,7 @@ interface AdminShellProps {
 }
 
 // In the JSX, after the Events nav link:
-<a href="/admin/log/" className={navLinkClass('log')}>
+;<a href="/admin/log/" className={navLinkClass('log')}>
   Log
 </a>
 ```
@@ -4774,6 +4799,7 @@ git commit -m "Add Log nav entry and admin entry file"
 ### Task 28: Wire `/admin/log/` into Vite
 
 **Files:**
+
 - Modify: `packages/rsvp/vite.config.ts`
 
 - [ ] **Step 1: Add the route**
@@ -4813,6 +4839,7 @@ git commit -m "Wire /admin/log/ into rscStaticPages"
 ### Task 29: Update `rsvpCsv.ts` for the new shape
 
 **Files:**
+
 - Modify: `packages/rsvp/src/admin/lib/rsvpCsv.ts`
 
 - [ ] **Step 1: Replace the file**
@@ -4904,6 +4931,7 @@ Wait for both workers to be up (frontend on `:5174`, rsvp/admin on `:5173`).
 - [ ] **Step 3: Walk through admin setup**
 
 In a browser at `http://localhost:5173/admin/`:
+
 - Verify the nav reads `Guests | Events | Log`.
 - Visit `/admin/events/`. Confirm the "Guest profile fields" section shows the seeded `Dietary restrictions or allergies` and `Song request` fields.
 - Create an event named "Reception" with one custom field `meal_choice` (single_select, options "Chicken", "Fish", "Vegetarian").
@@ -4912,6 +4940,7 @@ In a browser at `http://localhost:5173/admin/`:
 - [ ] **Step 4: Walk through public RSVP**
 
 Open `http://localhost:5174/rsvp?code=<INVITE_CODE>`:
+
 - Mark both guests "Attending" for Reception.
 - Pick a different meal for each.
 - Fill in dietary for both. Fill in song request and a long-text "anything else?" note.
@@ -4920,6 +4949,7 @@ Open `http://localhost:5174/rsvp?code=<INVITE_CODE>`:
 - [ ] **Step 5: Verify the Log tab**
 
 Visit `http://localhost:5173/admin/log/`:
+
 - Two rows in "RSVP responses" (one per guest), one row in "Guest responses" per guest.
 - Re-submit the public form unchanged → no new rows in either table.
 - Change one meal choice → one new row in "RSVP responses".
@@ -4927,6 +4957,7 @@ Visit `http://localhost:5173/admin/log/`:
 - [ ] **Step 6: Verify divider styling**
 
 Visually confirm that custom columns sit to the right of core columns with the left-border divider in:
+
 - Guests page outer table.
 - Guest detail modal (header detail-grid, events table).
 - Log tables.
