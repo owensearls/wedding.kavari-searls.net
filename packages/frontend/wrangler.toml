@@ -1,15 +1,29 @@
-name = "wedding-kavari-searls-net-frontend"
+name = "wedding"
 main = "./src/entry.worker.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "wedding"
-# Same D1 as the rsvp worker; replace with the production id once known
-# (see packages/rsvp/wrangler.toml for details).
-database_id = "REPLACE_ME_WITH_REAL_ID"
+database_name = "wedding-kavari-searls"
+# Shared D1 between frontend and rsvp
+database_id = "72251762-9df1-4281-8ccb-4039a763839d"
 
 [assets]
 directory = "./dist/client"
 binding = "ASSETS"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
