@@ -142,3 +142,17 @@
     max-width: 160px;
   }
 }
+
+.customDivider {
+  border-left: 2px solid var(--admin-divider, #c9cdd4) !important;
+}
+.customLabel {
+  color: var(--admin-muted, #6b7280);
+  font-size: 0.85em;
+  margin-right: 4px;
+}
+.customCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

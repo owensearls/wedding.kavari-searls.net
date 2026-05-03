@@ -24,8 +24,6 @@ const blankGuest = (): AdminGuestInput => ({
   lastName: '',
   email: '',
   phone: '',
-  dietaryRestrictions: '',
-  notes: '',
 })
 
 interface EditGroupFormProps {

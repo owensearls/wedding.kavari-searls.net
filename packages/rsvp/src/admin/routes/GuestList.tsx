@@ -30,13 +30,10 @@ const blankGuest = (): AdminGuestInput => ({
   lastName: '',
   email: '',
   phone: '',
-  dietaryRestrictions: '',
-  notes: '',
 })
 
 const blankGroup = (): AdminGroupInput => ({
   label: '',
-  notes: '',
   guests: [blankGuest()],
   invitedEventIds: [],
 })
