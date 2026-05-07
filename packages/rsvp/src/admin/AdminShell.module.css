@@ -1,0 +1,70 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background-color: #f5f3ec;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #6e6b60;
+}
+
+.brand {
+  font-size: 22px;
+  color: #4a4842;
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  gap: 14px;
+}
+
+.navLink {
+  color: #6e6b60;
+  text-decoration: none;
+  padding: 6px 10px;
+  font-size: 16px;
+}
+
+.navLinkActive {
+  border-bottom: 2px solid #6e6b60;
+}
+
+.main {
+  padding: 24px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 12px 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+
+  .nav {
+    gap: 4px;
+  }
+
+  .navLink {
+    padding: 6px 8px;
+    font-size: 15px;
+  }
+
+  .main {
+    padding: 14px;
+  }
+}

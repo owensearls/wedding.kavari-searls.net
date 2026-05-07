@@ -1,0 +1,41 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [Check]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v6
+        with: { node-version: lts/*, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Apply D1 migrations
+        run: pnpm --filter rsvp exec wrangler d1 migrations apply DB --remote
+      # Each package's `predeploy` runs `pnpm --filter '<pkg>...' build`,
+      # which topologically builds rsc-utils (via its dist/) before the app's
+      # `vite build`. `deploy` itself is just `wrangler deploy -c
+      # dist/rsc/wrangler.json` — the `-c` points at the *generated* config
+      # in dist/rsc/, which has no_bundle: true and the embedded ssr child
+      # environment. Pre-script auto-run requires enable-pre-post-scripts=true
+      # in .npmrc.
+      - name: Deploy rsvp worker
+        env:
+          VITE_FRONTEND_URL: https://wedding.kavari-searls.net
+        run: pnpm --filter rsvp run deploy
+      - name: Deploy frontend worker
+        run: pnpm --filter frontend run deploy

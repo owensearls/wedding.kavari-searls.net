@@ -1,0 +1,30 @@
+.wrap {
+  overflow-x: auto;
+  border: 1px solid #6e6b60;
+  background: white;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.3);
+  color: #4a4842;
+}
+
+.table th {
+  background: #f5f3ec;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}

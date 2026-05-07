@@ -1,0 +1,74 @@
+name: Check
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v6
+        with: { node-version: lts/*, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v6
+        with: { node-version: lts/*, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v6
+        with: { node-version: lts/*, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Build rsc-utils (consumed via dist/ by rsvp + frontend)
+        run: pnpm --filter rsc-utils build
+      - run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v6
+        with: { node-version: lts/*, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Provision local D1 sqlite for tests
+        run: pnpm --filter rsvp db:migrate:local
+      - run: pnpm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v6
+        with: { node-version: lts/*, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Build rsc-utils (consumed via dist/ by rsvp + frontend)
+        run: pnpm --filter rsc-utils build
+      - run: pnpm build

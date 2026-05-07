@@ -1,0 +1,25 @@
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  position: relative;
+}
+
+.label {
+  font-size: 13px;
+  color: #6e6b60;
+}
+
+.hint {
+  color: #b0aca0;
+  font-weight: normal;
+}
+
+.error {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  font-size: 12px;
+  color: #b04438;
+}
