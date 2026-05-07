@@ -111,6 +111,18 @@ describe('buildNotesValidator', () => {
     if (r.success) expect(r.data.dietary_restrictions).toBeNull()
   })
 
+  it('accepts explicit null on short_text', () => {
+    const r = v.safeParse({ dietary_restrictions: null })
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.dietary_restrictions).toBeNull()
+  })
+
+  it('accepts explicit null on single_select', () => {
+    const r = v.safeParse({ meal_choice: null })
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.meal_choice).toBeNull()
+  })
+
   it('accepts a known single_select option', () => {
     expect(v.safeParse({ meal_choice: 'opt_chicken' }).success).toBe(true)
   })

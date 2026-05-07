@@ -39,7 +39,7 @@ function fieldType(f: NotesFieldInput): 'short_text' | 'single_select' {
 }
 
 function newOptionId(): string {
-  return newId('opt').replace(/^opt_/, 'opt_').slice(0, 24)
+  return newId('opt').slice(0, 24)
 }
 
 export function CustomFieldsEditor({
