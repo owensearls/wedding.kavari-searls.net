@@ -1,5 +1,6 @@
 'use client'
 
+import { fieldsInOrder, type NotesJsonSchema } from 'db'
 import { useEffect, useState } from 'react'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
@@ -8,16 +9,13 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
 import { Table } from '../../components/ui/Table'
 import { getGuest } from '../../server/admin/guests'
-import {
-  formatCustomAnswers,
-  renderCustomFieldValue,
-} from '../lib/customFieldRender'
+import { formatCustomAnswers, renderFieldValue } from '../lib/customFieldRender'
 import styles from './GuestList.module.css'
-import type { AdminGuestDetail, CustomFieldConfig } from '../../schema'
+import type { AdminGuestDetail } from '../../schema'
 
 type GuestDetailWithFields = AdminGuestDetail & {
-  guestCustomFields: CustomFieldConfig[]
-  eventCustomFieldsByEvent: Record<string, CustomFieldConfig[]>
+  guestNotesSchema: NotesJsonSchema
+  eventNotesSchemaByEvent: Record<string, NotesJsonSchema | null>
 }
 
 interface GuestDetailModalProps {
@@ -86,17 +84,17 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
             )}
           </div>
 
-          {data.guestCustomFields.length > 0 && (
+          {fieldsInOrder(data.guestNotesSchema).length > 0 && (
             <div
               className={`${styles.detailGrid} ${styles.customDivider}`}
               style={{ marginTop: 12, paddingLeft: 12 }}
             >
-              {data.guestCustomFields.map((f) => {
-                const v = renderCustomFieldValue(f, data.notesJson)
+              {fieldsInOrder(data.guestNotesSchema).map(({ key, field }) => {
+                const v = renderFieldValue(field, data.notesJson[key])
                 return (
-                  <div key={f.id} style={{ display: 'contents' }}>
-                    <div className={styles.detailLabel}>{f.label}</div>
-                    <div>{v ?? '—'}</div>
+                  <div key={key} style={{ display: 'contents' }}>
+                    <div className={styles.detailLabel}>{field.title}</div>
+                    <div>{v}</div>
                   </div>
                 )
               })}
@@ -123,8 +121,8 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
                 </tr>
               )}
               {data.events.map((e) => {
-                const fields = data.eventCustomFieldsByEvent[e.eventId] ?? []
-                const answers = formatCustomAnswers(fields, e.notesJson)
+                const schema = data.eventNotesSchemaByEvent[e.eventId] ?? null
+                const answers = formatCustomAnswers(schema, e.notesJson)
                 return (
                   <tr key={e.eventId}>
                     <td>{e.eventName}</td>

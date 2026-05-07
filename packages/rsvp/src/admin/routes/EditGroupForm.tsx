@@ -18,6 +18,9 @@ import {
 } from '../../schema'
 import styles from './EditGroupForm.module.css'
 import type { AdminEventRecord } from '../../server/admin/events'
+import type { z } from 'zod'
+
+type GroupFormInput = z.input<typeof adminGroupInputSchema>
 
 const blankGuest = (): AdminGuestInput => ({
   firstName: '',
@@ -50,9 +53,9 @@ export function EditGroupForm({
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<AdminGroupInput>({
+  } = useForm<GroupFormInput, unknown, AdminGroupInput>({
     resolver: zodResolver(adminGroupInputSchema),
-    defaultValues: group,
+    defaultValues: group as GroupFormInput,
   })
 
   const { fields, append, remove } = useFieldArray({

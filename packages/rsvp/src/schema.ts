@@ -13,10 +13,7 @@ export const adminGuestInputSchema = z.object({
     blankToNull,
     z.string().max(100).nullable().optional()
   ),
-  email: z.preprocess(
-    blankToNull,
-    z.string().email().max(200).nullable().optional()
-  ),
+  email: z.preprocess(blankToNull, z.email().max(200).nullable().optional()),
   phone: z.preprocess(blankToNull, z.string().max(50).nullable().optional()),
 })
 export type AdminGuestInput = z.infer<typeof adminGuestInputSchema>
@@ -49,59 +46,81 @@ export const adminImportSchema = z.object({
 })
 export type AdminImport = z.infer<typeof adminImportSchema>
 
-// Custom-field admin input
-export const adminCustomFieldOptionInputSchema = z.object({
-  id: z.string().optional(),
-  label: z.string().min(1).max(200),
-  description: z.preprocess(
-    blankToNull,
-    z.string().max(500).nullable().optional()
-  ),
-  sortOrder: z.number().int().default(0),
+// ── JSON Schema notes-field admin input shapes ───────────────────────────
+
+export const shortTextFieldSchema = z.object({
+  title: z.string().min(1).max(200),
+  type: z.literal('string'),
+  maxLength: z.number().int().min(1).max(2000),
 })
-export type AdminCustomFieldOptionInput = z.infer<
-  typeof adminCustomFieldOptionInputSchema
->
+export type ShortTextFieldInput = z.infer<typeof shortTextFieldSchema>
 
-export const adminCustomFieldInputSchema = z
-  .object({
-    id: z.string().optional(),
-    key: z
-      .string()
-      .min(1)
-      .max(80)
-      .regex(/^[a-z][a-z0-9_]*$/, 'Use snake_case'),
-    label: z.string().min(1).max(200),
-    type: z.enum(['short_text', 'single_select']),
-    sortOrder: z.number().int().default(0),
-    options: z.array(adminCustomFieldOptionInputSchema).default([]),
-  })
-  .refine((d) => d.type === 'single_select' || d.options.length === 0, {
-    message: 'Options only allowed for single_select fields',
-    path: ['options'],
-  })
-export type AdminCustomFieldInput = z.infer<typeof adminCustomFieldInputSchema>
-
-// Event admin input (drops mealOptions / requiresMealChoice)
-export const adminEventInputSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1).max(200),
-  slug: z
+export const singleSelectOptionSchema = z.object({
+  const: z
     .string()
     .min(1)
     .max(80)
-    .regex(/^[a-z0-9-]+$/),
-  startsAt: z.preprocess(blankToNull, z.string().nullable().optional()),
-  endsAt: z.preprocess(blankToNull, z.string().nullable().optional()),
-  locationName: z.preprocess(
-    blankToNull,
-    z.string().max(200).nullable().optional()
-  ),
-  address: z.preprocess(blankToNull, z.string().max(500).nullable().optional()),
-  rsvpDeadline: z.preprocess(blankToNull, z.string().nullable().optional()),
-  sortOrder: z.number().int().default(0),
-  customFields: z.array(adminCustomFieldInputSchema).default([]),
+    .regex(/^[a-z0-9_]+$/),
+  title: z.string().min(1).max(200),
+  description: z.preprocess(blankToNull, z.string().max(500).nullable()),
 })
+export type SingleSelectOptionInput = z.infer<typeof singleSelectOptionSchema>
+
+export const singleSelectFieldSchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    oneOf: z.array(singleSelectOptionSchema).min(1),
+  })
+  .refine((f) => new Set(f.oneOf.map((o) => o.const)).size === f.oneOf.length, {
+    message: 'Duplicate option ids',
+    path: ['oneOf'],
+  })
+export type SingleSelectFieldInput = z.infer<typeof singleSelectFieldSchema>
+
+export const notesFieldSchema = z.union([
+  shortTextFieldSchema,
+  singleSelectFieldSchema,
+])
+export type NotesFieldInput = z.infer<typeof notesFieldSchema>
+
+export const adminFieldDraftSchema = z.object({
+  key: z
+    .string()
+    .min(1)
+    .max(80)
+    .regex(/^[a-z][a-z0-9_]*$/, 'Use snake_case'),
+  field: notesFieldSchema,
+})
+export type AdminFieldDraft = z.infer<typeof adminFieldDraftSchema>
+
+export const adminEventInputSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().min(1).max(200),
+    slug: z
+      .string()
+      .min(1)
+      .max(80)
+      .regex(/^[a-z0-9-]+$/),
+    startsAt: z.preprocess(blankToNull, z.string().nullable().optional()),
+    endsAt: z.preprocess(blankToNull, z.string().nullable().optional()),
+    locationName: z.preprocess(
+      blankToNull,
+      z.string().max(200).nullable().optional()
+    ),
+    address: z.preprocess(
+      blankToNull,
+      z.string().max(500).nullable().optional()
+    ),
+    rsvpDeadline: z.preprocess(blankToNull, z.string().nullable().optional()),
+    sortOrder: z.number().int().default(0),
+    notesSchema: z.array(adminFieldDraftSchema).default([]),
+  })
+  .refine(
+    (d) =>
+      new Set(d.notesSchema.map((f) => f.key)).size === d.notesSchema.length,
+    { message: 'Duplicate field keys', path: ['notesSchema'] }
+  )
 export type AdminEventInput = z.infer<typeof adminEventInputSchema>
 
 // Admin display shapes
@@ -168,21 +187,3 @@ export const adminResponseRowSchema = z.object({
   respondedAt: z.string().nullable(),
 })
 export type AdminResponseRow = z.infer<typeof adminResponseRowSchema>
-
-// Custom-field display shapes (mirrors db package's CustomFieldConfig).
-export const customFieldOptionSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  description: z.string().nullable(),
-})
-export type CustomFieldOption = z.infer<typeof customFieldOptionSchema>
-
-export const customFieldConfigSchema = z.object({
-  id: z.string(),
-  key: z.string(),
-  label: z.string(),
-  type: z.enum(['short_text', 'single_select']),
-  sortOrder: z.number(),
-  options: z.array(customFieldOptionSchema),
-})
-export type CustomFieldConfig = z.infer<typeof customFieldConfigSchema>

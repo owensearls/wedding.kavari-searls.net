@@ -1,5 +1,11 @@
 'use client'
 
+import {
+  fieldsInOrder,
+  isShortTextField,
+  isSingleSelectField,
+  type NotesFieldSchema,
+} from 'db'
 import { useEffect, useMemo, useState } from 'react'
 import { ErrorMessage } from '../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../components/ui/LoadingIndicator'
@@ -12,7 +18,6 @@ import {
 } from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type {
-  CustomFieldConfig,
   Guest,
   RsvpGroupResponse,
   RsvpStatus,
@@ -164,34 +169,41 @@ export function RsvpFull() {
   const hasPriorRsvp = data?.rsvps.some((r) => r.respondedAt !== null) ?? false
   const showSaveLabel = hasPriorRsvp || savedThisSession
 
-  function renderGuestCustomField(g: Guest, f: CustomFieldConfig) {
-    const v = state?.guestNotesJson[g.id]?.[f.key]
+  function renderGuestCustomField(
+    g: Guest,
+    fieldKey: string,
+    field: NotesFieldSchema
+  ) {
+    const v = state?.guestNotesJson[g.id]?.[fieldKey]
     const value = typeof v === 'string' ? v : ''
-    if (f.type === 'single_select') {
+    if (isSingleSelectField(field)) {
       return (
         <select
           className={styles.select}
           value={value}
-          onChange={(e) => setGuestCustom(g.id, f.key, e.target.value)}
+          onChange={(e) => setGuestCustom(g.id, fieldKey, e.target.value)}
         >
           <option value="">Choose…</option>
-          {f.options.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
+          {field.oneOf.map((opt) => (
+            <option key={opt.const} value={opt.const}>
+              {opt.title}
             </option>
           ))}
         </select>
       )
     }
-    return (
-      <input
-        type="text"
-        className={styles.select}
-        maxLength={500}
-        value={value}
-        onChange={(e) => setGuestCustom(g.id, f.key, e.target.value)}
-      />
-    )
+    if (isShortTextField(field)) {
+      return (
+        <input
+          type="text"
+          className={styles.select}
+          maxLength={field.maxLength}
+          value={value}
+          onChange={(e) => setGuestCustom(g.id, fieldKey, e.target.value)}
+        />
+      )
+    }
+    return null
   }
 
   return (
@@ -231,16 +243,18 @@ export function RsvpFull() {
               <h2 className={styles.detailsHeading}>Other details</h2>
               {data.guests.map((g) => (
                 <div key={g.id}>
-                  {data.guestCustomFields.map((f) => (
-                    <div key={f.id}>
-                      <label className={styles.fieldLabel}>
-                        {data.guests.length > 1
-                          ? `${g.displayName} — ${f.label}`
-                          : f.label}
-                      </label>
-                      {renderGuestCustomField(g, f)}
-                    </div>
-                  ))}
+                  {fieldsInOrder(data.guestNotesSchema).map(
+                    ({ key, field }) => (
+                      <div key={key}>
+                        <label className={styles.fieldLabel}>
+                          {data.guests.length > 1
+                            ? `${g.displayName} — ${field.title}`
+                            : field.title}
+                        </label>
+                        {renderGuestCustomField(g, key, field)}
+                      </div>
+                    )
+                  )}
                 </div>
               ))}
 

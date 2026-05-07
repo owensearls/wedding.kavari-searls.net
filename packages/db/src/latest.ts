@@ -1,5 +1,4 @@
 import type { Db } from './db'
-import type { CustomFieldConfig } from './diff'
 
 export interface LatestRsvpResponseRow {
   id: string
@@ -84,88 +83,5 @@ export async function latestGuestResponses(
     notesJson: r.notes_json,
     respondedAt: r.responded_at,
     respondedByGuestId: r.responded_by_guest_id,
-  }))
-}
-
-export async function loadEventCustomFields(
-  db: Db,
-  eventIds: string[]
-): Promise<Map<string, CustomFieldConfig[]>> {
-  const out = new Map<string, CustomFieldConfig[]>()
-  if (eventIds.length === 0) return out
-  const fields = await db
-    .selectFrom('event_custom_field')
-    .selectAll()
-    .where('event_id', 'in', eventIds)
-    .orderBy(['event_id', 'sort_order'])
-    .execute()
-  if (fields.length === 0) return out
-  const fieldIds = fields.map((f) => f.id)
-  const options = await db
-    .selectFrom('event_custom_field_option')
-    .selectAll()
-    .where('field_id', 'in', fieldIds)
-    .orderBy(['field_id', 'sort_order'])
-    .execute()
-  const optionsByField = new Map<string, CustomFieldConfig['options']>()
-  for (const o of options) {
-    const arr = optionsByField.get(o.field_id) ?? []
-    arr.push({
-      id: o.id,
-      label: o.label,
-      description: o.description,
-      sortOrder: o.sort_order,
-    })
-    optionsByField.set(o.field_id, arr)
-  }
-  for (const f of fields) {
-    const arr = out.get(f.event_id) ?? []
-    arr.push({
-      id: f.id,
-      key: f.key,
-      label: f.label,
-      type: f.type,
-      sortOrder: f.sort_order,
-      options: optionsByField.get(f.id) ?? [],
-    })
-    out.set(f.event_id, arr)
-  }
-  return out
-}
-
-export async function loadGuestCustomFields(
-  db: Db
-): Promise<CustomFieldConfig[]> {
-  const fields = await db
-    .selectFrom('guest_custom_field')
-    .selectAll()
-    .orderBy('sort_order')
-    .execute()
-  if (fields.length === 0) return []
-  const fieldIds = fields.map((f) => f.id)
-  const options = await db
-    .selectFrom('guest_custom_field_option')
-    .selectAll()
-    .where('field_id', 'in', fieldIds)
-    .orderBy(['field_id', 'sort_order'])
-    .execute()
-  const optionsByField = new Map<string, CustomFieldConfig['options']>()
-  for (const o of options) {
-    const arr = optionsByField.get(o.field_id) ?? []
-    arr.push({
-      id: o.id,
-      label: o.label,
-      description: o.description,
-      sortOrder: o.sort_order,
-    })
-    optionsByField.set(o.field_id, arr)
-  }
-  return fields.map((f) => ({
-    id: f.id,
-    key: f.key,
-    label: f.label,
-    type: f.type,
-    sortOrder: f.sort_order,
-    options: optionsByField.get(f.id) ?? [],
   }))
 }

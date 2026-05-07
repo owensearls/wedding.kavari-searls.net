@@ -2,16 +2,16 @@
 
 import {
   aggregateLookupMatches,
+  buildNotesValidator,
   diffGuestResponse,
   diffRsvpResponse,
   getDb,
+  GUEST_PROFILE_NOTES_SCHEMA,
   latestGuestResponses,
   latestRsvpResponses,
-  loadEventCustomFields,
-  loadGuestCustomFields,
   newId,
   nowIso,
-  validateNotesJson,
+  parseNotesSchema,
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
@@ -26,6 +26,7 @@ import {
   type RsvpRecord,
   type RsvpSubmission,
 } from '../schema'
+import type { z } from 'zod'
 
 function getDbConn() {
   return getDb(getEnv().DB)
@@ -39,6 +40,12 @@ function parseNotesJson(raw: string | null): NotesJson {
   } catch {
     return {}
   }
+}
+
+function formatZodIssue(error: z.ZodError): string {
+  const issue = error.issues[0]
+  const path = issue.path.join('.')
+  return path ? `${path}: ${issue.message}` : issue.message
 }
 
 export async function lookupGuests(query: string): Promise<LookupResponse> {
@@ -124,24 +131,30 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
         .execute()
     : []
 
-  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
-  const guestCustomFields = await loadGuestCustomFields(db)
   const latestRsvps = await latestRsvpResponses(db, { guestIds, eventIds })
   const latestGuests = await latestGuestResponses(db, { guestIds })
 
-  const eventsResponse: EventDetails[] = events.map((e) => ({
-    id: e.id,
-    name: e.name,
-    slug: e.slug,
-    startsAt: e.starts_at,
-    endsAt: e.ends_at,
-    locationName: e.location_name,
-    address: e.address,
-    rsvpDeadline: e.rsvp_deadline,
-    sortOrder: e.sort_order,
-    invitedGuestIds: guestIds,
-    customFields: eventCustomFieldsByEvent.get(e.id) ?? [],
-  }))
+  const eventsResponse: EventDetails[] = events.map((e) => {
+    let schema
+    try {
+      schema = parseNotesSchema(e.notes_schema)
+    } catch {
+      throw new RscFunctionError(500, `Event schema is malformed: ${e.slug}`)
+    }
+    return {
+      id: e.id,
+      name: e.name,
+      slug: e.slug,
+      startsAt: e.starts_at,
+      endsAt: e.ends_at,
+      locationName: e.location_name,
+      address: e.address,
+      rsvpDeadline: e.rsvp_deadline,
+      sortOrder: e.sort_order,
+      invitedGuestIds: guestIds,
+      notesSchema: schema,
+    }
+  })
 
   const latestGuestByGuestId = new Map(latestGuests.map((r) => [r.guestId, r]))
 
@@ -174,7 +187,7 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
     guests: guestsResponse,
     events: eventsResponse,
     rsvps,
-    guestCustomFields,
+    guestNotesSchema: GUEST_PROFILE_NOTES_SCHEMA,
   }
 }
 
@@ -221,8 +234,24 @@ export async function submitRsvp(
   const invitedEventIds = new Set(invitations.map((i) => i.event_id))
 
   const eventIds = [...invitedEventIds]
-  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
-  const guestCustomFields = await loadGuestCustomFields(db)
+  const eventRows = eventIds.length
+    ? await db
+        .selectFrom('event')
+        .select(['id', 'notes_schema'])
+        .where('id', 'in', eventIds)
+        .execute()
+    : []
+  const eventSchemaByEventId = new Map<
+    string,
+    ReturnType<typeof parseNotesSchema>
+  >()
+  for (const e of eventRows) {
+    try {
+      eventSchemaByEventId.set(e.id, parseNotesSchema(e.notes_schema))
+    } catch {
+      throw new RscFunctionError(500, 'Event schema is malformed')
+    }
+  }
 
   // Validate per-event submissions.
   const sanitizedRsvpNotes = new Map<string, NotesJson>()
@@ -237,20 +266,33 @@ export async function submitRsvp(
       )
     }
     if (r.status === 'attending' || r.status === 'declined') {
-      const config = eventCustomFieldsByEvent.get(r.eventId) ?? []
-      const v = validateNotesJson(r.notesJson, config)
-      if (!v.ok) throw new RscFunctionError(400, v.error)
-      sanitizedRsvpNotes.set(`${r.guestId}::${r.eventId}`, v.value)
+      const eventSchema = eventSchemaByEventId.get(r.eventId) ?? null
+      if (eventSchema) {
+        const result = buildNotesValidator(eventSchema).safeParse(
+          r.notesJson ?? {}
+        )
+        if (!result.success) {
+          throw new RscFunctionError(400, formatZodIssue(result.error))
+        }
+        sanitizedRsvpNotes.set(`${r.guestId}::${r.eventId}`, result.data)
+      } else if (r.notesJson && Object.keys(r.notesJson).length > 0) {
+        throw new RscFunctionError(400, 'Event has no custom fields')
+      } else {
+        sanitizedRsvpNotes.set(`${r.guestId}::${r.eventId}`, {})
+      }
     }
   }
 
   // Validate per-guest submissions.
   const sanitizedGuestNotes = new Map<string, NotesJson>()
+  const guestValidator = buildNotesValidator(GUEST_PROFILE_NOTES_SCHEMA)
   for (const u of data.guestUpdates) {
     if (!allowedGuestIds.has(u.guestId)) continue
-    const v = validateNotesJson(u.notesJson, guestCustomFields)
-    if (!v.ok) throw new RscFunctionError(400, v.error)
-    sanitizedGuestNotes.set(u.guestId, v.value)
+    const result = guestValidator.safeParse(u.notesJson ?? {})
+    if (!result.success) {
+      throw new RscFunctionError(400, formatZodIssue(result.error))
+    }
+    sanitizedGuestNotes.set(u.guestId, result.data)
   }
 
   const guestIdsTouched = Array.from(

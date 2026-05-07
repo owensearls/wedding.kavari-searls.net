@@ -1,9 +1,20 @@
 'use server'
 
-import { getDb, loadEventCustomFields, newId } from 'db'
+import {
+  fieldsInOrder,
+  getDb,
+  newId,
+  parseNotesSchema,
+  stringifyNotesSchema,
+  type NotesJsonSchema,
+} from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
-import { adminEventInputSchema, type AdminEventInput } from '../../schema'
+import {
+  adminEventInputSchema,
+  type AdminEventInput,
+  type AdminFieldDraft,
+} from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
@@ -11,6 +22,22 @@ function getDbConn() {
 
 export interface AdminEventRecord extends AdminEventInput {
   id: string
+}
+
+function schemaToDrafts(schema: NotesJsonSchema | null): AdminFieldDraft[] {
+  if (!schema) return []
+  return fieldsInOrder(schema).map(({ key, field }) => ({ key, field }))
+}
+
+function draftsToSchema(drafts: AdminFieldDraft[]): NotesJsonSchema | null {
+  if (drafts.length === 0) return null
+  return {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    additionalProperties: false,
+    'x-fieldOrder': drafts.map((d) => d.key),
+    properties: Object.fromEntries(drafts.map((d) => [d.key, d.field])),
+  }
 }
 
 export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
@@ -21,23 +48,27 @@ export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
     .orderBy('sort_order')
     .execute()
   if (events.length === 0) return { events: [] }
-  const customFieldsByEvent = await loadEventCustomFields(
-    db,
-    events.map((e) => e.id)
-  )
   return {
-    events: events.map((e) => ({
-      id: e.id,
-      name: e.name,
-      slug: e.slug,
-      startsAt: e.starts_at,
-      endsAt: e.ends_at,
-      locationName: e.location_name,
-      address: e.address,
-      rsvpDeadline: e.rsvp_deadline,
-      sortOrder: e.sort_order,
-      customFields: customFieldsByEvent.get(e.id) ?? [],
-    })),
+    events: events.map((e) => {
+      let schema: NotesJsonSchema | null
+      try {
+        schema = parseNotesSchema(e.notes_schema)
+      } catch {
+        throw new RscFunctionError(500, `Event schema is malformed: ${e.slug}`)
+      }
+      return {
+        id: e.id,
+        name: e.name,
+        slug: e.slug,
+        startsAt: e.starts_at,
+        endsAt: e.ends_at,
+        locationName: e.location_name,
+        address: e.address,
+        rsvpDeadline: e.rsvp_deadline,
+        sortOrder: e.sort_order,
+        notesSchema: schemaToDrafts(schema),
+      }
+    }),
   }
 }
 
@@ -52,6 +83,9 @@ export async function saveEvent(
   const id = data.id ?? newId('evt')
   const sortOrder = data.sortOrder ?? 0
 
+  const schema = draftsToSchema(data.notesSchema)
+  const notes_schema = schema ? stringifyNotesSchema(schema) : null
+
   if (data.id) {
     await db
       .updateTable('event')
@@ -64,6 +98,7 @@ export async function saveEvent(
         address: data.address ?? null,
         rsvp_deadline: data.rsvpDeadline ?? null,
         sort_order: sortOrder,
+        notes_schema,
       })
       .where('id', '=', data.id)
       .execute()
@@ -87,96 +122,9 @@ export async function saveEvent(
         address: data.address ?? null,
         rsvp_deadline: data.rsvpDeadline ?? null,
         sort_order: sortOrder,
+        notes_schema,
       })
       .execute()
-  }
-
-  // Diff custom fields: delete any not in submission, upsert the rest.
-  const submittedFieldIds = new Set(
-    data.customFields.map((f) => f.id).filter((x): x is string => !!x)
-  )
-  const existing = await db
-    .selectFrom('event_custom_field')
-    .select(['id'])
-    .where('event_id', '=', id)
-    .execute()
-  for (const ex of existing) {
-    if (!submittedFieldIds.has(ex.id)) {
-      await db
-        .deleteFrom('event_custom_field')
-        .where('id', '=', ex.id)
-        .execute()
-    }
-  }
-
-  for (const f of data.customFields) {
-    const fieldId = f.id ?? newId('ecf')
-    if (f.id) {
-      await db
-        .updateTable('event_custom_field')
-        .set({
-          key: f.key,
-          label: f.label,
-          type: f.type,
-          sort_order: f.sortOrder,
-        })
-        .where('id', '=', f.id)
-        .execute()
-    } else {
-      await db
-        .insertInto('event_custom_field')
-        .values({
-          id: fieldId,
-          event_id: id,
-          key: f.key,
-          label: f.label,
-          type: f.type,
-          sort_order: f.sortOrder,
-        })
-        .execute()
-    }
-
-    // Diff options for single_select fields.
-    const submittedOptionIds = new Set(
-      f.options.map((o) => o.id).filter((x): x is string => !!x)
-    )
-    const existingOptions = await db
-      .selectFrom('event_custom_field_option')
-      .select(['id'])
-      .where('field_id', '=', fieldId)
-      .execute()
-    for (const eo of existingOptions) {
-      if (!submittedOptionIds.has(eo.id)) {
-        await db
-          .deleteFrom('event_custom_field_option')
-          .where('id', '=', eo.id)
-          .execute()
-      }
-    }
-    for (const o of f.options) {
-      if (o.id) {
-        await db
-          .updateTable('event_custom_field_option')
-          .set({
-            label: o.label,
-            description: o.description ?? null,
-            sort_order: o.sortOrder,
-          })
-          .where('id', '=', o.id)
-          .execute()
-      } else {
-        await db
-          .insertInto('event_custom_field_option')
-          .values({
-            id: newId('ecfo'),
-            field_id: fieldId,
-            label: o.label,
-            description: o.description ?? null,
-            sort_order: o.sortOrder,
-          })
-          .execute()
-      }
-    }
   }
 
   return { id }

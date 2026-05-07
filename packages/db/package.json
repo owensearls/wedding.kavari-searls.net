@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "kysely": "^0.27.5",
-    "kysely-d1": "^0.3.0"
+    "kysely-d1": "^0.3.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250410.0",

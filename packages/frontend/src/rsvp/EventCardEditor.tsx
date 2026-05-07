@@ -1,3 +1,4 @@
+import { fieldsInOrder, isShortTextField, isSingleSelectField } from 'db'
 import {
   defaultValueForField,
   formatRsvpDate,
@@ -30,6 +31,7 @@ export function EventCardEditor({
   onCustomChange,
 }: EventCardEditorProps) {
   const dateText = formatRsvpDate(event.startsAt)
+  const fields = event.notesSchema ? fieldsInOrder(event.notesSchema) : []
 
   function renderToggleAndCustom(guestId: string) {
     const k = rsvpKey(guestId, event.id)
@@ -53,37 +55,37 @@ export function EventCardEditor({
           </button>
         </div>
         {current.status === 'attending' &&
-          event.customFields.map((f) => (
-            <div key={f.id} className={styles.mealRow}>
-              <label htmlFor={`f-${k}-${f.id}`}>{f.label}:</label>
-              {f.type === 'single_select' ? (
+          fields.map(({ key, field }) => (
+            <div key={key} className={styles.mealRow}>
+              <label htmlFor={`f-${k}-${key}`}>{field.title}:</label>
+              {isSingleSelectField(field) ? (
                 <select
-                  id={`f-${k}-${f.id}`}
+                  id={`f-${k}-${key}`}
                   className={styles.select}
-                  value={defaultValueForField(f, current.notesJson)}
+                  value={defaultValueForField(key, field, current.notesJson)}
                   onChange={(e) =>
-                    onCustomChange(guestId, event.id, f.key, e.target.value)
+                    onCustomChange(guestId, event.id, key, e.target.value)
                   }
                 >
                   <option value="">Choose…</option>
-                  {f.options.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.label}
+                  {field.oneOf.map((opt) => (
+                    <option key={opt.const} value={opt.const}>
+                      {opt.title}
                     </option>
                   ))}
                 </select>
-              ) : (
+              ) : isShortTextField(field) ? (
                 <input
-                  id={`f-${k}-${f.id}`}
+                  id={`f-${k}-${key}`}
                   type="text"
                   className={styles.select}
-                  maxLength={500}
-                  value={defaultValueForField(f, current.notesJson)}
+                  maxLength={field.maxLength}
+                  value={defaultValueForField(key, field, current.notesJson)}
                   onChange={(e) =>
-                    onCustomChange(guestId, event.id, f.key, e.target.value)
+                    onCustomChange(guestId, event.id, key, e.target.value)
                   }
                 />
-              )}
+              ) : null}
             </div>
           ))}
       </>

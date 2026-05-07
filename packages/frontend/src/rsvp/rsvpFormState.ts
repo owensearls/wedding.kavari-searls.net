@@ -1,9 +1,5 @@
-import type {
-  CustomFieldConfig,
-  NotesJson,
-  RsvpGroupResponse,
-  RsvpStatus,
-} from '../schema'
+import type { NotesJson, RsvpGroupResponse, RsvpStatus } from '../schema'
+import type { NotesFieldSchema } from 'db'
 
 export type RsvpKey = `${string}::${string}`
 
@@ -67,9 +63,10 @@ export function buildInitialRsvpFormState(
 }
 
 export function defaultValueForField(
-  field: CustomFieldConfig,
+  key: string,
+  _field: NotesFieldSchema,
   current: NotesJson
 ): string {
-  const v = current[field.key]
+  const v = current[key]
   return typeof v === 'string' ? v : ''
 }

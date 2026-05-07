@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { NotesJsonSchema } from 'db'
 
 export const rsvpStatusSchema = z.enum(['attending', 'declined'])
 export type RsvpStatus = z.infer<typeof rsvpStatusSchema>
@@ -21,25 +22,37 @@ export const lookupResponseSchema = z.object({
 })
 export type LookupResponse = z.infer<typeof lookupResponseSchema>
 
-export const customFieldOptionSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  description: z.string().nullable(),
-})
-export type CustomFieldOption = z.infer<typeof customFieldOptionSchema>
-
-export const customFieldConfigSchema = z.object({
-  id: z.string(),
-  key: z.string(),
-  label: z.string(),
-  type: z.enum(['short_text', 'single_select']),
-  sortOrder: z.number(),
-  options: z.array(customFieldOptionSchema),
-})
-export type CustomFieldConfig = z.infer<typeof customFieldConfigSchema>
-
 export const notesJsonSchema = z.record(z.string(), z.string().nullable())
 export type NotesJson = z.infer<typeof notesJsonSchema>
+
+// Wire schema mirroring db's NotesJsonSchema. Used for parsing server
+// responses and validating per-event/per-guest notes_schema.
+const shortTextFieldShape = z.object({
+  title: z.string(),
+  type: z.literal('string'),
+  maxLength: z.number(),
+})
+
+const singleSelectOptionShape = z.object({
+  const: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+})
+
+const singleSelectFieldShape = z.object({
+  title: z.string(),
+  oneOf: z.array(singleSelectOptionShape),
+})
+
+const notesFieldShape = z.union([shortTextFieldShape, singleSelectFieldShape])
+
+export const notesJsonSchemaShape = z.object({
+  $schema: z.string().optional(),
+  type: z.literal('object'),
+  additionalProperties: z.literal(false),
+  'x-fieldOrder': z.array(z.string()),
+  properties: z.record(z.string(), notesFieldShape),
+}) as z.ZodType<NotesJsonSchema>
 
 export const guestRsvpSchema = z.object({
   guestId: z.string(),
@@ -84,7 +97,7 @@ export const eventSchema = z.object({
   address: z.string().nullable(),
   rsvpDeadline: z.string().nullable(),
   sortOrder: z.number(),
-  customFields: z.array(customFieldConfigSchema),
+  notesSchema: notesJsonSchemaShape.nullable(),
   invitedGuestIds: z.array(z.string()),
 })
 export type EventDetails = z.infer<typeof eventSchema>
@@ -107,6 +120,6 @@ export const rsvpGroupResponseSchema = z.object({
   guests: z.array(guestSchema),
   events: z.array(eventSchema),
   rsvps: z.array(rsvpRecordSchema),
-  guestCustomFields: z.array(customFieldConfigSchema),
+  guestNotesSchema: notesJsonSchemaShape,
 })
 export type RsvpGroupResponse = z.infer<typeof rsvpGroupResponseSchema>

@@ -2,15 +2,15 @@
 
 import {
   getDb,
+  GUEST_PROFILE_NOTES_SCHEMA,
   latestGuestResponses,
   latestRsvpResponses,
-  loadEventCustomFields,
-  loadGuestCustomFields,
-  type CustomFieldConfig as DbCustomFieldConfig,
+  parseNotesSchema,
+  type NotesJsonSchema,
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
-import type { AdminGuestDetail, CustomFieldConfig } from '../../schema'
+import type { AdminGuestDetail } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
@@ -28,8 +28,8 @@ function parseNotesJson(raw: string | null): Record<string, string | null> {
 
 export async function getGuest(id: string): Promise<
   AdminGuestDetail & {
-    guestCustomFields: CustomFieldConfig[]
-    eventCustomFieldsByEvent: Record<string, CustomFieldConfig[]>
+    guestNotesSchema: NotesJsonSchema
+    eventNotesSchemaByEvent: Record<string, NotesJsonSchema | null>
   }
 > {
   if (!id) throw new RscFunctionError(400, 'Missing id')
@@ -61,6 +61,7 @@ export async function getGuest(id: string): Promise<
       'invitation.event_id as eventId',
       'event.name as eventName',
       'event.sort_order as sortOrder',
+      'event.notes_schema as notesSchemaRaw',
     ])
     .where('invitation.guest_id', '=', leaderId)
     .orderBy('event.sort_order')
@@ -91,8 +92,16 @@ export async function getGuest(id: string): Promise<
     : []
   const responderName = new Map(responders.map((r) => [r.id, r.display_name]))
 
-  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
-  const guestCustomFields = await loadGuestCustomFields(db)
+  const eventNotesSchemaByEvent: Record<string, NotesJsonSchema | null> = {}
+  for (const inv of invitations) {
+    try {
+      eventNotesSchemaByEvent[inv.eventId] = parseNotesSchema(
+        inv.notesSchemaRaw
+      )
+    } catch {
+      throw new RscFunctionError(500, 'Event schema is malformed')
+    }
+  }
 
   const events = invitations.map((inv) => {
     const r = latestRsvps.find((x) => x.eventId === inv.eventId)
@@ -108,9 +117,6 @@ export async function getGuest(id: string): Promise<
     }
   })
 
-  // db's CustomFieldConfig is structurally identical to the admin schema's.
-  const toAdminCfg = (c: DbCustomFieldConfig): CustomFieldConfig => c
-
   return {
     id: guest.id,
     displayName: guest.display_name,
@@ -121,12 +127,7 @@ export async function getGuest(id: string): Promise<
     notesJson: parseNotesJson(lg?.notesJson ?? null),
     groupLabel,
     events,
-    guestCustomFields: guestCustomFields.map(toAdminCfg),
-    eventCustomFieldsByEvent: Object.fromEntries(
-      [...eventCustomFieldsByEvent.entries()].map(([k, v]) => [
-        k,
-        v.map(toAdminCfg),
-      ])
-    ),
+    guestNotesSchema: GUEST_PROFILE_NOTES_SCHEMA,
+    eventNotesSchemaByEvent,
   }
 }

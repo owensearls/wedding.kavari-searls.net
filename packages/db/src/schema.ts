@@ -22,45 +22,13 @@ export interface EventTable {
   address: string | null
   rsvp_deadline: string | null
   sort_order: number
+  notes_schema: string | null
 }
 
 export interface InvitationTable {
   id: string
   guest_id: string
   event_id: string
-}
-
-export interface EventCustomFieldTable {
-  id: string
-  event_id: string
-  key: string
-  label: string
-  type: 'short_text' | 'single_select'
-  sort_order: number
-}
-
-export interface EventCustomFieldOptionTable {
-  id: string
-  field_id: string
-  label: string
-  description: string | null
-  sort_order: number
-}
-
-export interface GuestCustomFieldTable {
-  id: string
-  key: string
-  label: string
-  type: 'short_text' | 'single_select'
-  sort_order: number
-}
-
-export interface GuestCustomFieldOptionTable {
-  id: string
-  field_id: string
-  label: string
-  description: string | null
-  sort_order: number
 }
 
 export interface RsvpResponseTable {
@@ -86,10 +54,6 @@ export interface Database {
   guest: GuestTable
   event: EventTable
   invitation: InvitationTable
-  event_custom_field: EventCustomFieldTable
-  event_custom_field_option: EventCustomFieldOptionTable
-  guest_custom_field: GuestCustomFieldTable
-  guest_custom_field_option: GuestCustomFieldOptionTable
   rsvp_response: RsvpResponseTable
   guest_response: GuestResponseTable
 }

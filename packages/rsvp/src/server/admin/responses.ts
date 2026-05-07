@@ -1,21 +1,26 @@
 'use server'
 
 import {
+  fieldsInOrder,
+  findOption,
   getDb,
+  GUEST_PROFILE_NOTES_SCHEMA,
+  isShortTextField,
+  isSingleSelectField,
   latestGuestResponses,
   latestRsvpResponses,
-  loadEventCustomFields,
-  loadGuestCustomFields,
-  type CustomFieldConfig as DbCustomFieldConfig,
+  parseNotesSchema,
+  type NotesJson,
+  type NotesJsonSchema,
 } from 'db'
 import { getEnv } from 'db/context'
-import type { AdminResponseRow, CustomFieldConfig } from '../../schema'
+import type { AdminResponseRow } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
 }
 
-function parseNotesJson(raw: string | null): Record<string, string | null> {
+function parseNotesJson(raw: string | null): NotesJson {
   if (!raw) return {}
   try {
     const parsed = JSON.parse(raw)
@@ -25,21 +30,23 @@ function parseNotesJson(raw: string | null): Record<string, string | null> {
   }
 }
 
-function formatCustomAnswersForCsv(
-  notesJson: Record<string, string | null>,
-  fields: DbCustomFieldConfig[]
+function formatAnswersForCsv(
+  schema: NotesJsonSchema | null,
+  notesJson: NotesJson
 ): string {
-  if (fields.length === 0) return ''
+  if (!schema) return ''
   const parts: string[] = []
-  for (const f of fields) {
-    const raw = notesJson[f.key]
-    if (raw == null) continue
+  for (const { key, field } of fieldsInOrder(schema)) {
+    const raw = notesJson[key]
+    if (raw === null || raw === undefined || raw === '') continue
     let value = raw
-    if (f.type === 'single_select') {
-      const opt = f.options.find((o) => o.id === raw)
-      value = opt ? opt.label : `(unknown ${raw})`
+    if (isSingleSelectField(field)) {
+      const opt = findOption(field, raw)
+      value = opt ? opt.title : `${raw} (legacy)`
+    } else if (isShortTextField(field)) {
+      value = raw
     }
-    parts.push(`${f.label}: ${value}`)
+    parts.push(`${field.title}: ${value}`)
   }
   return parts.join('; ')
 }
@@ -60,12 +67,18 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
 
   const events = await db
     .selectFrom('event')
-    .select(['id', 'name', 'sort_order'])
+    .select(['id', 'name', 'sort_order', 'notes_schema'])
     .orderBy('sort_order')
     .execute()
   const eventById = new Map(events.map((e) => [e.id, e]))
-  const eventIds = events.map((e) => e.id)
-  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
+  const eventSchemaById = new Map<string, NotesJsonSchema | null>()
+  for (const e of events) {
+    try {
+      eventSchemaById.set(e.id, parseNotesSchema(e.notes_schema))
+    } catch {
+      eventSchemaById.set(e.id, null)
+    }
+  }
 
   const invitations = await db
     .selectFrom('invitation')
@@ -87,15 +100,22 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
     const eventIdsForGroup = invitations
       .filter((i) => i.guest_id === leaderId)
       .map((i) => i.event_id)
+    const guestResponse = guestRespMap.get(g.guestId)
+    const guestAnswers = formatAnswersForCsv(
+      GUEST_PROFILE_NOTES_SCHEMA,
+      parseNotesJson(guestResponse?.notesJson ?? null)
+    )
     for (const eid of eventIdsForGroup) {
       const ev = eventById.get(eid)
       if (!ev) continue
       const r = rsvpMap.get(rsvpKey(g.guestId, eid))
-      const lg = guestRespMap.get(g.guestId)
-      const customAnswers = formatCustomAnswersForCsv(
-        parseNotesJson(r?.notesJson ?? null),
-        eventCustomFieldsByEvent.get(eid) ?? []
+      const eventAnswers = formatAnswersForCsv(
+        eventSchemaById.get(eid) ?? null,
+        parseNotesJson(r?.notesJson ?? null)
       )
+      const customAnswers = [eventAnswers, guestAnswers]
+        .filter((s) => s.length > 0)
+        .join('; ')
       out.push({
         groupLabel: g.groupLabel ?? '',
         inviteCode: g.inviteCode ?? '',
@@ -103,7 +123,7 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
         eventName: ev.name,
         status: r?.status ?? 'pending',
         customAnswers,
-        notes: lg?.notes ?? null,
+        notes: guestResponse?.notes ?? null,
         respondedAt: r?.respondedAt ?? null,
       })
     }
@@ -111,22 +131,27 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
   return { rows: out }
 }
 
-export interface AdminRsvpResponseLogRow {
+// ── Merged log ──────────────────────────────────────────────────────────
+
+export type LogRowKind = 'rsvp' | 'guest'
+
+export interface AdminLogRow {
   id: string
+  kind: LogRowKind
   respondedAt: string
   guestName: string
-  eventName: string
-  status: 'attending' | 'declined'
-  notesJson: Record<string, string | null>
+  subject: string | null
+  status: 'attending' | 'declined' | null
+  notes: string | null
+  notesJson: NotesJson
+  notesSchema: NotesJsonSchema | null
   respondedByDisplayName: string | null
-  eventCustomFields: CustomFieldConfig[]
 }
 
-export async function listRsvpResponseLog(): Promise<{
-  rows: AdminRsvpResponseLogRow[]
-}> {
+export async function listLog(): Promise<{ rows: AdminLogRow[] }> {
   const db = getDbConn()
-  const rows = await db
+
+  const rsvpRows = await db
     .selectFrom('rsvp_response')
     .innerJoin('guest', 'guest.id', 'rsvp_response.guest_id')
     .innerJoin('event', 'event.id', 'rsvp_response.event_id')
@@ -143,43 +168,12 @@ export async function listRsvpResponseLog(): Promise<{
       'rsvp_response.notes_json as notesJson',
       'guest.display_name as guestName',
       'event.name as eventName',
+      'event.notes_schema as eventNotesSchema',
       'responder.display_name as responderName',
     ])
-    .orderBy('rsvp_response.responded_at', 'desc')
     .execute()
 
-  const eventIds = Array.from(new Set(rows.map((r) => r.eventId)))
-  const eventCustomFieldsByEvent = await loadEventCustomFields(db, eventIds)
-
-  return {
-    rows: rows.map((r) => ({
-      id: r.id,
-      respondedAt: r.respondedAt,
-      guestName: r.guestName,
-      eventName: r.eventName,
-      status: r.status,
-      notesJson: parseNotesJson(r.notesJson),
-      respondedByDisplayName: r.responderName ?? null,
-      eventCustomFields: eventCustomFieldsByEvent.get(r.eventId) ?? [],
-    })),
-  }
-}
-
-export interface AdminGuestResponseLogRow {
-  id: string
-  respondedAt: string
-  guestName: string
-  notes: string | null
-  notesJson: Record<string, string | null>
-  respondedByDisplayName: string | null
-}
-
-export async function listGuestResponseLog(): Promise<{
-  rows: AdminGuestResponseLogRow[]
-  guestCustomFields: CustomFieldConfig[]
-}> {
-  const db = getDbConn()
-  const rows = await db
+  const guestRows = await db
     .selectFrom('guest_response')
     .innerJoin('guest', 'guest.id', 'guest_response.guest_id')
     .leftJoin(
@@ -195,18 +189,46 @@ export async function listGuestResponseLog(): Promise<{
       'guest_response.notes_json as notesJson',
       'responder.display_name as responderName',
     ])
-    .orderBy('guest_response.responded_at', 'desc')
     .execute()
-  const guestCustomFields = await loadGuestCustomFields(db)
-  return {
-    rows: rows.map((r) => ({
+
+  const rsvpMapped: AdminLogRow[] = rsvpRows.map((r) => {
+    let schema: NotesJsonSchema | null
+    try {
+      schema = parseNotesSchema(r.eventNotesSchema)
+    } catch {
+      schema = null
+    }
+    return {
       id: r.id,
+      kind: 'rsvp',
       respondedAt: r.respondedAt,
       guestName: r.guestName,
-      notes: r.notes,
+      subject: r.eventName,
+      status: r.status,
+      notes: null,
       notesJson: parseNotesJson(r.notesJson),
+      notesSchema: schema,
       respondedByDisplayName: r.responderName ?? null,
-    })),
-    guestCustomFields,
-  }
+    }
+  })
+
+  const guestMapped: AdminLogRow[] = guestRows.map((r) => ({
+    id: r.id,
+    kind: 'guest',
+    respondedAt: r.respondedAt,
+    guestName: r.guestName,
+    subject: null,
+    status: null,
+    notes: r.notes,
+    notesJson: parseNotesJson(r.notesJson),
+    notesSchema: GUEST_PROFILE_NOTES_SCHEMA,
+    respondedByDisplayName: r.responderName ?? null,
+  }))
+
+  const all = [...rsvpMapped, ...guestMapped].sort((a, b) => {
+    if (a.respondedAt === b.respondedAt) return a.id < b.id ? 1 : -1
+    return a.respondedAt < b.respondedAt ? 1 : -1
+  })
+
+  return { rows: all }
 }

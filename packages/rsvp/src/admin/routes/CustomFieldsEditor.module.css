@@ -29,6 +29,12 @@
   align-items: center;
 }
 
+@media (max-width: 480px) {
+  .fieldBlock {
+    padding: 10px 12px;
+  }
+}
+
 .fieldFooter {
   display: flex;
   justify-content: flex-end;

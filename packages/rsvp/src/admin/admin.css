@@ -18,7 +18,26 @@
   outline: none;
   width: 100%;
   box-sizing: border-box;
+  line-height: 1.4;
   transition: border-color 0.15s ease;
+}
+
+/* Native <select> styling drifts off the input baseline in some
+   browsers — pin the height and reset appearance so dropdowns align
+   with adjacent text inputs in the same row. */
+select.admin-input {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 38px;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='%234a4842' d='M6 8L0 0h12z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 7px;
+}
+
+input.admin-input {
+  height: 38px;
 }
 
 .admin-input:focus,

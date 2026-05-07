@@ -1,15 +1,21 @@
 'use client'
 
+import { newId } from 'db'
 import { Button } from '../../components/ui/Button'
 import { FieldGroup } from '../../components/ui/FieldGroup'
 import { FormGrid } from '../../components/ui/FormGrid'
 import { RemoveButton } from '../../components/ui/RemoveButton'
 import styles from './CustomFieldsEditor.module.css'
-import type { AdminCustomFieldInput } from '../../schema'
+import type {
+  AdminFieldDraft,
+  NotesFieldInput,
+  ShortTextFieldInput,
+  SingleSelectFieldInput,
+} from '../../schema'
 
 interface CustomFieldsEditorProps {
-  fields: AdminCustomFieldInput[]
-  onChange: (next: AdminCustomFieldInput[]) => void
+  fields: AdminFieldDraft[]
+  onChange: (next: AdminFieldDraft[]) => void
 }
 
 function slugify(label: string): string {
@@ -20,14 +26,34 @@ function slugify(label: string): string {
     .slice(0, 80)
 }
 
+function isShortText(f: NotesFieldInput): f is ShortTextFieldInput {
+  return (f as ShortTextFieldInput).type === 'string'
+}
+
+function isSingleSelect(f: NotesFieldInput): f is SingleSelectFieldInput {
+  return Array.isArray((f as SingleSelectFieldInput).oneOf)
+}
+
+function fieldType(f: NotesFieldInput): 'short_text' | 'single_select' {
+  return isShortText(f) ? 'short_text' : 'single_select'
+}
+
+function newOptionId(): string {
+  return newId('opt').replace(/^opt_/, 'opt_').slice(0, 24)
+}
+
 export function CustomFieldsEditor({
   fields,
   onChange,
 }: CustomFieldsEditorProps) {
-  function update(idx: number, patch: Partial<AdminCustomFieldInput>) {
+  function update(idx: number, patch: Partial<AdminFieldDraft>) {
     const next = [...fields]
     next[idx] = { ...next[idx], ...patch }
     onChange(next)
+  }
+
+  function updateField(idx: number, field: NotesFieldInput) {
+    update(idx, { field })
   }
 
   function add() {
@@ -35,10 +61,7 @@ export function CustomFieldsEditor({
       ...fields,
       {
         key: '',
-        label: '',
-        type: 'short_text',
-        sortOrder: fields.length,
-        options: [],
+        field: { title: '', type: 'string', maxLength: 500 },
       },
     ])
   }
@@ -47,106 +70,129 @@ export function CustomFieldsEditor({
     onChange(fields.filter((_, i) => i !== idx))
   }
 
-  function setOptions(
-    fieldIdx: number,
-    next: AdminCustomFieldInput['options']
-  ) {
-    update(fieldIdx, { options: next })
-  }
-
   return (
     <div className={styles.editor}>
-      {fields.map((f, idx) => (
-        <div key={f.id ?? `new-${idx}`} className={styles.fieldBlock}>
-          <FormGrid cols={3}>
-            <FieldGroup label="Label">
-              <input
-                className="admin-input"
-                value={f.label}
-                onChange={(e) => {
-                  const label = e.target.value
-                  const next: Partial<AdminCustomFieldInput> = { label }
-                  // Auto-slug only if user hasn't customised the key.
-                  if (!f.id && (f.key === '' || f.key === slugify(f.label))) {
-                    next.key = slugify(label)
-                  }
-                  update(idx, next)
-                }}
-              />
-            </FieldGroup>
-            <FieldGroup label="Key" hint="snake_case, used in stored answers">
-              <input
-                className="admin-input"
-                value={f.key}
-                onChange={(e) => update(idx, { key: e.target.value })}
-              />
-            </FieldGroup>
-            <FieldGroup label="Type">
-              <select
-                className="admin-input"
-                value={f.type}
-                onChange={(e) =>
-                  update(idx, {
-                    type: e.target.value as AdminCustomFieldInput['type'],
-                    options:
-                      e.target.value === 'single_select' ? f.options : [],
-                  })
-                }
-              >
-                <option value="short_text">Short text</option>
-                <option value="single_select">Single select</option>
-              </select>
-            </FieldGroup>
-          </FormGrid>
-
-          {f.type === 'single_select' && (
-            <div className={styles.options}>
-              {f.options.map((o, oi) => (
-                <div key={o.id ?? `new-${oi}`} className={styles.optionRow}>
-                  <input
-                    className="admin-input"
-                    placeholder="Option label"
-                    value={o.label}
-                    onChange={(e) => {
-                      const next = [...f.options]
-                      next[oi] = { ...next[oi], label: e.target.value }
-                      setOptions(idx, next)
-                    }}
-                  />
-                  <RemoveButton
-                    label="Remove option"
-                    onClick={() =>
-                      setOptions(
-                        idx,
-                        f.options.filter((_, i) => i !== oi)
-                      )
+      {fields.map((draft, idx) => {
+        const type = fieldType(draft.field)
+        return (
+          <div key={idx} className={styles.fieldBlock}>
+            <FormGrid cols={3}>
+              <FieldGroup label="Label">
+                <input
+                  className="admin-input"
+                  value={draft.field.title}
+                  onChange={(e) => {
+                    const title = e.target.value
+                    const nextField = { ...draft.field, title }
+                    const patch: Partial<AdminFieldDraft> = {
+                      field: nextField,
                     }
-                  />
-                </div>
-              ))}
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setOptions(idx, [
-                    ...f.options,
-                    {
-                      label: '',
-                      description: null,
-                      sortOrder: f.options.length,
-                    },
-                  ])
-                }
-              >
-                + Add option
-              </Button>
-            </div>
-          )}
+                    if (
+                      draft.key === '' ||
+                      draft.key === slugify(draft.field.title)
+                    ) {
+                      patch.key = slugify(title)
+                    }
+                    update(idx, patch)
+                  }}
+                />
+              </FieldGroup>
+              <FieldGroup label="Key" hint="snake_case, used in stored answers">
+                <input
+                  className="admin-input"
+                  value={draft.key}
+                  onChange={(e) => update(idx, { key: e.target.value })}
+                />
+              </FieldGroup>
+              <FieldGroup label="Type">
+                <select
+                  className="admin-input"
+                  value={type}
+                  onChange={(e) => {
+                    const nextType = e.target.value as
+                      | 'short_text'
+                      | 'single_select'
+                    if (nextType === 'short_text') {
+                      updateField(idx, {
+                        title: draft.field.title,
+                        type: 'string',
+                        maxLength: 500,
+                      })
+                    } else {
+                      updateField(idx, {
+                        title: draft.field.title,
+                        oneOf: [],
+                      })
+                    }
+                  }}
+                >
+                  <option value="short_text">Short text</option>
+                  <option value="single_select">Single select</option>
+                </select>
+              </FieldGroup>
+            </FormGrid>
 
-          <div className={styles.fieldFooter}>
-            <RemoveButton label="Remove field" onClick={() => remove(idx)} />
+            {isSingleSelect(draft.field) && (
+              <div className={styles.options}>
+                {draft.field.oneOf.map((opt, oi) => (
+                  <div key={oi} className={styles.optionRow}>
+                    <input
+                      className="admin-input"
+                      placeholder="Option label"
+                      value={opt.title}
+                      onChange={(e) => {
+                        const oneOf = [
+                          ...(draft.field as SingleSelectFieldInput).oneOf,
+                        ]
+                        oneOf[oi] = { ...oneOf[oi], title: e.target.value }
+                        updateField(idx, {
+                          ...draft.field,
+                          oneOf,
+                        } as SingleSelectFieldInput)
+                      }}
+                    />
+                    <RemoveButton
+                      label="Remove option"
+                      onClick={() => {
+                        const oneOf = (
+                          draft.field as SingleSelectFieldInput
+                        ).oneOf.filter((_, i) => i !== oi)
+                        updateField(idx, {
+                          ...draft.field,
+                          oneOf,
+                        } as SingleSelectFieldInput)
+                      }}
+                    />
+                  </div>
+                ))}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const oneOf = [
+                      ...(draft.field as SingleSelectFieldInput).oneOf,
+                      {
+                        const: newOptionId(),
+                        title: '',
+                        description: null,
+                      },
+                    ]
+                    updateField(idx, {
+                      ...draft.field,
+                      oneOf,
+                    } as SingleSelectFieldInput)
+                  }}
+                >
+                  + Add option
+                </Button>
+              </div>
+            )}
+
+            <div className={styles.fieldFooter}>
+              <RemoveButton label="Remove field" onClick={() => remove(idx)} />
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
       <Button variant="ghost" onClick={add}>
         + Add custom field
       </Button>

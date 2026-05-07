@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
-  adminCustomFieldInputSchema,
   adminEventInputSchema,
+  adminFieldDraftSchema,
   adminGroupInputSchema,
   adminGuestInputSchema,
   adminImportRowSchema,
   adminImportSchema,
+  shortTextFieldSchema,
+  singleSelectFieldSchema,
 } from './schema'
 
 describe('adminGuestInputSchema', () => {
@@ -50,12 +52,12 @@ describe('adminGroupInputSchema', () => {
 })
 
 describe('adminEventInputSchema', () => {
-  it('defaults customFields to empty array', () => {
+  it('defaults notesSchema to empty array', () => {
     const r = adminEventInputSchema.parse({
       name: 'Reception',
       slug: 'reception',
     })
-    expect(r.customFields).toEqual([])
+    expect(r.notesSchema).toEqual([])
   })
 
   it('rejects non-snake-case event slugs', () => {
@@ -63,48 +65,94 @@ describe('adminEventInputSchema', () => {
       adminEventInputSchema.parse({ name: 'Reception', slug: 'Reception_X' })
     ).toThrow()
   })
+
+  it('rejects duplicate field keys', () => {
+    expect(() =>
+      adminEventInputSchema.parse({
+        name: 'Reception',
+        slug: 'reception',
+        notesSchema: [
+          {
+            key: 'meal_choice',
+            field: { title: 'Meal', type: 'string', maxLength: 500 },
+          },
+          {
+            key: 'meal_choice',
+            field: { title: 'Meal2', type: 'string', maxLength: 500 },
+          },
+        ],
+      })
+    ).toThrow()
+  })
 })
 
-describe('adminCustomFieldInputSchema', () => {
-  it('accepts a short_text field with no options', () => {
+describe('adminFieldDraftSchema', () => {
+  it('parses a short_text draft', () => {
     expect(() =>
-      adminCustomFieldInputSchema.parse({
+      adminFieldDraftSchema.parse({
         key: 'dietary_restrictions',
-        label: 'Dietary',
-        type: 'short_text',
+        field: {
+          title: 'Dietary',
+          type: 'string',
+          maxLength: 500,
+        },
       })
     ).not.toThrow()
   })
 
-  it('rejects options on a short_text field', () => {
+  it('parses a single_select draft', () => {
     expect(() =>
-      adminCustomFieldInputSchema.parse({
-        key: 'foo',
-        label: 'Foo',
-        type: 'short_text',
-        options: [{ label: 'A' }],
+      adminFieldDraftSchema.parse({
+        key: 'meal_choice',
+        field: {
+          title: 'Meal',
+          oneOf: [
+            { const: 'opt_a', title: 'Chicken', description: '' },
+            { const: 'opt_b', title: 'Fish', description: '' },
+          ],
+        },
       })
-    ).toThrow()
+    ).not.toThrow()
   })
 
   it('rejects keys with uppercase or hyphens', () => {
     expect(() =>
-      adminCustomFieldInputSchema.parse({
+      adminFieldDraftSchema.parse({
         key: 'Meal-Choice',
-        label: 'Meal',
-        type: 'single_select',
+        field: {
+          title: 'Meal',
+          oneOf: [{ const: 'opt_a', title: 'Chicken', description: '' }],
+        },
+      })
+    ).toThrow()
+  })
+})
+
+describe('shortTextFieldSchema', () => {
+  it('requires maxLength', () => {
+    expect(() =>
+      shortTextFieldSchema.parse({ title: 'Hi', type: 'string' })
+    ).toThrow()
+  })
+})
+
+describe('singleSelectFieldSchema', () => {
+  it('rejects duplicate option const ids', () => {
+    expect(() =>
+      singleSelectFieldSchema.parse({
+        title: 'Meal',
+        oneOf: [
+          { const: 'opt_a', title: 'Chicken', description: '' },
+          { const: 'opt_a', title: 'Fish', description: '' },
+        ],
       })
     ).toThrow()
   })
 
-  it('accepts single_select with options', () => {
-    const r = adminCustomFieldInputSchema.parse({
-      key: 'meal_choice',
-      label: 'Meal',
-      type: 'single_select',
-      options: [{ label: 'Chicken' }, { label: 'Fish' }],
-    })
-    expect(r.options).toHaveLength(2)
+  it('rejects empty oneOf', () => {
+    expect(() =>
+      singleSelectFieldSchema.parse({ title: 'Meal', oneOf: [] })
+    ).toThrow()
   })
 })
 

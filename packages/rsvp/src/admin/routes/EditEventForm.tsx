@@ -129,8 +129,8 @@ export function EditEventForm({
       <EditFormSection>
         <SectionLabel>Custom fields</SectionLabel>
         <CustomFieldsEditor
-          fields={event.customFields}
-          onChange={(next) => onChange({ ...event, customFields: next })}
+          fields={event.notesSchema}
+          onChange={(next) => onChange({ ...event, notesSchema: next })}
         />
       </EditFormSection>
 

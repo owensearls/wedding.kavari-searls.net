@@ -11,9 +11,6 @@ export {
   canonicalNotesJson,
   diffGuestResponse,
   diffRsvpResponse,
-  validateNotesJson,
-  type CustomFieldConfig,
-  type CustomFieldOption,
   type GuestDiffInput,
   type GuestDiffResult,
   type NotesJson,
@@ -24,8 +21,21 @@ export {
 export {
   latestGuestResponses,
   latestRsvpResponses,
-  loadEventCustomFields,
-  loadGuestCustomFields,
   type LatestGuestResponseRow,
   type LatestRsvpResponseRow,
 } from './latest'
+export {
+  buildNotesValidator,
+  fieldsInOrder,
+  findOption,
+  isShortTextField,
+  isSingleSelectField,
+  parseNotesSchema,
+  stringifyNotesSchema,
+  type NotesFieldSchema,
+  type NotesJsonSchema,
+  type ShortTextFieldSchema,
+  type SingleSelectFieldSchema,
+  type SingleSelectOptionSchema,
+} from './notesSchema'
+export { GUEST_PROFILE_NOTES_SCHEMA } from './guestProfileSchema'

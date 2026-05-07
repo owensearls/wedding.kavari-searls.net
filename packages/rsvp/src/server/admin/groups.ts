@@ -4,11 +4,9 @@ import {
   getDb,
   latestGuestResponses,
   latestRsvpResponses,
-  loadGuestCustomFields,
   newId,
   newInviteCode,
   nowIso,
-  type CustomFieldConfig,
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
@@ -35,7 +33,6 @@ function parseNotesJson(raw: string | null): Record<string, string | null> {
 
 export async function listGroups(): Promise<{
   groups: AdminGroupListItem[]
-  guestCustomFields: CustomFieldConfig[]
 }> {
   const db = getDbConn()
 
@@ -46,7 +43,7 @@ export async function listGroups(): Promise<{
     .orderBy('group_label')
     .execute()
   if (leaders.length === 0) {
-    return { groups: [], guestCustomFields: await loadGuestCustomFields(db) }
+    return { groups: [] }
   }
   const leaderIds = leaders.map((l) => l.id)
 
@@ -80,7 +77,6 @@ export async function listGroups(): Promise<{
     latestRsvps.map((r) => [latestRsvpKey(r.guestId, r.eventId), r])
   )
   const latestGuestMap = new Map(latestGuests.map((r) => [r.guestId, r]))
-  const guestCustomFields = await loadGuestCustomFields(db)
 
   const items: AdminGroupListItem[] = leaders.map((leader) => {
     const groupMembers = members.filter((m) => m.party_leader_id === leader.id)
@@ -129,7 +125,7 @@ export async function listGroups(): Promise<{
       }),
     }
   })
-  return { groups: items, guestCustomFields }
+  return { groups: items }
 }
 
 export async function saveGroup(

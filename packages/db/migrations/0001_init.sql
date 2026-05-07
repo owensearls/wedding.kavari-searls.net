@@ -28,7 +28,8 @@ CREATE TABLE event (
   location_name TEXT,
   address TEXT,
   rsvp_deadline TEXT,
-  sort_order INTEGER NOT NULL DEFAULT 0
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  notes_schema TEXT
 );
 
 -- ── Invitations ─────────────────────────────────────────────────────────
@@ -40,48 +41,6 @@ CREATE TABLE invitation (
 );
 CREATE INDEX idx_invitation_guest ON invitation(guest_id);
 CREATE INDEX idx_invitation_event ON invitation(event_id);
-
--- ── Custom field configuration ──────────────────────────────────────────
-CREATE TABLE event_custom_field (
-  id TEXT PRIMARY KEY,
-  event_id TEXT NOT NULL REFERENCES event(id) ON DELETE CASCADE,
-  key TEXT NOT NULL,
-  label TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('short_text', 'single_select')),
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  UNIQUE (event_id, key)
-);
-CREATE INDEX idx_event_custom_field_event
-  ON event_custom_field(event_id, sort_order);
-
-CREATE TABLE event_custom_field_option (
-  id TEXT PRIMARY KEY,
-  field_id TEXT NOT NULL REFERENCES event_custom_field(id) ON DELETE CASCADE,
-  label TEXT NOT NULL,
-  description TEXT,
-  sort_order INTEGER NOT NULL DEFAULT 0
-);
-CREATE INDEX idx_event_custom_field_option_field
-  ON event_custom_field_option(field_id, sort_order);
-
-CREATE TABLE guest_custom_field (
-  id TEXT PRIMARY KEY,
-  key TEXT NOT NULL UNIQUE,
-  label TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('short_text', 'single_select')),
-  sort_order INTEGER NOT NULL DEFAULT 0
-);
-CREATE INDEX idx_guest_custom_field_sort ON guest_custom_field(sort_order);
-
-CREATE TABLE guest_custom_field_option (
-  id TEXT PRIMARY KEY,
-  field_id TEXT NOT NULL REFERENCES guest_custom_field(id) ON DELETE CASCADE,
-  label TEXT NOT NULL,
-  description TEXT,
-  sort_order INTEGER NOT NULL DEFAULT 0
-);
-CREATE INDEX idx_guest_custom_field_option_field
-  ON guest_custom_field_option(field_id, sort_order);
 
 -- ── Append-only response tables ─────────────────────────────────────────
 CREATE TABLE rsvp_response (
@@ -98,9 +57,10 @@ CREATE INDEX idx_rsvp_response_guest_event_at
 
 -- One row per guest per public submit, when something changed.
 -- The `notes` column is the hardcoded long-text "anything else?" field
--- on the public form; `notes_json` holds answers for admin-configured
--- custom fields. Asymmetric vs. rsvp_response (which has no `notes`)
--- because there's no equivalent free-text field in the per-event RSVP UI.
+-- on the public form; `notes_json` holds answers for the hardcoded
+-- guest-profile schema. Asymmetric vs. rsvp_response (which has no
+-- `notes`) because there's no equivalent free-text field in the
+-- per-event RSVP UI.
 CREATE TABLE guest_response (
   id TEXT PRIMARY KEY,
   guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
@@ -111,8 +71,3 @@ CREATE TABLE guest_response (
 );
 CREATE INDEX idx_guest_response_guest_at
   ON guest_response(guest_id, responded_at);
-
--- ── Seeds ────────────────────────────────────────────────────────────────
-INSERT INTO guest_custom_field (id, key, label, type, sort_order) VALUES
-  ('gcf_dietary',      'dietary_restrictions', 'Dietary restrictions or allergies', 'short_text', 0),
-  ('gcf_song_request', 'song_request',         'Song request',                       'short_text', 1);
