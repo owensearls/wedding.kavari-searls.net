@@ -13,7 +13,10 @@ export const adminGuestInputSchema = z.object({
     blankToNull,
     z.string().max(100).nullable().optional()
   ),
-  email: z.preprocess(blankToNull, z.email().max(200).nullable().optional()),
+  email: z.preprocess(
+    blankToNull,
+    z.string().email().max(200).nullable().optional()
+  ),
   phone: z.preprocess(blankToNull, z.string().max(50).nullable().optional()),
 })
 export type AdminGuestInput = z.infer<typeof adminGuestInputSchema>
