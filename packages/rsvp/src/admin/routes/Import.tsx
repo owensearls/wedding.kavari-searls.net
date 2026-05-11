@@ -21,6 +21,7 @@ Jordan & guest,Plus,one,,,reception`
 
 export function Import() {
   const [csv, setCsv] = useState('')
+  const [keepLabels, setKeepLabels] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
@@ -55,7 +56,7 @@ export function Import() {
     setSubmitting(true)
     setError(null)
     try {
-      const res = await importRows(preview.data)
+      const res = await importRows(preview.data, { keepLabels })
       setResult(res)
       setCsv('')
     } catch (err) {
@@ -90,6 +91,15 @@ export function Import() {
           placeholder={EXAMPLE}
           onChange={(e) => setCsv(e.target.value)}
         />
+        <label className={styles.checkbox}>
+          <input
+            type="checkbox"
+            checked={keepLabels}
+            onChange={(e) => setKeepLabels(e.target.checked)}
+          />
+          Save group labels (used to identify parties in the admin UI). When
+          off, labels group rows during import only and aren't stored.
+        </label>
         <div className={styles.row}>
           <Button onClick={onSubmit} disabled={submitting || !csv.trim()}>
             {submitting ? 'Importing…' : 'Import'}
@@ -161,7 +171,14 @@ export function Import() {
                 {result.created.flatMap((c) =>
                   c.guests.map((g) => (
                     <tr key={g.id}>
-                      <td>{c.label ?? <em>(solo)</em>}</td>
+                      <td>
+                        {c.label ??
+                          (c.guests.length === 1 ? (
+                            <em>(solo)</em>
+                          ) : (
+                            <em>(no label)</em>
+                          ))}
+                      </td>
                       <td>{g.displayName}</td>
                       <td>
                         <code>{g.inviteCode}</code>

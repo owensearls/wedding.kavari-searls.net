@@ -11,6 +11,19 @@
   flex-wrap: wrap;
 }
 
+.checkbox {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 10px;
+  font-size: 0.95em;
+  color: #4a4738;
+}
+
+.checkbox input {
+  margin-top: 4px;
+}
+
 .chips {
   display: inline-flex;
   flex-wrap: wrap;

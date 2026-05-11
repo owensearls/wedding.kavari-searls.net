@@ -144,7 +144,7 @@ export async function saveGroup(
     await db
       .updateTable('guest')
       .set({
-        group_label: data.label,
+        group_label: data.label.trim() ? data.label : null,
         updated_at: now,
       })
       .where('id', '=', leaderId)
@@ -163,7 +163,7 @@ export async function saveGroup(
         email: first.email ? first.email : null,
         phone: first.phone ?? null,
         invite_code: newInviteCode(),
-        group_label: data.label,
+        group_label: data.label.trim() ? data.label : null,
         created_at: now,
         updated_at: now,
       })
@@ -202,7 +202,7 @@ export async function saveGroup(
           display_name: displayName,
           email: g.email ? g.email : null,
           phone: g.phone ?? null,
-          group_label: data.label,
+          group_label: data.label.trim() ? data.label : null,
           updated_at: now,
         })
         .where('id', '=', g.id)
@@ -219,7 +219,7 @@ export async function saveGroup(
           email: g.email ? g.email : null,
           phone: g.phone ?? null,
           invite_code: newInviteCode(),
-          group_label: data.label,
+          group_label: data.label.trim() ? data.label : null,
           created_at: now,
           updated_at: now,
         })

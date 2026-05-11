@@ -21,17 +21,12 @@ export const adminGuestInputSchema = z.object({
 })
 export type AdminGuestInput = z.infer<typeof adminGuestInputSchema>
 
-export const adminGroupInputSchema = z
-  .object({
-    id: z.string().optional(),
-    label: z.string().max(200).default(''),
-    guests: z.array(adminGuestInputSchema).min(1),
-    invitedEventIds: z.array(z.string()).default([]),
-  })
-  .refine((data) => data.guests.length <= 1 || data.label.trim().length > 0, {
-    message: 'Label is required when there are additional guests',
-    path: ['label'],
-  })
+export const adminGroupInputSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().max(200).default(''),
+  guests: z.array(adminGuestInputSchema).min(1),
+  invitedEventIds: z.array(z.string()).default([]),
+})
 export type AdminGroupInput = z.infer<typeof adminGroupInputSchema>
 
 export const adminImportRowSchema = z.object({

@@ -3,6 +3,7 @@
 import {
   fieldsInOrder,
   getDb,
+  latestRsvpResponses,
   newId,
   parseNotesSchema,
   stringifyNotesSchema,
@@ -37,6 +38,103 @@ function draftsToSchema(drafts: AdminFieldDraft[]): NotesJsonSchema | null {
     additionalProperties: false,
     'x-fieldOrder': drafts.map((d) => d.key),
     properties: Object.fromEntries(drafts.map((d) => [d.key, d.field])),
+  }
+}
+
+export interface AdminEventStats {
+  eventId: string
+  invitedCount: number
+  attendingCount: number
+  declinedCount: number
+  pendingCount: number
+}
+
+export async function listEventStats(): Promise<{ stats: AdminEventStats[] }> {
+  const db = getDbConn()
+
+  const events = await db.selectFrom('event').select('id').execute()
+  if (events.length === 0) return { stats: [] }
+  const eventIds = events.map((e) => e.id)
+
+  const invitations = await db
+    .selectFrom('invitation')
+    .select(['guest_id', 'event_id'])
+    .where('event_id', 'in', eventIds)
+    .execute()
+
+  if (invitations.length === 0) {
+    return {
+      stats: events.map((e) => ({
+        eventId: e.id,
+        invitedCount: 0,
+        attendingCount: 0,
+        declinedCount: 0,
+        pendingCount: 0,
+      })),
+    }
+  }
+
+  const leaderIds = [...new Set(invitations.map((i) => i.guest_id))]
+
+  const partyMembers = await db
+    .selectFrom('guest')
+    .select(['id', 'party_leader_id'])
+    .where((eb) =>
+      eb.or([
+        eb('id', 'in', leaderIds),
+        eb('party_leader_id', 'in', leaderIds),
+      ])
+    )
+    .execute()
+
+  const partyByLeader = new Map<string, string[]>()
+  for (const m of partyMembers) {
+    const leaderId = m.party_leader_id ?? m.id
+    const arr = partyByLeader.get(leaderId) ?? []
+    arr.push(m.id)
+    partyByLeader.set(leaderId, arr)
+  }
+
+  // For each event, collect the set of guest ids that party-belong to a
+  // leader invited to that event. Use a Set to avoid double-counting if a
+  // guest somehow appears in multiple leader's parties.
+  const invitedGuestsByEvent = new Map<string, Set<string>>()
+  for (const inv of invitations) {
+    const guests = partyByLeader.get(inv.guest_id) ?? []
+    let set = invitedGuestsByEvent.get(inv.event_id)
+    if (!set) {
+      set = new Set<string>()
+      invitedGuestsByEvent.set(inv.event_id, set)
+    }
+    for (const g of guests) set.add(g)
+  }
+
+  const allGuestIds = [...new Set(partyMembers.map((m) => m.id))]
+  const rsvps =
+    allGuestIds.length > 0
+      ? await latestRsvpResponses(db, { eventIds, guestIds: allGuestIds })
+      : []
+  const statusByKey = new Map<string, 'attending' | 'declined'>()
+  for (const r of rsvps) statusByKey.set(`${r.guestId}::${r.eventId}`, r.status)
+
+  return {
+    stats: events.map((e) => {
+      const invited = invitedGuestsByEvent.get(e.id) ?? new Set<string>()
+      let attending = 0
+      let declined = 0
+      for (const guestId of invited) {
+        const status = statusByKey.get(`${guestId}::${e.id}`)
+        if (status === 'attending') attending++
+        else if (status === 'declined') declined++
+      }
+      return {
+        eventId: e.id,
+        invitedCount: invited.size,
+        attendingCount: attending,
+        declinedCount: declined,
+        pendingCount: invited.size - attending - declined,
+      }
+    }),
   }
 }
 

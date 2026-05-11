@@ -18,7 +18,18 @@ export interface ImportResult {
   skipped: string[]
 }
 
-export async function importRows(rows: unknown[]): Promise<ImportResult> {
+export interface ImportOptions {
+  // When true, the CSV's groupLabel is stored on each created guest. When
+  // false (default), the label is used only to group rows during this import
+  // and never persisted.
+  keepLabels?: boolean
+}
+
+export async function importRows(
+  rows: unknown[],
+  options: ImportOptions = {}
+): Promise<ImportResult> {
+  const keepLabels = options.keepLabels ?? false
   const parsed = adminImportSchema.safeParse({ rows })
   if (!parsed.success) {
     const issue = parsed.error.issues[0]
@@ -49,17 +60,20 @@ export async function importRows(rows: unknown[]): Promise<ImportResult> {
 
   for (const [key, labelRows] of groupedByKey) {
     const isSolo = key.startsWith('__solo__:')
-    const label: string | null = isSolo ? null : key
+    const csvLabel: string | null = isSolo ? null : key
+    const storedLabel: string | null = keepLabels ? csvLabel : null
 
-    if (label !== null) {
+    // Only dedup against existing rows when we're actually saving the label —
+    // otherwise the user explicitly opted out of label-based identity.
+    if (keepLabels && csvLabel !== null) {
       const existing = await db
         .selectFrom('guest')
         .select(['id'])
-        .where('group_label', '=', label)
+        .where('group_label', '=', csvLabel)
         .where('party_leader_id', 'is', null)
         .executeTakeFirst()
       if (existing) {
-        skipped.push(label)
+        skipped.push(csvLabel)
         continue
       }
     }
@@ -93,7 +107,7 @@ export async function importRows(rows: unknown[]): Promise<ImportResult> {
           email: row.email && row.email.length ? row.email : null,
           phone: row.phone ?? null,
           invite_code: inviteCode,
-          group_label: label,
+          group_label: storedLabel,
           created_at: now,
           updated_at: now,
         })
@@ -122,7 +136,11 @@ export async function importRows(rows: unknown[]): Promise<ImportResult> {
         .execute()
     }
 
-    created.push({ groupId: leaderId!, label, guests: createdGuests })
+    created.push({
+      groupId: leaderId!,
+      label: storedLabel,
+      guests: createdGuests,
+    })
   }
 
   return { created, skipped }

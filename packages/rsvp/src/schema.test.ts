@@ -35,12 +35,11 @@ describe('adminGuestInputSchema', () => {
 })
 
 describe('adminGroupInputSchema', () => {
-  it('requires label when more than one guest', () => {
-    expect(() =>
-      adminGroupInputSchema.parse({
-        guests: [{ firstName: 'A' }, { firstName: 'B' }],
-      })
-    ).toThrow()
+  it('allows blank label even with multiple guests', () => {
+    const r = adminGroupInputSchema.parse({
+      guests: [{ firstName: 'A' }, { firstName: 'B' }],
+    })
+    expect(r.label).toBe('')
   })
 
   it('allows blank label for single-guest invites', () => {

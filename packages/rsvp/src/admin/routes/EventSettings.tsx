@@ -9,8 +9,10 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Table } from '../../components/ui/Table'
 import {
   listEvents,
+  listEventStats,
   saveEvent,
   type AdminEventRecord,
+  type AdminEventStats,
 } from '../../server/admin/events'
 import { formatForDisplay } from '../lib/dateHelpers'
 import { EditEventForm } from './EditEventForm'
@@ -30,6 +32,7 @@ const blankEvent = (): AdminEventInput => ({
 
 export function EventSettings() {
   const [events, setEvents] = useState<AdminEventRecord[]>([])
+  const [stats, setStats] = useState<AdminEventStats[]>([])
   const [editing, setEditing] = useState<AdminEventInput | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -39,14 +42,17 @@ export function EventSettings() {
     setLoading(true)
     setError(null)
     try {
-      const r = await listEvents()
+      const [r, s] = await Promise.all([listEvents(), listEventStats()])
       setEvents(r.events)
+      setStats(s.stats)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load')
     } finally {
       setLoading(false)
     }
   }
+
+  const statsByEvent = new Map(stats.map((s) => [s.eventId, s]))
 
   useEffect(() => {
     refresh()
@@ -106,25 +112,37 @@ export function EventSettings() {
               <th>Slug</th>
               <th>Starts</th>
               <th>Location</th>
+              <th>Invited</th>
+              <th>Attending</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {events.map((ev) => (
-              <tr key={ev.id}>
-                <td>{ev.name}</td>
-                <td>
-                  <code>{ev.slug}</code>
-                </td>
-                <td>{formatForDisplay(ev.startsAt)}</td>
-                <td>{ev.locationName ?? ''}</td>
-                <td>
-                  <Button variant="ghost" onClick={() => setEditing(ev)}>
-                    Edit
-                  </Button>
-                </td>
-              </tr>
-            ))}
+            {events.map((ev) => {
+              const s = statsByEvent.get(ev.id)
+              return (
+                <tr key={ev.id}>
+                  <td>{ev.name}</td>
+                  <td>
+                    <code>{ev.slug}</code>
+                  </td>
+                  <td>{formatForDisplay(ev.startsAt)}</td>
+                  <td>{ev.locationName ?? ''}</td>
+                  <td>{s?.invitedCount ?? 0}</td>
+                  <td>
+                    {s?.attendingCount ?? 0}
+                    {s && s.declinedCount > 0
+                      ? ` (${s.declinedCount} declined)`
+                      : ''}
+                  </td>
+                  <td>
+                    <Button variant="ghost" onClick={() => setEditing(ev)}>
+                      Edit
+                    </Button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </Table>
       )}
