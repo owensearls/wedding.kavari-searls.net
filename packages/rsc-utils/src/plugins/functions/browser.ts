@@ -14,13 +14,14 @@ export function setupServerCallback(): void {
       body,
     }).then(async (res) => {
       const ct = res.headers.get('content-type') ?? ''
-      // Action errors ride the RSC stream with a non-2xx status — let the
-      // client decoder surface the rejection through the awaited call.
-      if (ct.includes('text/x-component')) return res
+      if (res.ok && ct.includes('text/x-component')) return res
+      // Server emits errors as plain text (with the appropriate status) so
+      // React's production RSC encoder doesn't strip the message. Surface the
+      // body verbatim to the caller.
       if (!res.ok) {
         const text = await res.text().catch(() => '')
         throw new Error(
-          `Server action ${id} failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`
+          text || res.statusText || `Request failed (${res.status})`
         )
       }
       const text = await res.text().catch(() => '')

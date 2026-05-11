@@ -10,3 +10,30 @@
   margin-top: 12px;
   flex-wrap: wrap;
 }
+
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.chipKnown {
+  background: #e6efe1;
+  color: #2d6a3f;
+  border: 1px solid #c9dcc1;
+}
+
+.chipUnknown {
+  background: #fbe7e1;
+  color: #8b3a2f;
+  border: 1px solid #ecc7bc;
+}

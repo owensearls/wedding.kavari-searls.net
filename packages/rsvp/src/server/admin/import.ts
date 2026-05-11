@@ -12,7 +12,7 @@ function getDbConn() {
 export interface ImportResult {
   created: {
     groupId: string
-    label: string
+    label: string | null
     guests: { id: string; displayName: string; inviteCode: string }[]
   }[]
   skipped: string[]
@@ -20,33 +20,48 @@ export interface ImportResult {
 
 export async function importRows(rows: unknown[]): Promise<ImportResult> {
   const parsed = adminImportSchema.safeParse({ rows })
-  if (!parsed.success) throw new RscFunctionError(400, 'Invalid import data')
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0]
+    const path = issue.path.join('.')
+    throw new RscFunctionError(
+      400,
+      `Invalid import data${path ? ` at ${path}` : ''}: ${issue.message}`
+    )
+  }
 
   const db = getDbConn()
   const events = await db.selectFrom('event').select(['id', 'slug']).execute()
   const eventBySlug = new Map(events.map((e) => [e.slug, e.id]))
 
-  const groupedByLabel = new Map<string, typeof parsed.data.rows>()
-  for (const row of parsed.data.rows) {
-    const arr = groupedByLabel.get(row.groupLabel) ?? []
+  // Rows with no groupLabel become solo invites; group each one under a unique
+  // synthetic key so they don't collide with each other in the grouping map.
+  const groupedByKey = new Map<string, typeof parsed.data.rows>()
+  for (const [i, row] of parsed.data.rows.entries()) {
+    const key = row.groupLabel ?? `__solo__:${i}`
+    const arr = groupedByKey.get(key) ?? []
     arr.push(row)
-    groupedByLabel.set(row.groupLabel, arr)
+    groupedByKey.set(key, arr)
   }
 
   const now = nowIso()
   const created: ImportResult['created'] = []
   const skipped: string[] = []
 
-  for (const [label, labelRows] of groupedByLabel) {
-    const existing = await db
-      .selectFrom('guest')
-      .select(['id'])
-      .where('group_label', '=', label)
-      .where('party_leader_id', 'is', null)
-      .executeTakeFirst()
-    if (existing) {
-      skipped.push(label)
-      continue
+  for (const [key, labelRows] of groupedByKey) {
+    const isSolo = key.startsWith('__solo__:')
+    const label: string | null = isSolo ? null : key
+
+    if (label !== null) {
+      const existing = await db
+        .selectFrom('guest')
+        .select(['id'])
+        .where('group_label', '=', label)
+        .where('party_leader_id', 'is', null)
+        .executeTakeFirst()
+      if (existing) {
+        skipped.push(label)
+        continue
+      }
     }
 
     const eventIdsForGroup = new Set<string>()

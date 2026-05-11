@@ -35,7 +35,7 @@ export const adminGroupInputSchema = z
 export type AdminGroupInput = z.infer<typeof adminGroupInputSchema>
 
 export const adminImportRowSchema = z.object({
-  groupLabel: z.string().min(1),
+  groupLabel: z.preprocess(blankToUndef, z.string().optional()),
   firstName: z.string().min(1),
   lastName: z.preprocess(blankToUndef, z.string().optional()),
   email: z.preprocess(blankToUndef, z.string().optional()),

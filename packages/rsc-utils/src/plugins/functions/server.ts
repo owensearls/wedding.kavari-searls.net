@@ -23,7 +23,7 @@ export class RscFunctionError extends Error {
   }
 }
 
-const FALLBACK_MESSAGE = 'Something went wrong. Please try again.'
+const FALLBACK_MESSAGE = 'Internal server error, please try again.'
 
 export function createRscHandlers(): RscHandler {
   const allowedIds = collectActionIds(modules)
@@ -42,7 +42,6 @@ export function createRscHandlers(): RscHandler {
         return new Response('Forbidden', { status: 403 })
       }
 
-      let status = 200
       let result: unknown
       try {
         const contentType = request.headers.get('content-type') ?? ''
@@ -57,28 +56,25 @@ export function createRscHandlers(): RscHandler {
           actionId,
           error: serializeError(err),
         })
-        if (err instanceof RscFunctionError) {
-          status = err.status
-          result = rejectedPromise(err.message)
-        } else {
-          status = 500
-          result = rejectedPromise(FALLBACK_MESSAGE)
-        }
+        // React's production RSC encoder strips Error messages from the
+        // stream to avoid leaking server internals, so send the controlled
+        // error message as plain text instead.
+        const isControlled = err instanceof RscFunctionError
+        const status = isControlled ? err.status : 500
+        const message = isControlled ? err.message : FALLBACK_MESSAGE
+        return new Response(message, {
+          status,
+          headers: { 'content-type': 'text/plain; charset=utf-8' },
+        })
       }
 
       const stream = renderToReadableStream(result)
       return new Response(stream, {
-        status,
+        status: 200,
         headers: { 'content-type': 'text/x-component' },
       })
     },
   }
-}
-
-// Wrap the rejection in an async IIFE so the unhandled-rejection moment is
-// owned by a function the RSC stream is about to consume.
-async function rejectedPromise(message: string): Promise<never> {
-  throw new Error(message)
 }
 
 function serializeError(err: unknown) {

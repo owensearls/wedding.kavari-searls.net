@@ -1,13 +1,14 @@
 'use client'
 
 import Papa from 'papaparse'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { EditFormSection } from '../../components/ui/EditFormSection'
 import { EditFormShell } from '../../components/ui/EditFormShell'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { SectionLabel } from '../../components/ui/SectionLabel'
 import { Table } from '../../components/ui/Table'
+import { listEvents, type AdminEventRecord } from '../../server/admin/events'
 import { importRows, type ImportResult } from '../../server/admin/import'
 import styles from './Import.module.css'
 
@@ -23,12 +24,26 @@ export function Import() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
+  const [events, setEvents] = useState<AdminEventRecord[]>([])
+
+  useEffect(() => {
+    listEvents()
+      .then((r) => setEvents(r.events))
+      .catch(() => setEvents([]))
+  }, [])
+
+  const eventBySlug = useMemo(
+    () => new Map(events.map((e) => [e.slug, e])),
+    [events]
+  )
 
   const preview = useMemo(() => {
     if (!csv.trim()) return null
     return Papa.parse<Record<string, string>>(csv.trim(), {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (h) => h.trim(),
+      transform: (v) => v.trim(),
     })
   }, [csv])
 
@@ -65,7 +80,8 @@ export function Import() {
           Paste a CSV. Columns: <code>groupLabel</code>, <code>firstName</code>,{' '}
           <code>lastName</code>, <code>email</code>, <code>phone</code>,{' '}
           <code>events</code> (comma-separated event slugs). Existing invites
-          (matched by label) are skipped.
+          (matched by label) are skipped. Rows with an empty{' '}
+          <code>groupLabel</code> are imported as solo invites.
         </p>
         <textarea
           className="admin-textarea"
@@ -104,10 +120,19 @@ export function Import() {
               </tr>
             </thead>
             <tbody>
-              {preview.data.slice(0, 50).map((row, i) => (
+              {preview.data.map((row, i) => (
                 <tr key={i}>
                   {previewColumns.map((k) => (
-                    <td key={k}>{row[k] ?? ''}</td>
+                    <td key={k}>
+                      {k === 'events' ? (
+                        <EventChips
+                          value={row[k] ?? ''}
+                          eventBySlug={eventBySlug}
+                        />
+                      ) : (
+                        (row[k] ?? '')
+                      )}
+                    </td>
                   ))}
                 </tr>
               ))}
@@ -136,7 +161,7 @@ export function Import() {
                 {result.created.flatMap((c) =>
                   c.guests.map((g) => (
                     <tr key={g.id}>
-                      <td>{c.label}</td>
+                      <td>{c.label ?? <em>(solo)</em>}</td>
                       <td>{g.displayName}</td>
                       <td>
                         <code>{g.inviteCode}</code>
@@ -150,5 +175,35 @@ export function Import() {
         </EditFormSection>
       )}
     </EditFormShell>
+  )
+}
+
+function EventChips({
+  value,
+  eventBySlug,
+}: {
+  value: string
+  eventBySlug: Map<string, AdminEventRecord>
+}) {
+  const slugs = value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (slugs.length === 0) return null
+  return (
+    <span className={styles.chips}>
+      {slugs.map((slug) => {
+        const event = eventBySlug.get(slug)
+        return (
+          <span
+            key={slug}
+            className={`${styles.chip} ${event ? styles.chipKnown : styles.chipUnknown}`}
+            title={event ? slug : `Unknown event slug: ${slug}`}
+          >
+            {event ? event.name : slug}
+          </span>
+        )
+      })}
+    </span>
   )
 }

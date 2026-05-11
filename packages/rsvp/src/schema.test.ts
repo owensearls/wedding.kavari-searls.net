@@ -173,4 +173,12 @@ describe('adminImportSchema', () => {
     expect(r.lastName).toBeUndefined()
     expect(r.email).toBeUndefined()
   })
+
+  it('treats blank groupLabel as undefined (solo invite)', () => {
+    const r = adminImportRowSchema.parse({
+      groupLabel: '',
+      firstName: 'Alice',
+    })
+    expect(r.groupLabel).toBeUndefined()
+  })
 })
