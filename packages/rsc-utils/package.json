@@ -1,0 +1,56 @@
+{
+  "name": "rsc-utils",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./functions/server": {
+      "types": "./dist/plugins/functions/server.d.ts",
+      "default": "./dist/plugins/functions/server.js"
+    },
+    "./functions/browser": {
+      "types": "./dist/plugins/functions/browser.d.ts",
+      "default": "./dist/plugins/functions/browser.js"
+    },
+    "./static-pages/client": {
+      "types": "./dist/plugins/static-pages/client.d.ts",
+      "default": "./dist/plugins/static-pages/client.js"
+    },
+    "./static-pages/server": {
+      "types": "./dist/plugins/static-pages/server.d.ts",
+      "default": "./dist/plugins/static-pages/server.js"
+    },
+    "./types": {
+      "types": "./dist/ambient.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build && cp src/ambient.d.ts dist/ambient.d.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "peerDependencies": {
+    "@vitejs/plugin-rsc": "~0.5.24",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-rsc": "~0.5.24",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "rsc-html-stream": "^0.0.7",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.8"
+  }
+}

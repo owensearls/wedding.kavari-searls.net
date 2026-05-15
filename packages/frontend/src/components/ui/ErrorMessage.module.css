@@ -1,0 +1,18 @@
+.error {
+  padding: 10px 14px;
+  margin: 0 0 16px 0;
+  background: #faf1ee;
+  border: 1px solid #d4a99f;
+  border-left: 3px solid #8b3a2f;
+  color: #7a3125;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.error p {
+  margin: 0;
+}
+
+.inline {
+  margin: 8px 0 0 0;
+}

@@ -1,0 +1,109 @@
+.wrap {
+  max-width: 540px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 0 25px;
+}
+
+.intro {
+  color: #6e6b60;
+  font-size: 22px;
+  line-height: 1.5;
+  margin-bottom: 1.5em;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.input {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 18px;
+  font-family: inherit;
+  color: #6e6b60;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #6e6b60;
+  border-radius: 0;
+  outline: none;
+}
+
+.input:focus {
+  background: white;
+  border-color: #4a4842;
+}
+
+.button {
+  padding: 12px 22px;
+  font-size: 18px;
+  font-family: inherit;
+  color: #6e6b60;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #6e6b60;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.button:hover {
+  background: white;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #b04438;
+  font-size: 16px;
+  margin-top: 6px;
+}
+
+.matches {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.match {
+  padding: 14px 16px;
+  border: 1px solid #6e6b60;
+  background: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 18px;
+  color: #6e6b60;
+  text-decoration: none;
+  display: block;
+}
+
+.match:hover {
+  background: white;
+}
+
+.matchLabel {
+  font-weight: 600;
+}
+
+.matchNames {
+  font-size: 15px;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+@media (max-width: 480px) {
+  .row {
+    flex-direction: column;
+  }
+}

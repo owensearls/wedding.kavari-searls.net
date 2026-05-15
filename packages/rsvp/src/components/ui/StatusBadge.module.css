@@ -1,0 +1,20 @@
+.badge {
+  display: inline;
+  font-weight: 500;
+}
+
+.attending {
+  color: #2d6a3f;
+}
+
+.declined {
+  color: #8b3a2f;
+}
+
+.pending {
+  color: #8a6a1a;
+}
+
+.notInvited {
+  color: #b0aca0;
+}

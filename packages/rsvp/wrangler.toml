@@ -1,0 +1,30 @@
+name = "wedding-rsvp"
+main = "./src/entry.worker.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wedding-kavari-searls"
+# Shared D1 between frontend and rsvp
+database_id = "72251762-9df1-4281-8ccb-4039a763839d"
+migrations_dir = "../db/migrations"
+
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1

@@ -1,0 +1,62 @@
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: white;
+  border: 1px solid #6e6b60;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  flex: 1;
+  font-size: 22px;
+  font-weight: 600;
+  color: #4a4842;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .pageHeader {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+
+  .title {
+    font-size: 20px;
+    flex-basis: 100%;
+  }
+
+  .actions {
+    flex-basis: 100%;
+    gap: 8px;
+  }
+}
+
+/* Three header buttons (e.g. Import / Export / New on Guests) fit one row
+   down to ~414px at the default 16px/8px-16px scale; below that we shrink
+   the chrome so they don't wrap. */
+@media (max-width: 414px) {
+  .actions > button {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .actions {
+    gap: 6px;
+  }
+
+  .actions > button {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+}

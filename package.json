@@ -1,37 +1,43 @@
 {
-  "name": "wedding.kavari-searls.net",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "pnpm -r build",
+    "pretest": "pnpm --filter rsc-utils build && pnpm --filter rsvp db:migrate:local",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preview": "vite preview"
+    "preview": "pnpm --filter rsvp build && pnpm --filter rsvp preview & sleep 3 && pnpm --filter frontend build && pnpm --filter frontend preview --port 4173",
+    "predev": "pnpm --filter rsvp db:migrate:local",
+    "dev": "pnpm --filter rsvp build && concurrently -k -n rsvp,frontend pnpm:dev:rsvp \"wait-on tcp:5173 && pnpm --filter frontend dev\"",
+    "dev:rsvp": "pnpm --filter rsvp dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "clean": "rm -rf .wrangler/state"
   },
-  "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^7.1.0",
-    "@fortawesome/free-solid-svg-icons": "^7.1.0",
-    "@fortawesome/react-fontawesome": "^3.1.1",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^16.5.0",
+    "playwright": "^1.59.1",
     "prettier": "^3.8.1",
-    "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "wait-on": "^9.0.5"
   }
 }
