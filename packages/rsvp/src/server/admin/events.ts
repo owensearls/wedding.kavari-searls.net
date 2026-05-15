@@ -80,10 +80,7 @@ export async function listEventStats(): Promise<{ stats: AdminEventStats[] }> {
     .selectFrom('guest')
     .select(['id', 'party_leader_id'])
     .where((eb) =>
-      eb.or([
-        eb('id', 'in', leaderIds),
-        eb('party_leader_id', 'in', leaderIds),
-      ])
+      eb.or([eb('id', 'in', leaderIds), eb('party_leader_id', 'in', leaderIds)])
     )
     .execute()
 
