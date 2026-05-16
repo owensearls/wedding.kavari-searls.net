@@ -8,6 +8,7 @@ import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Table } from '../../components/ui/Table'
 import {
+  deleteEvent,
   listEvents,
   listEventStats,
   saveEvent,
@@ -73,6 +74,20 @@ export function EventSettings() {
     }
   }
 
+  async function onDelete(ev: AdminEventRecord) {
+    const ok = window.confirm(
+      `Delete event "${ev.name}"? This will also remove its invitations and RSVP responses.`
+    )
+    if (!ok) return
+    setError(null)
+    try {
+      await deleteEvent(ev.id)
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed')
+    }
+  }
+
   if (editing) {
     return (
       <EditEventForm
@@ -122,7 +137,30 @@ export function EventSettings() {
               const s = statsByEvent.get(ev.id)
               return (
                 <tr key={ev.id}>
-                  <td>{ev.name}</td>
+                  <td>
+                    {ev.name}
+                    {ev.schemaMalformed && (
+                      <details style={{ marginTop: 4 }}>
+                        <summary
+                          style={{ color: '#b91c1c', cursor: 'pointer' }}
+                        >
+                          Schema malformed — {ev.schemaError}
+                        </summary>
+                        <pre
+                          style={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            background: '#f4f1ea',
+                            padding: 8,
+                            marginTop: 4,
+                            fontSize: 12,
+                          }}
+                        >
+                          {ev.schemaRaw ?? '(empty)'}
+                        </pre>
+                      </details>
+                    )}
+                  </td>
                   <td>
                     <code>{ev.slug}</code>
                   </td>
@@ -136,8 +174,13 @@ export function EventSettings() {
                       : ''}
                   </td>
                   <td>
-                    <Button variant="ghost" onClick={() => setEditing(ev)}>
-                      Edit
+                    {!ev.schemaMalformed && (
+                      <Button variant="ghost" onClick={() => setEditing(ev)}>
+                        Edit
+                      </Button>
+                    )}
+                    <Button variant="ghost" onClick={() => onDelete(ev)}>
+                      Delete
                     </Button>
                   </td>
                 </tr>

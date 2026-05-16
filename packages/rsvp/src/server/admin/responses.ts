@@ -14,6 +14,7 @@ import {
   type NotesJsonSchema,
 } from 'db'
 import { getEnv } from 'db/context'
+import { RscFunctionError } from 'rsc-utils/functions/server'
 import type { AdminResponseRow } from '../../schema'
 
 function getDbConn() {
@@ -28,6 +29,24 @@ function parseNotesJson(raw: string | null): NotesJson {
   } catch {
     return {}
   }
+}
+
+// Returns null on any parse error or structural mismatch, so downstream
+// renderers can safely treat the event as "no custom fields".
+function safeParseNotesSchema(raw: string | null): NotesJsonSchema | null {
+  let parsed: unknown
+  try {
+    parsed = parseNotesSchema(raw)
+  } catch {
+    return null
+  }
+  if (parsed === null) return null
+  if (typeof parsed !== 'object' || Array.isArray(parsed)) return null
+  const s = parsed as Partial<NotesJsonSchema>
+  if (s.type !== 'object') return null
+  if (!Array.isArray(s['x-fieldOrder'])) return null
+  if (!s.properties || typeof s.properties !== 'object') return null
+  return parsed as NotesJsonSchema
 }
 
 function formatAnswersForCsv(
@@ -73,11 +92,7 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
   const eventById = new Map(events.map((e) => [e.id, e]))
   const eventSchemaById = new Map<string, NotesJsonSchema | null>()
   for (const e of events) {
-    try {
-      eventSchemaById.set(e.id, parseNotesSchema(e.notes_schema))
-    } catch {
-      eventSchemaById.set(e.id, null)
-    }
+    eventSchemaById.set(e.id, safeParseNotesSchema(e.notes_schema))
   }
 
   const invitations = await db
@@ -149,6 +164,16 @@ export interface AdminLogRow {
 }
 
 export async function listLog(): Promise<{ rows: AdminLogRow[] }> {
+  try {
+    return await listLogInner()
+  } catch (err) {
+    const message =
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    throw new RscFunctionError(500, `Activity log failed: ${message}`)
+  }
+}
+
+async function listLogInner(): Promise<{ rows: AdminLogRow[] }> {
   const db = getDbConn()
 
   const rsvpRows = await db
@@ -192,12 +217,7 @@ export async function listLog(): Promise<{ rows: AdminLogRow[] }> {
     .execute()
 
   const rsvpMapped: AdminLogRow[] = rsvpRows.map((r) => {
-    let schema: NotesJsonSchema | null
-    try {
-      schema = parseNotesSchema(r.eventNotesSchema)
-    } catch {
-      schema = null
-    }
+    const schema = safeParseNotesSchema(r.eventNotesSchema)
     return {
       id: r.id,
       kind: 'rsvp',
