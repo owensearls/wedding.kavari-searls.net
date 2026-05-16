@@ -210,6 +210,19 @@ function validateNotesSchemaShape(schema: NotesJsonSchema | null): void {
 export async function saveEvent(
   input: AdminEventInput
 ): Promise<{ id: string }> {
+  try {
+    return await saveEventInner(input)
+  } catch (err) {
+    if (err instanceof RscFunctionError) throw err
+    const message =
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    throw new RscFunctionError(500, `Save failed: ${message}`)
+  }
+}
+
+async function saveEventInner(
+  input: AdminEventInput
+): Promise<{ id: string }> {
   const parsed = adminEventInputSchema.safeParse(input)
   if (!parsed.success) throw new RscFunctionError(400, 'Invalid event data')
   const data = parsed.data
