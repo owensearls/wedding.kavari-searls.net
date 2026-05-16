@@ -220,9 +220,7 @@ export async function saveEvent(
   }
 }
 
-async function saveEventInner(
-  input: AdminEventInput
-): Promise<{ id: string }> {
+async function saveEventInner(input: AdminEventInput): Promise<{ id: string }> {
   const parsed = adminEventInputSchema.safeParse(input)
   if (!parsed.success) throw new RscFunctionError(400, 'Invalid event data')
   const data = parsed.data
