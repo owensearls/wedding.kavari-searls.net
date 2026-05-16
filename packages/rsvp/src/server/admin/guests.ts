@@ -99,7 +99,7 @@ export async function getGuest(id: string): Promise<
         inv.notesSchemaRaw
       )
     } catch {
-      throw new RscFunctionError(500, 'Event schema is malformed')
+      eventNotesSchemaByEvent[inv.eventId] = null
     }
   }
 

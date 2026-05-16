@@ -23,6 +23,9 @@ function getDbConn() {
 
 export interface AdminEventRecord extends AdminEventInput {
   id: string
+  schemaMalformed?: boolean
+  schemaError?: string
+  schemaRaw?: string | null
 }
 
 function schemaToDrafts(schema: NotesJsonSchema | null): AdminFieldDraft[] {
@@ -145,13 +148,7 @@ export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
   if (events.length === 0) return { events: [] }
   return {
     events: events.map((e) => {
-      let schema: NotesJsonSchema | null
-      try {
-        schema = parseNotesSchema(e.notes_schema)
-      } catch {
-        throw new RscFunctionError(500, `Event schema is malformed: ${e.slug}`)
-      }
-      return {
+      const base = {
         id: e.id,
         name: e.name,
         slug: e.slug,
@@ -161,9 +158,52 @@ export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
         address: e.address,
         rsvpDeadline: e.rsvp_deadline,
         sortOrder: e.sort_order,
-        notesSchema: schemaToDrafts(schema),
       }
+      let schema: NotesJsonSchema | null
+      try {
+        schema = parseNotesSchema(e.notes_schema)
+        validateNotesSchemaShape(schema)
+      } catch (err) {
+        return {
+          ...base,
+          notesSchema: [],
+          schemaMalformed: true,
+          schemaError:
+            err instanceof Error ? err.message : 'Unknown schema error',
+          schemaRaw: e.notes_schema,
+        }
+      }
+      return { ...base, notesSchema: schemaToDrafts(schema) }
     }),
+  }
+}
+
+function validateNotesSchemaShape(schema: NotesJsonSchema | null): void {
+  if (schema === null) return
+  if (typeof schema !== 'object' || Array.isArray(schema)) {
+    throw new Error('Schema must be a JSON object')
+  }
+  if (schema.type !== 'object') {
+    throw new Error('Schema "type" must be "object"')
+  }
+  if (!Array.isArray(schema['x-fieldOrder'])) {
+    throw new Error('Schema is missing "x-fieldOrder" array')
+  }
+  if (!schema.properties || typeof schema.properties !== 'object') {
+    throw new Error('Schema is missing "properties" object')
+  }
+  for (const key of schema['x-fieldOrder']) {
+    const field = schema.properties[key]
+    if (!field) {
+      throw new Error(`Field "${key}" listed in x-fieldOrder but not defined`)
+    }
+    const isShortText =
+      'type' in field && (field as { type: string }).type === 'string'
+    const isSingleSelect =
+      'oneOf' in field && Array.isArray((field as { oneOf: unknown }).oneOf)
+    if (!isShortText && !isSingleSelect) {
+      throw new Error(`Field "${key}" has unknown shape`)
+    }
   }
 }
 
