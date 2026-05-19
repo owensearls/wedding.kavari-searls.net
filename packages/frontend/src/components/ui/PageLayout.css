@@ -26,9 +26,8 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100dvh;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: transparent;
+  min-height: 100lvh;
+  background-color: #e4e7e2;
 }
 
 body::before {

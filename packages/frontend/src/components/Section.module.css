@@ -6,4 +6,5 @@
   position: relative;
   padding-left: 25px;
   padding-right: 25px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
