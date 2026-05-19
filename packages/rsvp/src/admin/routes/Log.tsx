@@ -12,7 +12,6 @@ import {
 } from '../../components/ui/Table'
 import { listLog, type AdminLogRow } from '../../server/admin/responses'
 import { formatCustomAnswers } from '../lib/customFieldRender'
-import guestListStyles from './GuestList.module.css'
 import styles from './Log.module.css'
 
 const TIMESTAMP_FMT = new Intl.DateTimeFormat(undefined, {
@@ -44,17 +43,21 @@ export function Log() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    ;(async () => {
-      setLoading(true)
-      try {
-        const r = await listLog()
-        setRows(r.rows)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load')
-      } finally {
-        setLoading(false)
-      }
-    })()
+    let cancelled = false
+    listLog()
+      .then((r) => {
+        if (!cancelled) setRows(r.rows)
+      })
+      .catch((err: unknown) => {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : 'Failed to load')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   return (
@@ -119,7 +122,7 @@ export function Log() {
                                   key={a.label}
                                   className={styles.answerChip}
                                 >
-                                  <span className={guestListStyles.customLabel}>
+                                  <span className={styles.customLabel}>
                                     {a.label}:
                                   </span>
                                   {a.value}
@@ -177,9 +180,7 @@ export function Log() {
                                     key={a.label}
                                     className={styles.answerChip}
                                   >
-                                    <span
-                                      className={guestListStyles.customLabel}
-                                    >
+                                    <span className={styles.customLabel}>
                                       {a.label}:
                                     </span>
                                     {a.value}

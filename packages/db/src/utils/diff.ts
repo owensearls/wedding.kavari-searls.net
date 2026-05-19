@@ -53,6 +53,12 @@ export type GuestDiffResult =
  * The new row replays the full submitted state — events that didn't
  * change are still re-asserted as children, so each guest_response is a
  * complete snapshot of "what the guest most recently said."
+ *
+ * Invariant: `input.latest.notesJson` and each `input.latest.events[].notesJson`
+ * are assumed to already be canonical strings (the write path always uses
+ * `canonicalNotesJson`). If that ever stops holding, the equality check
+ * below will spuriously insert a no-op row, but won't otherwise corrupt
+ * data.
  */
 export function diffGuestResponse(input: GuestDiffInput): GuestDiffResult {
   const nextNotes = canonicalNotesJson(input.submitted.notesJson)

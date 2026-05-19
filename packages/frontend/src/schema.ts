@@ -1,8 +1,4 @@
-import {
-  guestResponseSubmissionSchema,
-  rsvpStatusSchema,
-  type NotesJsonSchema,
-} from 'db'
+import { rsvpStatusSchema, type NotesJsonSchema } from 'db'
 import { z } from 'zod'
 
 export {
@@ -128,9 +124,3 @@ export const rsvpGroupResponseSchema = z.object({
   invitationNotesSchema: notesJsonSchemaShape.nullable(),
 })
 export type RsvpGroupResponse = z.infer<typeof rsvpGroupResponseSchema>
-
-// Builder helper for the public form: turns a draft into the canonical
-// submission shape. The form state owns one GuestResponseSubmission per
-// guest the user is responding for.
-export const formGuestResponseSchema = guestResponseSubmissionSchema
-export type FormGuestResponse = z.infer<typeof formGuestResponseSchema>

@@ -1,7 +1,6 @@
 'use server'
 
 import {
-  fieldsInOrder,
   getDb,
   latestGuestResponses,
   newId,
@@ -11,11 +10,8 @@ import {
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
-import {
-  adminEventInputSchema,
-  type AdminEventInput,
-  type AdminFieldDraft,
-} from '../../schema'
+import { adminEventInputSchema, type AdminEventInput } from '../../schema'
+import { draftsToSchema, schemaToDrafts } from './utils'
 
 function getDbConn() {
   return getDb(getEnv().DB)
@@ -26,22 +22,6 @@ export interface AdminEventRecord extends AdminEventInput {
   schemaMalformed?: boolean
   schemaError?: string
   schemaRaw?: string | null
-}
-
-function schemaToDrafts(schema: NotesJsonSchema | null): AdminFieldDraft[] {
-  if (!schema) return []
-  return fieldsInOrder(schema).map(({ key, field }) => ({ key, field }))
-}
-
-function draftsToSchema(drafts: AdminFieldDraft[]): NotesJsonSchema | null {
-  if (drafts.length === 0) return null
-  return {
-    $schema: 'https://json-schema.org/draft/2020-12/schema',
-    type: 'object',
-    additionalProperties: false,
-    'x-fieldOrder': drafts.map((d) => d.key),
-    properties: Object.fromEntries(drafts.map((d) => [d.key, d.field])),
-  }
 }
 
 export interface AdminEventStats {
