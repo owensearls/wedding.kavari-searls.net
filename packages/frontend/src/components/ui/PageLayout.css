@@ -19,7 +19,7 @@
 
 :root {
   --mountain-aspect: 1.391;
-  --mountain-band-height: min(calc(100vw / var(--mountain-aspect)), 50lvh);
+  --mountain-band-height: calc(100vw / var(--mountain-aspect));
 }
 
 html {
