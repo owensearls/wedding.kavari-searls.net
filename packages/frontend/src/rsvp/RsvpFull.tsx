@@ -235,10 +235,6 @@ export function RsvpFull() {
                       </span>
                       <span className={styles.dividerLine} aria-hidden="true" />
                     </div>
-                    <p className={styles.dividerHint}>
-                      Each guest defaults to "responding for them" — toggle off
-                      to let them reply on their own.
-                    </p>
                     {otherGuestIds.map((id) => (
                       <GuestResponseCard
                         key={id}
