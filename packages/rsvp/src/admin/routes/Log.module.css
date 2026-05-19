@@ -3,3 +3,28 @@
   flex-direction: column;
   gap: 24px;
 }
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eventEntry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eventName {
+  font-weight: 500;
+}
+
+.eventAnswers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #6e6b60;
+  padding-left: 4px;
+}

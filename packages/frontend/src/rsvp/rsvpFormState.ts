@@ -1,20 +1,21 @@
-import type { NotesJson, RsvpGroupResponse, RsvpStatus } from '../schema'
-import type { NotesFieldSchema } from 'db'
+import type {
+  GuestEventResponse,
+  GuestResponseSubmission,
+  RsvpGroupResponse,
+} from '../schema'
 
-export type RsvpKey = `${string}::${string}`
-
-export interface RsvpFormState {
-  rsvps: Record<
-    RsvpKey,
-    { status: RsvpStatus | 'pending'; notesJson: NotesJson }
-  >
-  guestNotesJson: Record<string, NotesJson>
-  guestNotes: Record<string, string>
-  respondedByGuestId: string
+// The form owns one draft per guest in the party. When a draft's
+// `respondingFor` is false, the guest is excluded from the final submission
+// payload (the acting user opted not to respond on their behalf).
+export interface GuestResponseDraft extends GuestResponseSubmission {
+  respondingFor: boolean
 }
 
-export function rsvpKey(guestId: string, eventId: string): RsvpKey {
-  return `${guestId}::${eventId}` as RsvpKey
+export interface RsvpFormState {
+  drafts: Record<string, GuestResponseDraft>
+  // Ordered ids the UI walks through. The acting guest is first.
+  guestOrder: string[]
+  respondedByGuestId: string
 }
 
 export function formatRsvpDate(iso: string | null): string | null {
@@ -36,37 +37,36 @@ export function formatRsvpDate(iso: string | null): string | null {
 export function buildInitialRsvpFormState(
   data: RsvpGroupResponse
 ): RsvpFormState {
-  const rsvps: RsvpFormState['rsvps'] = {}
-  for (const ev of data.events) {
-    for (const guestId of ev.invitedGuestIds) {
-      const existing = data.rsvps.find(
-        (r) => r.guestId === guestId && r.eventId === ev.id
-      )
-      rsvps[rsvpKey(guestId, ev.id)] = {
-        status: existing?.status ?? 'pending',
-        notesJson: existing?.notesJson ?? {},
-      }
+  const responsesByGuestId = new Map(data.responses.map((r) => [r.guestId, r]))
+  const ordered = [
+    ...data.guests.filter((g) => g.id === data.actingGuestId),
+    ...data.guests.filter((g) => g.id !== data.actingGuestId),
+  ]
+  const drafts: Record<string, GuestResponseDraft> = {}
+  for (const g of ordered) {
+    const r = responsesByGuestId.get(g.id)
+    const events: GuestEventResponse[] = (r?.events ?? []).map((e) => ({
+      eventId: e.eventId,
+      status: e.status,
+      notesJson: { ...e.notesJson },
+    }))
+    drafts[g.id] = {
+      guestId: g.id,
+      notesJson: { ...(r?.notesJson ?? {}) },
+      events,
+      respondingFor: true,
     }
   }
-  const guestNotesJson: Record<string, NotesJson> = {}
-  const guestNotes: Record<string, string> = {}
-  for (const g of data.guests) {
-    guestNotesJson[g.id] = g.notesJson ?? {}
-    guestNotes[g.id] = g.notes ?? ''
-  }
   return {
-    rsvps,
-    guestNotesJson,
-    guestNotes,
-    respondedByGuestId: data.actingGuestId || data.guests[0]?.id || '',
+    drafts,
+    guestOrder: ordered.map((g) => g.id),
+    respondedByGuestId: data.actingGuestId || ordered[0]?.id || '',
   }
 }
 
-export function defaultValueForField(
-  key: string,
-  _field: NotesFieldSchema,
-  current: NotesJson
-): string {
-  const v = current[key]
-  return typeof v === 'string' ? v : ''
+export function getEventState(
+  draft: GuestResponseDraft,
+  eventId: string
+): GuestEventResponse | undefined {
+  return draft.events.find((e) => e.eventId === eventId)
 }

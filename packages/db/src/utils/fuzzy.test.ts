@@ -22,13 +22,13 @@ describe('normalize', () => {
     expect(normalize('  Alice   Smith  ')).toBe('alice smith')
   })
 
-  it('keeps email-safe characters and apostrophes/hyphens', () => {
-    expect(normalize('Foo@Bar.com')).toBe('foo@bar.com')
+  it('keeps apostrophes and hyphens in names', () => {
     expect(normalize("O'Brien-Smith")).toBe("o'brien-smith")
   })
 
-  it('strips other punctuation', () => {
+  it('strips other punctuation (including @ and .) so names cant be looked up by email', () => {
     expect(normalize('Alice!!! Smith?')).toBe('alice smith')
+    expect(normalize('foo@bar.com')).toBe('foo bar com')
   })
 
   it('returns empty for blank input', () => {
@@ -53,7 +53,6 @@ describe('tokens', () => {
 
 describe('score', () => {
   it('returns 1000 on exact match', () => {
-    expect(score('owen@searls.net', 'owen@searls.net')).toBe(1000)
     expect(score('Alice Smith', 'alice smith')).toBe(1000)
   })
 
@@ -98,7 +97,6 @@ describe('aggregateLookupMatches', () => {
       displayName: 'Alice Smith',
       firstName: 'Alice',
       lastName: 'Smith',
-      email: 'alice@example.com',
       inviteCode: 'alice01',
       partyLeaderId: 'g1',
       groupLabel: 'The Smith family',
@@ -108,7 +106,6 @@ describe('aggregateLookupMatches', () => {
       displayName: 'Bob Smith',
       firstName: 'Bob',
       lastName: 'Smith',
-      email: null,
       inviteCode: 'bob0002',
       partyLeaderId: 'g1',
       groupLabel: 'The Smith family',
@@ -118,7 +115,6 @@ describe('aggregateLookupMatches', () => {
       displayName: 'Jordan Lee',
       firstName: 'Jordan',
       lastName: 'Lee',
-      email: 'jordan@example.com',
       inviteCode: 'jordn22',
       partyLeaderId: 'g3',
       groupLabel: 'Jordan & guest',
@@ -129,18 +125,18 @@ describe('aggregateLookupMatches', () => {
     expect(aggregateLookupMatches(candidates, 'zzzzz')).toEqual([])
   })
 
-  it("matches by email and returns that guest's code", () => {
-    const result = aggregateLookupMatches(candidates, 'alice@example.com')
-    expect(result).toHaveLength(1)
-    expect(result[0].inviteCode).toBe('alice01')
-    expect(result[0].guestNames).toEqual(['Alice Smith'])
+  it('does not match by email (lookup-by-email is disabled)', () => {
+    // The local-part is "uniqueprefix" — present nowhere in any guest's
+    // name — so typing the email finds nothing. Matching on the host part
+    // ("example.com") would expose membership.
+    expect(
+      aggregateLookupMatches(candidates, 'uniqueprefix@example.com')
+    ).toEqual([])
   })
 
   it("matches by last name, dedupes into one group, uses best scorer's code", () => {
     const result = aggregateLookupMatches(candidates, 'bob smith')
     expect(result).toHaveLength(1)
-    // "bob smith" matches Bob's full name exactly (highest score), so Bob's
-    // code is the one returned even though both Smith siblings score > 0.
     expect(result[0].inviteCode).toBe('bob0002')
     expect(result[0].guestNames.sort()).toEqual(['Alice Smith', 'Bob Smith'])
   })
@@ -161,16 +157,14 @@ describe('aggregateLookupMatches', () => {
           displayName: 'Alison Kavari',
           firstName: 'Alison',
           lastName: 'Kavari',
-          email: null,
           inviteCode: 'kvri33',
           partyLeaderId: 'g4',
           groupLabel: 'The Kavari family',
         },
       ],
-      'alice@example.com'
+      'Alice Smith'
     )
-    // Alice's exact email beats anyone else — first result should be her group
-    // and the returned code should be Alice's (best-scoring guest in the group).
+    // Alice Smith is an exact match; should score highest.
     expect(result[0].inviteCode).toBe('alice01')
   })
 
@@ -180,7 +174,6 @@ describe('aggregateLookupMatches', () => {
       displayName: `Alice ${i}`,
       firstName: 'Alice',
       lastName: String(i),
-      email: null,
       inviteCode: `code${i}`,
       partyLeaderId: `g${i}`,
       groupLabel: `Group ${i}`,

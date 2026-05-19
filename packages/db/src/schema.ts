@@ -29,31 +29,36 @@ export interface InvitationTable {
   id: string
   guest_id: string
   event_id: string
-}
-
-export interface RsvpResponseTable {
-  id: string
-  guest_id: string
-  event_id: string
-  status: 'attending' | 'declined'
-  notes_json: string | null
-  responded_at: string
-  responded_by_guest_id: string | null
+  notes_schema: string | null
 }
 
 export interface GuestResponseTable {
   id: string
   guest_id: string
-  notes: string | null
   notes_json: string | null
   responded_at: string
   responded_by_guest_id: string | null
+}
+
+export interface GuestInvitationResponseTable {
+  id: string
+  guest_response_id: string
+  event_id: string
+  status: 'attending' | 'declined'
+  notes_json: string | null
+}
+
+export interface AdminSettingsTable {
+  id: string
+  default_invitation_notes_schema: string | null
+  lookup_by_name_enabled: number
 }
 
 export interface Database {
   guest: GuestTable
   event: EventTable
   invitation: InvitationTable
-  rsvp_response: RsvpResponseTable
   guest_response: GuestResponseTable
+  guest_invitation_response: GuestInvitationResponseTable
+  admin_settings: AdminSettingsTable
 }

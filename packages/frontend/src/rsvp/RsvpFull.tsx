@@ -1,24 +1,18 @@
 'use client'
 
-import {
-  fieldsInOrder,
-  isShortTextField,
-  isSingleSelectField,
-  type NotesFieldSchema,
-} from 'db'
 import { useEffect, useMemo, useState } from 'react'
 import { ErrorMessage } from '../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../components/ui/LoadingIndicator'
 import { getRsvpGroup, submitRsvp } from '../server/rsvp'
-import { EventCardEditor } from './EventCardEditor'
+import { GuestResponseCard } from './GuestResponseCard'
 import {
   buildInitialRsvpFormState,
-  rsvpKey,
+  type GuestResponseDraft,
   type RsvpFormState,
 } from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type {
-  Guest,
+  GuestResponseSubmission,
   RsvpGroupResponse,
   RsvpStatus,
   RsvpSubmission,
@@ -68,68 +62,77 @@ export function RsvpFull() {
   }, [code])
 
   const guestById = useMemo(() => {
-    const m = new Map<string, Guest>()
-    if (data) for (const g of data.guests) m.set(g.id, g)
-    return m
+    if (!data) return new Map()
+    return new Map(data.guests.map((g) => [g.id, g]))
   }, [data])
 
-  function setStatus(guestId: string, eventId: string, status: RsvpStatus) {
-    setState((s) => {
-      if (!s) return s
-      const k = rsvpKey(guestId, eventId)
-      const current = s.rsvps[k] ?? { status: 'pending', notesJson: {} }
-      const nextNotes = status === 'attending' ? current.notesJson : {}
-      return {
-        ...s,
-        rsvps: { ...s.rsvps, [k]: { status, notesJson: nextNotes } },
-      }
-    })
-  }
-
-  function setCustom(
+  function updateDraft(
     guestId: string,
-    eventId: string,
-    fieldKey: string,
-    value: string
+    updater: (draft: GuestResponseDraft) => GuestResponseDraft
   ) {
     setState((s) => {
       if (!s) return s
-      const k = rsvpKey(guestId, eventId)
-      const current = s.rsvps[k] ?? { status: 'pending', notesJson: {} }
-      const nextNotes = { ...current.notesJson, [fieldKey]: value || null }
+      const current = s.drafts[guestId]
+      if (!current) return s
       return {
         ...s,
-        rsvps: { ...s.rsvps, [k]: { ...current, notesJson: nextNotes } },
+        drafts: { ...s.drafts, [guestId]: updater(current) },
       }
     })
   }
 
-  function setGuestCustom(guestId: string, fieldKey: string, value: string) {
-    setState((s) =>
-      s
-        ? {
-            ...s,
-            guestNotesJson: {
-              ...s.guestNotesJson,
-              [guestId]: {
-                ...(s.guestNotesJson[guestId] ?? {}),
-                [fieldKey]: value || null,
-              },
-            },
-          }
-        : s
-    )
+  function setEventStatus(
+    guestId: string,
+    eventId: string,
+    status: RsvpStatus | null
+  ) {
+    updateDraft(guestId, (draft) => {
+      const filtered = draft.events.filter((e) => e.eventId !== eventId)
+      if (status === null) return { ...draft, events: filtered }
+      const existing = draft.events.find((e) => e.eventId === eventId)
+      return {
+        ...draft,
+        events: [
+          ...filtered,
+          {
+            eventId,
+            status,
+            notesJson:
+              status === 'attending' ? (existing?.notesJson ?? {}) : {},
+          },
+        ],
+      }
+    })
   }
 
-  function setGuestNotes(guestId: string, value: string) {
-    setState((s) =>
-      s
-        ? {
-            ...s,
-            guestNotes: { ...s.guestNotes, [guestId]: value },
-          }
-        : s
-    )
+  function setEventNote(
+    guestId: string,
+    eventId: string,
+    key: string,
+    value: string
+  ) {
+    updateDraft(guestId, (draft) => ({
+      ...draft,
+      events: draft.events.map((e) =>
+        e.eventId === eventId
+          ? {
+              ...e,
+              notesJson: { ...e.notesJson, [key]: value || null },
+            }
+          : e
+      ),
+    }))
+  }
+
+  function setInviteNote(guestId: string, key: string, value: string) {
+    updateDraft(guestId, (draft) => ({
+      ...draft,
+      notesJson: { ...draft.notesJson, [key]: value || null },
+    }))
+  }
+
+  function setRespondingFor(guestId: string, next: boolean) {
+    updateDraft(guestId, (draft) => ({ ...draft, respondingFor: next }))
   }
 
   async function onSubmit() {
@@ -137,22 +140,17 @@ export function RsvpFull() {
     setSubmitting(true)
     setSubmitError(null)
     try {
+      const guestResponses: GuestResponseSubmission[] = state.guestOrder
+        .map((id) => state.drafts[id])
+        .filter((d) => d.respondingFor)
+        .map((d) => ({
+          guestId: d.guestId,
+          notesJson: d.notesJson,
+          events: d.events,
+        }))
       const submission: RsvpSubmission = {
-        respondedByGuestId: state.respondedByGuestId || data.guests[0].id,
-        rsvps: Object.entries(state.rsvps).map(([k, v]) => {
-          const [guestId, eventId] = k.split('::')
-          return {
-            guestId,
-            eventId,
-            status: v.status,
-            notesJson: v.notesJson,
-          }
-        }),
-        guestUpdates: data.guests.map((g) => ({
-          guestId: g.id,
-          notes: state.guestNotes[g.id]?.trim() || null,
-          notesJson: state.guestNotesJson[g.id] ?? {},
-        })),
+        respondedByGuestId: state.respondedByGuestId,
+        guestResponses,
       }
       await submitRsvp(code, submission)
       setSavedThisSession(true)
@@ -165,46 +163,68 @@ export function RsvpFull() {
     }
   }
 
-  const primaryGuestId = data?.guests[0]?.id
-  const hasPriorRsvp = data?.rsvps.some((r) => r.respondedAt !== null) ?? false
-  const showSaveLabel = hasPriorRsvp || savedThisSession
+  const hasPriorResponse =
+    data?.responses.some((r) => r.respondedAt !== null) ?? false
+  const showSaveLabel = hasPriorResponse || savedThisSession
 
-  function renderGuestCustomField(
-    g: Guest,
-    fieldKey: string,
-    field: NotesFieldSchema
-  ) {
-    const v = state?.guestNotesJson[g.id]?.[fieldKey]
-    const value = typeof v === 'string' ? v : ''
-    if (isSingleSelectField(field)) {
-      return (
-        <select
-          className={styles.select}
-          value={value}
-          onChange={(e) => setGuestCustom(g.id, fieldKey, e.target.value)}
-        >
-          <option value="">Choose…</option>
-          {field.oneOf.map((opt) => (
-            <option key={opt.const} value={opt.const}>
-              {opt.title}
-            </option>
-          ))}
-        </select>
-      )
-    }
-    if (isShortTextField(field)) {
-      return (
-        <input
-          type="text"
-          className={styles.select}
-          maxLength={field.maxLength}
-          value={value}
-          onChange={(e) => setGuestCustom(g.id, fieldKey, e.target.value)}
-        />
-      )
-    }
-    return null
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.content}>
+          <LoadingIndicator label="Loading your invitation…" />
+        </div>
+      </div>
+    )
   }
+
+  if (loadError) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.content}>
+          <a href="/" className={styles.backLink}>
+            ← Back to home
+          </a>
+          <ErrorMessage>{loadError}</ErrorMessage>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data || !state) return null
+
+  if (submitted) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.content}>
+          <div className={styles.success}>
+            <p className={styles.successOrnament} aria-hidden="true">
+              ❦
+            </p>
+            <h1 className={styles.successHeading}>With gratitude</h1>
+            <p className={styles.successCopy}>
+              Your response has been recorded. You may return to this page any
+              time before the deadline to revise it.
+            </p>
+            <div className={styles.successActions}>
+              <button
+                type="button"
+                className={styles.linkBtn}
+                onClick={() => setSubmitted(false)}
+              >
+                Edit response
+              </button>
+              <a href="/" className={styles.linkBtn}>
+                Back to home
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const actingGuestId = state.guestOrder[0]
+  const otherGuestIds = state.guestOrder.slice(1)
 
   return (
     <div className={styles.page}>
@@ -213,103 +233,93 @@ export function RsvpFull() {
           ← Back to home
         </a>
 
-        {loading && <LoadingIndicator label="Loading your invitation…" />}
-        {loadError && <ErrorMessage>{loadError}</ErrorMessage>}
+        <header className={styles.pageHead}>
+          <p className={styles.eyebrow}>Kindly respond</p>
+          <h1 className={styles.heading}>RSVP</h1>
+          {data.group.label && (
+            <p className={styles.subheading}>{data.group.label}</p>
+          )}
+        </header>
 
-        {data && state && !submitted && (
+        {data.events.length === 0 ? (
+          <p className={styles.empty}>
+            No events are open for RSVP yet — please check back soon.
+          </p>
+        ) : (
           <>
-            <h1 className={styles.heading}>RSVP</h1>
-            <div className={styles.subheading}>{data.group.label}</div>
+            <GuestResponseCard
+              guestName={guestById.get(actingGuestId)?.displayName ?? ''}
+              draft={state.drafts[actingGuestId]}
+              events={data.events}
+              invitationNotesSchema={data.invitationNotesSchema}
+              showRespondingToggle={false}
+              onEventStatusChange={(eventId, status) =>
+                setEventStatus(actingGuestId, eventId, status)
+              }
+              onEventNoteChange={(eventId, key, value) =>
+                setEventNote(actingGuestId, eventId, key, value)
+              }
+              onInviteNoteChange={(key, value) =>
+                setInviteNote(actingGuestId, key, value)
+              }
+              onRespondingForChange={() => {}}
+            />
 
-            {data.events.length === 0 && (
-              <p className={styles.centered}>
-                No events are open for RSVP yet — check back soon.
-              </p>
-            )}
-
-            {data.events.map((ev) => (
-              <EventCardEditor
-                key={ev.id}
-                event={ev}
-                guestById={guestById}
-                state={state}
-                singleGuest={data.guests.length === 1}
-                onStatusChange={setStatus}
-                onCustomChange={setCustom}
-              />
-            ))}
-
-            <div className={styles.detailsCard}>
-              <h2 className={styles.detailsHeading}>Other details</h2>
-              {data.guests.map((g) => (
-                <div key={g.id}>
-                  {fieldsInOrder(data.guestNotesSchema).map(
-                    ({ key, field }) => (
-                      <div key={key}>
-                        <label className={styles.fieldLabel}>
-                          {data.guests.length > 1
-                            ? `${g.displayName} — ${field.title}`
-                            : field.title}
-                        </label>
-                        {renderGuestCustomField(g, key, field)}
-                      </div>
-                    )
-                  )}
+            {otherGuestIds.length > 0 && (
+              <>
+                <div className={styles.sectionDivider}>
+                  <span className={styles.dividerLine} aria-hidden="true" />
+                  <span className={styles.dividerLabel}>
+                    Responding for anyone else?
+                  </span>
+                  <span className={styles.dividerLine} aria-hidden="true" />
                 </div>
-              ))}
-
-              {primaryGuestId && (
-                <>
-                  <label className={styles.fieldLabel}>
-                    Anything else we should know?
-                  </label>
-                  <textarea
-                    className={styles.textarea}
-                    rows={3}
-                    value={state.guestNotes[primaryGuestId] ?? ''}
-                    onChange={(e) =>
-                      setGuestNotes(primaryGuestId, e.target.value)
+                <p className={styles.dividerHint}>
+                  Each guest defaults to "responding for them" — toggle off to
+                  let them reply on their own.
+                </p>
+                {otherGuestIds.map((id) => (
+                  <GuestResponseCard
+                    key={id}
+                    guestName={guestById.get(id)?.displayName ?? ''}
+                    draft={state.drafts[id]}
+                    events={data.events}
+                    invitationNotesSchema={data.invitationNotesSchema}
+                    showRespondingToggle
+                    onEventStatusChange={(eventId, status) =>
+                      setEventStatus(id, eventId, status)
                     }
+                    onEventNoteChange={(eventId, key, value) =>
+                      setEventNote(id, eventId, key, value)
+                    }
+                    onInviteNoteChange={(key, value) =>
+                      setInviteNote(id, key, value)
+                    }
+                    onRespondingForChange={(next) => setRespondingFor(id, next)}
                   />
-                </>
-              )}
-            </div>
-
-            <div className={styles.submitRow}>
-              <button
-                type="button"
-                className={styles.submit}
-                onClick={onSubmit}
-                disabled={submitting}
-              >
-                {submitting
-                  ? showSaveLabel
-                    ? 'Saving…'
-                    : 'Sending…'
-                  : showSaveLabel
-                    ? 'Save RSVP'
-                    : 'Send RSVP'}
-              </button>
-            </div>
-            <ErrorMessage>{submitError}</ErrorMessage>
+                ))}
+              </>
+            )}
           </>
         )}
 
-        {submitted && (
-          <div className={styles.success}>
-            <h1>Thank you!</h1>
-            <p>
-              We've recorded your RSVP. You can return to this page any time
-              before the deadline to change it.
-            </p>
-            <button type="button" onClick={() => setSubmitted(false)}>
-              Edit RSVP
-            </button>
-            <a href="/" className={styles.backLink}>
-              ← Back to home
-            </a>
-          </div>
-        )}
+        <div className={styles.submitRow}>
+          <button
+            type="button"
+            className={styles.submit}
+            onClick={onSubmit}
+            disabled={submitting}
+          >
+            {submitting
+              ? showSaveLabel
+                ? 'Saving…'
+                : 'Sending…'
+              : showSaveLabel
+                ? 'Save response'
+                : 'Send response'}
+          </button>
+        </div>
+        <ErrorMessage>{submitError}</ErrorMessage>
       </div>
     </div>
   )

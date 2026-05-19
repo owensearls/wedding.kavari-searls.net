@@ -1,60 +1,25 @@
 import type { Db } from './db'
 
-export interface LatestRsvpResponseRow {
-  id: string
-  guestId: string
+export interface LatestEventResponse {
   eventId: string
   status: 'attending' | 'declined'
   notesJson: string | null
-  respondedAt: string
-  respondedByGuestId: string | null
-}
-
-export async function latestRsvpResponses(
-  db: Db,
-  filter?: { guestIds?: string[]; eventIds?: string[] }
-): Promise<LatestRsvpResponseRow[]> {
-  let q = db.selectFrom('rsvp_response').selectAll()
-  if (filter?.guestIds && filter.guestIds.length > 0) {
-    q = q.where('guest_id', 'in', filter.guestIds)
-  }
-  if (filter?.eventIds && filter.eventIds.length > 0) {
-    q = q.where('event_id', 'in', filter.eventIds)
-  }
-  const rows = await q.execute()
-  type R = (typeof rows)[number]
-  const byKey = new Map<string, R>()
-  for (const r of rows) {
-    const k = `${r.guest_id}::${r.event_id}`
-    const prev = byKey.get(k)
-    if (
-      !prev ||
-      r.responded_at > prev.responded_at ||
-      (r.responded_at === prev.responded_at && r.id > prev.id)
-    ) {
-      byKey.set(k, r)
-    }
-  }
-  return [...byKey.values()].map((r) => ({
-    id: r.id,
-    guestId: r.guest_id,
-    eventId: r.event_id,
-    status: r.status,
-    notesJson: r.notes_json,
-    respondedAt: r.responded_at,
-    respondedByGuestId: r.responded_by_guest_id,
-  }))
 }
 
 export interface LatestGuestResponseRow {
   id: string
   guestId: string
-  notes: string | null
   notesJson: string | null
   respondedAt: string
   respondedByGuestId: string | null
+  events: LatestEventResponse[]
 }
 
+/**
+ * Returns the latest guest_response row per guest, hydrated with its
+ * guest_invitation_response children. A guest with no submissions yet is
+ * omitted from the result entirely (callers fall back to "pending").
+ */
 export async function latestGuestResponses(
   db: Db,
   filter?: { guestIds?: string[] }
@@ -65,23 +30,44 @@ export async function latestGuestResponses(
   }
   const rows = await q.execute()
   type R = (typeof rows)[number]
-  const byKey = new Map<string, R>()
+  const byGuest = new Map<string, R>()
   for (const r of rows) {
-    const prev = byKey.get(r.guest_id)
+    const prev = byGuest.get(r.guest_id)
     if (
       !prev ||
       r.responded_at > prev.responded_at ||
       (r.responded_at === prev.responded_at && r.id > prev.id)
     ) {
-      byKey.set(r.guest_id, r)
+      byGuest.set(r.guest_id, r)
     }
   }
-  return [...byKey.values()].map((r) => ({
+
+  const latest = [...byGuest.values()]
+  if (latest.length === 0) return []
+
+  const responseIds = latest.map((r) => r.id)
+  const children = await db
+    .selectFrom('guest_invitation_response')
+    .selectAll()
+    .where('guest_response_id', 'in', responseIds)
+    .execute()
+  const childrenByResponse = new Map<string, LatestEventResponse[]>()
+  for (const c of children) {
+    const arr = childrenByResponse.get(c.guest_response_id) ?? []
+    arr.push({
+      eventId: c.event_id,
+      status: c.status,
+      notesJson: c.notes_json,
+    })
+    childrenByResponse.set(c.guest_response_id, arr)
+  }
+
+  return latest.map((r) => ({
     id: r.id,
     guestId: r.guest_id,
-    notes: r.notes,
     notesJson: r.notes_json,
     respondedAt: r.responded_at,
     respondedByGuestId: r.responded_by_guest_id,
+    events: childrenByResponse.get(r.id) ?? [],
   }))
 }

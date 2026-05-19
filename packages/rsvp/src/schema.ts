@@ -21,29 +21,6 @@ export const adminGuestInputSchema = z.object({
 })
 export type AdminGuestInput = z.infer<typeof adminGuestInputSchema>
 
-export const adminGroupInputSchema = z.object({
-  id: z.string().optional(),
-  label: z.string().max(200).default(''),
-  guests: z.array(adminGuestInputSchema).min(1),
-  invitedEventIds: z.array(z.string()).default([]),
-})
-export type AdminGroupInput = z.infer<typeof adminGroupInputSchema>
-
-export const adminImportRowSchema = z.object({
-  groupLabel: z.preprocess(blankToUndef, z.string().optional()),
-  firstName: z.string().min(1),
-  lastName: z.preprocess(blankToUndef, z.string().optional()),
-  email: z.preprocess(blankToUndef, z.string().optional()),
-  phone: z.preprocess(blankToUndef, z.string().optional()),
-  events: z.preprocess(blankToUndef, z.string().optional()),
-})
-export type AdminImportRow = z.infer<typeof adminImportRowSchema>
-
-export const adminImportSchema = z.object({
-  rows: z.array(adminImportRowSchema).min(1).max(2000),
-})
-export type AdminImport = z.infer<typeof adminImportSchema>
-
 // ── JSON Schema notes-field admin input shapes ───────────────────────────
 
 export const shortTextFieldSchema = z.object({
@@ -91,6 +68,55 @@ export const adminFieldDraftSchema = z.object({
 })
 export type AdminFieldDraft = z.infer<typeof adminFieldDraftSchema>
 
+export const adminSettingsInputSchema = z
+  .object({
+    notesSchema: z.array(adminFieldDraftSchema).default([]),
+    applyToExisting: z.boolean().default(false),
+    lookupByNameEnabled: z.boolean().default(true),
+  })
+  .refine(
+    (d) =>
+      new Set(d.notesSchema.map((f) => f.key)).size === d.notesSchema.length,
+    { message: 'Duplicate field keys', path: ['notesSchema'] }
+  )
+export type AdminSettingsInput = z.infer<typeof adminSettingsInputSchema>
+
+export const adminSettingsViewSchema = z.object({
+  notesSchema: z.array(adminFieldDraftSchema),
+  lookupByNameEnabled: z.boolean(),
+})
+export type AdminSettingsView = z.infer<typeof adminSettingsViewSchema>
+
+export const adminGroupInputSchema = z
+  .object({
+    id: z.string().optional(),
+    label: z.string().max(200).default(''),
+    guests: z.array(adminGuestInputSchema).min(1),
+    invitedEventIds: z.array(z.string()).default([]),
+    notesSchema: z.array(adminFieldDraftSchema).default([]),
+  })
+  .refine(
+    (d) =>
+      new Set(d.notesSchema.map((f) => f.key)).size === d.notesSchema.length,
+    { message: 'Duplicate field keys', path: ['notesSchema'] }
+  )
+export type AdminGroupInput = z.infer<typeof adminGroupInputSchema>
+
+export const adminImportRowSchema = z.object({
+  groupLabel: z.preprocess(blankToUndef, z.string().optional()),
+  firstName: z.string().min(1),
+  lastName: z.preprocess(blankToUndef, z.string().optional()),
+  email: z.preprocess(blankToUndef, z.string().optional()),
+  phone: z.preprocess(blankToUndef, z.string().optional()),
+  events: z.preprocess(blankToUndef, z.string().optional()),
+})
+export type AdminImportRow = z.infer<typeof adminImportRowSchema>
+
+export const adminImportSchema = z.object({
+  rows: z.array(adminImportRowSchema).min(1).max(2000),
+})
+export type AdminImport = z.infer<typeof adminImportSchema>
+
 export const adminEventInputSchema = z
   .object({
     id: z.string().optional(),
@@ -134,7 +160,6 @@ export const adminGroupListGuestSchema = z.object({
   displayName: z.string(),
   email: z.string().nullable(),
   inviteCode: z.string(),
-  notes: z.string().nullable(),
   notesJson: z.record(z.string(), z.string().nullable()),
   eventStatuses: z.array(adminGuestEventStatusSchema),
 })
@@ -148,6 +173,7 @@ export const adminGroupListItemSchema = z.object({
   declinedCount: z.number(),
   pendingCount: z.number(),
   updatedAt: z.string(),
+  notesSchema: z.array(adminFieldDraftSchema),
   guests: z.array(adminGroupListGuestSchema),
 })
 export type AdminGroupListItem = z.infer<typeof adminGroupListItemSchema>
@@ -167,7 +193,6 @@ export const adminGuestDetailSchema = z.object({
   email: z.string().nullable(),
   phone: z.string().nullable(),
   inviteCode: z.string(),
-  notes: z.string().nullable(),
   notesJson: z.record(z.string(), z.string().nullable()),
   groupLabel: z.string(),
   events: z.array(adminGuestDetailEventSchema),
@@ -181,7 +206,6 @@ export const adminResponseRowSchema = z.object({
   eventName: z.string(),
   status: z.string(),
   customAnswers: z.string(),
-  notes: z.string().nullable(),
   respondedAt: z.string().nullable(),
 })
 export type AdminResponseRow = z.infer<typeof adminResponseRowSchema>

@@ -4,27 +4,26 @@ import {
   aggregateLookupMatches,
   buildNotesValidator,
   diffGuestResponse,
-  diffRsvpResponse,
   getDb,
-  GUEST_PROFILE_NOTES_SCHEMA,
   latestGuestResponses,
-  latestRsvpResponses,
   newId,
   nowIso,
   parseNotesSchema,
+  rsvpSubmissionSchema,
+  type GuestEventResponse,
+  type NotesJson,
+  type RsvpSubmission,
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
 import {
   lookupQuerySchema,
-  rsvpSubmissionSchema,
   type EventDetails,
   type Guest,
+  type LatestGuestResponse,
   type LookupResponse,
-  type NotesJson,
+  type PublicConfig,
   type RsvpGroupResponse,
-  type RsvpRecord,
-  type RsvpSubmission,
 } from '../schema'
 import type { z } from 'zod'
 
@@ -48,6 +47,20 @@ function formatZodIssue(error: z.ZodError): string {
   return path ? `${path}: ${issue.message}` : issue.message
 }
 
+async function lookupByNameAllowed(): Promise<boolean> {
+  const db = getDbConn()
+  const row = await db
+    .selectFrom('admin_settings')
+    .select('lookup_by_name_enabled')
+    .where('id', '=', 'default')
+    .executeTakeFirst()
+  return row ? row.lookup_by_name_enabled !== 0 : true
+}
+
+export async function getPublicConfig(): Promise<PublicConfig> {
+  return { lookupByNameEnabled: await lookupByNameAllowed() }
+}
+
 export async function lookupGuests(query: string): Promise<LookupResponse> {
   const parsed = lookupQuerySchema.safeParse({ query })
   if (!parsed.success) {
@@ -57,12 +70,42 @@ export async function lookupGuests(query: string): Promise<LookupResponse> {
 
   const db = getDbConn()
 
+  // Always allow exact-invite-code lookup — that's the "you have the code"
+  // path and can't be enumerated.
+  const trimmed = q.trim().toLowerCase()
+  const exactByCode = await db
+    .selectFrom('guest')
+    .select([
+      'guest.display_name as displayName',
+      'guest.invite_code as inviteCode',
+      'guest.party_leader_id as partyLeaderId',
+      'guest.id as guestId',
+      'guest.group_label as groupLabel',
+    ])
+    .where('guest.invite_code', '=', trimmed)
+    .executeTakeFirst()
+  if (exactByCode) {
+    return {
+      matches: [
+        {
+          partyLeaderId: exactByCode.partyLeaderId ?? exactByCode.guestId,
+          inviteCode: exactByCode.inviteCode ?? '',
+          label: exactByCode.groupLabel ?? '',
+          guestNames: [exactByCode.displayName],
+        },
+      ],
+    }
+  }
+
+  if (!(await lookupByNameAllowed())) {
+    return { matches: [] }
+  }
+
   const rows = await db
     .selectFrom('guest')
     .select([
       'guest.id as guestId',
       'guest.display_name as displayName',
-      'guest.email as email',
       'guest.first_name as firstName',
       'guest.last_name as lastName',
       'guest.invite_code as inviteCode',
@@ -76,7 +119,6 @@ export async function lookupGuests(query: string): Promise<LookupResponse> {
     displayName: r.displayName,
     firstName: r.firstName,
     lastName: r.lastName,
-    email: r.email,
     inviteCode: r.inviteCode ?? '',
     partyLeaderId: r.partyLeaderId ?? r.guestId,
     groupLabel: r.groupLabel ?? '',
@@ -122,6 +164,17 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
     .execute()
   const eventIds = invitations.map((i) => i.event_id)
 
+  // Invite-level schema: same across all of a leader's invitation rows,
+  // so picking from any one is fine.
+  let invitationNotesSchema = null
+  try {
+    invitationNotesSchema = parseNotesSchema(
+      invitations[0]?.notes_schema ?? null
+    )
+  } catch {
+    throw new RscFunctionError(500, 'Invitation schema is malformed')
+  }
+
   const events = eventIds.length
     ? await db
         .selectFrom('event')
@@ -131,8 +184,7 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
         .execute()
     : []
 
-  const latestRsvps = await latestRsvpResponses(db, { guestIds, eventIds })
-  const latestGuests = await latestGuestResponses(db, { guestIds })
+  const latestResponses = await latestGuestResponses(db, { guestIds })
 
   const eventsResponse: EventDetails[] = events.map((e) => {
     let schema
@@ -156,38 +208,41 @@ export async function getRsvpGroup(code: string): Promise<RsvpGroupResponse> {
     }
   })
 
-  const latestGuestByGuestId = new Map(latestGuests.map((r) => [r.guestId, r]))
+  const latestByGuestId = new Map(latestResponses.map((r) => [r.guestId, r]))
 
   const guestsResponse: Guest[] = allGuests.map((g) => {
-    const lr = latestGuestByGuestId.get(g.id)
+    const lr = latestByGuestId.get(g.id)
     return {
       id: g.id,
       firstName: g.first_name,
       lastName: g.last_name,
       displayName: g.display_name,
-      email: g.email,
-      phone: g.phone,
       inviteCode: g.invite_code ?? '',
-      notes: lr?.notes ?? null,
       notesJson: parseNotesJson(lr?.notesJson ?? null),
     }
   })
 
-  const rsvps: RsvpRecord[] = latestRsvps.map((r) => ({
-    guestId: r.guestId,
-    eventId: r.eventId,
-    status: r.status,
-    notesJson: parseNotesJson(r.notesJson),
-    respondedAt: r.respondedAt,
-  }))
+  const responses: LatestGuestResponse[] = allGuests.map((g) => {
+    const lr = latestByGuestId.get(g.id)
+    return {
+      guestId: g.id,
+      notesJson: parseNotesJson(lr?.notesJson ?? null),
+      events: (lr?.events ?? []).map((e) => ({
+        eventId: e.eventId,
+        status: e.status,
+        notesJson: parseNotesJson(e.notesJson),
+      })),
+      respondedAt: lr?.respondedAt ?? null,
+    }
+  })
 
   return {
     group: { id: leaderId, label: leader.group_label ?? '' },
     actingGuestId: actingGuest.id,
     guests: guestsResponse,
     events: eventsResponse,
-    rsvps,
-    guestNotesSchema: GUEST_PROFILE_NOTES_SCHEMA,
+    responses,
+    invitationNotesSchema,
   }
 }
 
@@ -228,17 +283,23 @@ export async function submitRsvp(
 
   const invitations = await db
     .selectFrom('invitation')
-    .select(['event_id'])
+    .select(['event_id', 'notes_schema'])
     .where('guest_id', '=', leaderId)
     .execute()
   const invitedEventIds = new Set(invitations.map((i) => i.event_id))
 
-  const eventIds = [...invitedEventIds]
-  const eventRows = eventIds.length
+  let invitationSchema
+  try {
+    invitationSchema = parseNotesSchema(invitations[0]?.notes_schema ?? null)
+  } catch {
+    throw new RscFunctionError(500, 'Invitation schema is malformed')
+  }
+
+  const eventRows = invitedEventIds.size
     ? await db
         .selectFrom('event')
         .select(['id', 'notes_schema'])
-        .where('id', 'in', eventIds)
+        .where('id', 'in', [...invitedEventIds])
         .execute()
     : []
   const eventSchemaByEventId = new Map<
@@ -253,122 +314,115 @@ export async function submitRsvp(
     }
   }
 
-  // Validate per-event submissions.
-  const sanitizedRsvpNotes = new Map<string, NotesJson>()
-  for (const r of data.rsvps) {
-    if (!allowedGuestIds.has(r.guestId)) {
-      throw new RscFunctionError(400, `Guest ${r.guestId} is not in this group`)
-    }
-    if (!invitedEventIds.has(r.eventId)) {
+  // Validate each guest's invite-level notes against the invitation schema.
+  const sanitizedGuests = new Map<
+    string,
+    { notesJson: NotesJson; events: GuestEventResponse[] }
+  >()
+  for (const gr of data.guestResponses) {
+    if (!allowedGuestIds.has(gr.guestId)) {
       throw new RscFunctionError(
         400,
-        `Group is not invited to event ${r.eventId}`
+        `Guest ${gr.guestId} is not in this group`
       )
     }
-    if (r.status === 'attending' || r.status === 'declined') {
-      const eventSchema = eventSchemaByEventId.get(r.eventId) ?? null
+
+    let cleanNotes: NotesJson = {}
+    if (invitationSchema) {
+      const result = buildNotesValidator(invitationSchema).safeParse(
+        gr.notesJson ?? {}
+      )
+      if (!result.success) {
+        throw new RscFunctionError(400, formatZodIssue(result.error))
+      }
+      cleanNotes = result.data
+    } else if (gr.notesJson && Object.keys(gr.notesJson).length > 0) {
+      throw new RscFunctionError(400, 'Invitation has no custom fields')
+    }
+
+    const cleanEvents: GuestEventResponse[] = []
+    for (const ev of gr.events) {
+      if (!invitedEventIds.has(ev.eventId)) {
+        throw new RscFunctionError(
+          400,
+          `Group is not invited to event ${ev.eventId}`
+        )
+      }
+      const eventSchema = eventSchemaByEventId.get(ev.eventId) ?? null
+      let eventNotes: NotesJson = {}
       if (eventSchema) {
         const result = buildNotesValidator(eventSchema).safeParse(
-          r.notesJson ?? {}
+          ev.notesJson ?? {}
         )
         if (!result.success) {
           throw new RscFunctionError(400, formatZodIssue(result.error))
         }
-        sanitizedRsvpNotes.set(`${r.guestId}::${r.eventId}`, result.data)
-      } else if (r.notesJson && Object.keys(r.notesJson).length > 0) {
+        eventNotes = result.data
+      } else if (ev.notesJson && Object.keys(ev.notesJson).length > 0) {
         throw new RscFunctionError(400, 'Event has no custom fields')
-      } else {
-        sanitizedRsvpNotes.set(`${r.guestId}::${r.eventId}`, {})
       }
+      cleanEvents.push({
+        eventId: ev.eventId,
+        status: ev.status,
+        notesJson: eventNotes,
+      })
     }
+
+    sanitizedGuests.set(gr.guestId, {
+      notesJson: cleanNotes,
+      events: cleanEvents,
+    })
   }
 
-  // Validate per-guest submissions.
-  const sanitizedGuestNotes = new Map<string, NotesJson>()
-  const guestValidator = buildNotesValidator(GUEST_PROFILE_NOTES_SCHEMA)
-  for (const u of data.guestUpdates) {
-    if (!allowedGuestIds.has(u.guestId)) continue
-    const result = guestValidator.safeParse(u.notesJson ?? {})
-    if (!result.success) {
-      throw new RscFunctionError(400, formatZodIssue(result.error))
-    }
-    sanitizedGuestNotes.set(u.guestId, result.data)
-  }
-
-  const guestIdsTouched = Array.from(
-    new Set([
-      ...data.rsvps.map((r) => r.guestId),
-      ...data.guestUpdates.map((u) => u.guestId),
-    ])
-  )
-
-  const latestRsvps = await latestRsvpResponses(db, {
-    guestIds: guestIdsTouched,
-    eventIds: data.rsvps.map((r) => r.eventId),
-  })
-  const latestRsvpKey = (g: string, e: string) => `${g}::${e}`
-  const latestRsvpMap = new Map(
-    latestRsvps.map((r) => [latestRsvpKey(r.guestId, r.eventId), r])
-  )
-
-  const latestGuests = await latestGuestResponses(db, {
+  const guestIdsTouched = [...sanitizedGuests.keys()]
+  const latestResponses = await latestGuestResponses(db, {
     guestIds: guestIdsTouched,
   })
-  const latestGuestMap = new Map(latestGuests.map((r) => [r.guestId, r]))
+  const latestByGuestId = new Map(latestResponses.map((r) => [r.guestId, r]))
 
   const now = nowIso()
 
-  for (const r of data.rsvps) {
-    if (r.status === 'pending') continue
-    const sanitized = sanitizedRsvpNotes.get(`${r.guestId}::${r.eventId}`)
-    if (!sanitized) continue
-    const latest = latestRsvpMap.get(latestRsvpKey(r.guestId, r.eventId))
-    const diff = diffRsvpResponse({
-      latest: latest
-        ? { status: latest.status, notesJson: latest.notesJson }
-        : null,
-      submitted: { status: r.status, notesJson: sanitized },
-    })
-    if (!diff.insert) continue
-    await db
-      .insertInto('rsvp_response')
-      .values({
-        id: newId('rresp'),
-        guest_id: r.guestId,
-        event_id: r.eventId,
-        status: r.status,
-        notes_json: diff.notesJson,
-        responded_at: now,
-        responded_by_guest_id: data.respondedByGuestId,
-      })
-      .execute()
-  }
-
-  for (const u of data.guestUpdates) {
-    if (!allowedGuestIds.has(u.guestId)) continue
-    const sanitized = sanitizedGuestNotes.get(u.guestId)
-    if (!sanitized) continue
-    const latest = latestGuestMap.get(u.guestId)
-    const submittedNotes =
-      typeof u.notes === 'string' ? u.notes : (u.notes ?? null)
+  for (const [guestId, snapshot] of sanitizedGuests) {
+    const latest = latestByGuestId.get(guestId)
     const diff = diffGuestResponse({
       latest: latest
-        ? { notes: latest.notes, notesJson: latest.notesJson }
+        ? {
+            notesJson: latest.notesJson,
+            events: latest.events.map((e) => ({
+              eventId: e.eventId,
+              status: e.status,
+              notesJson: e.notesJson,
+            })),
+          }
         : null,
-      submitted: { notes: submittedNotes, notesJson: sanitized },
+      submitted: snapshot,
     })
     if (!diff.insert) continue
+
+    const guestResponseId = newId('gresp')
     await db
       .insertInto('guest_response')
       .values({
-        id: newId('gresp'),
-        guest_id: u.guestId,
-        notes: diff.notes,
+        id: guestResponseId,
+        guest_id: guestId,
         notes_json: diff.notesJson,
         responded_at: now,
         responded_by_guest_id: data.respondedByGuestId,
       })
       .execute()
+
+    for (const ev of diff.events) {
+      await db
+        .insertInto('guest_invitation_response')
+        .values({
+          id: newId('gir'),
+          guest_response_id: guestResponseId,
+          event_id: ev.eventId,
+          status: ev.status,
+          notes_json: ev.notesJson,
+        })
+        .execute()
+    }
   }
 
   return { ok: true, respondedAt: now }
