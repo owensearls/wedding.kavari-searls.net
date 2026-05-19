@@ -27,7 +27,6 @@ export function RsvpFull() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [savedThisSession, setSavedThisSession] = useState(false)
 
   useEffect(() => {
     setCode(new URLSearchParams(window.location.search).get('code'))
@@ -153,7 +152,6 @@ export function RsvpFull() {
         guestResponses,
       }
       await submitRsvp(code, submission)
-      setSavedThisSession(true)
       setSubmitted(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
@@ -163,68 +161,9 @@ export function RsvpFull() {
     }
   }
 
-  const hasPriorResponse =
-    data?.responses.some((r) => r.respondedAt !== null) ?? false
-  const showSaveLabel = hasPriorResponse || savedThisSession
-
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.content}>
-          <LoadingIndicator label="Loading your invitation…" />
-        </div>
-      </div>
-    )
-  }
-
-  if (loadError) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.content}>
-          <a href="/" className={styles.backLink}>
-            ← Back to home
-          </a>
-          <ErrorMessage>{loadError}</ErrorMessage>
-        </div>
-      </div>
-    )
-  }
-
-  if (!data || !state) return null
-
-  if (submitted) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.content}>
-          <div className={styles.success}>
-            <p className={styles.successOrnament} aria-hidden="true">
-              ❦
-            </p>
-            <h1 className={styles.successHeading}>With gratitude</h1>
-            <p className={styles.successCopy}>
-              Your response has been recorded. You may return to this page any
-              time before the deadline to revise it.
-            </p>
-            <div className={styles.successActions}>
-              <button
-                type="button"
-                className={styles.linkBtn}
-                onClick={() => setSubmitted(false)}
-              >
-                Edit response
-              </button>
-              <a href="/" className={styles.linkBtn}>
-                Back to home
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const actingGuestId = state.guestOrder[0]
-  const otherGuestIds = state.guestOrder.slice(1)
+  const actingGuestId = state?.guestOrder[0]
+  const otherGuestIds = state?.guestOrder.slice(1) ?? []
+  const hasDeadline = data?.events.some((e) => e.rsvpDeadline) ?? false
 
   return (
     <div className={styles.page}>
@@ -233,90 +172,109 @@ export function RsvpFull() {
           ← Back to home
         </a>
 
-        <h1 className={styles.heading}>RSVP</h1>
-        {data.group.label && (
-          <div className={styles.subheading}>{data.group.label}</div>
+        {loading && <LoadingIndicator label="Loading your invitation…" />}
+        {loadError && <ErrorMessage>{loadError}</ErrorMessage>}
+
+        {data && state && submitted && (
+          <div className={styles.success}>
+            <h1>Thank you!</h1>
+            <p>
+              Your response has been recorded. You may return to this page{' '}
+              {hasDeadline
+                ? 'any time before the deadline'
+                : 'at any time before the wedding'}{' '}
+              to revise it.
+            </p>
+            <button type="button" onClick={() => setSubmitted(false)}>
+              Edit RSVP
+            </button>
+          </div>
         )}
 
-        {data.events.length === 0 ? (
-          <p className={styles.empty}>
-            No events are open for RSVP yet — please check back soon.
-          </p>
-        ) : (
+        {data && state && !submitted && actingGuestId && (
           <>
-            <GuestResponseCard
-              guestName={guestById.get(actingGuestId)?.displayName ?? ''}
-              draft={state.drafts[actingGuestId]}
-              events={data.events}
-              invitationNotesSchema={data.invitationNotesSchema}
-              showRespondingToggle={false}
-              onEventStatusChange={(eventId, status) =>
-                setEventStatus(actingGuestId, eventId, status)
-              }
-              onEventNoteChange={(eventId, key, value) =>
-                setEventNote(actingGuestId, eventId, key, value)
-              }
-              onInviteNoteChange={(key, value) =>
-                setInviteNote(actingGuestId, key, value)
-              }
-              onRespondingForChange={() => {}}
-            />
+            <h1 className={styles.heading}>RSVP</h1>
+            {data.group.label && (
+              <div className={styles.subheading}>{data.group.label}</div>
+            )}
 
-            {otherGuestIds.length > 0 && (
+            {data.events.length === 0 ? (
+              <p className={styles.empty}>
+                No events are open for RSVP yet — please check back soon.
+              </p>
+            ) : (
               <>
-                <div className={styles.sectionDivider}>
-                  <span className={styles.dividerLine} aria-hidden="true" />
-                  <span className={styles.dividerLabel}>
-                    Responding for anyone else?
-                  </span>
-                  <span className={styles.dividerLine} aria-hidden="true" />
-                </div>
-                <p className={styles.dividerHint}>
-                  Each guest defaults to "responding for them" — toggle off to
-                  let them reply on their own.
-                </p>
-                {otherGuestIds.map((id) => (
-                  <GuestResponseCard
-                    key={id}
-                    guestName={guestById.get(id)?.displayName ?? ''}
-                    draft={state.drafts[id]}
-                    events={data.events}
-                    invitationNotesSchema={data.invitationNotesSchema}
-                    showRespondingToggle
-                    onEventStatusChange={(eventId, status) =>
-                      setEventStatus(id, eventId, status)
-                    }
-                    onEventNoteChange={(eventId, key, value) =>
-                      setEventNote(id, eventId, key, value)
-                    }
-                    onInviteNoteChange={(key, value) =>
-                      setInviteNote(id, key, value)
-                    }
-                    onRespondingForChange={(next) => setRespondingFor(id, next)}
-                  />
-                ))}
+                <GuestResponseCard
+                  guestName={guestById.get(actingGuestId)?.displayName ?? ''}
+                  draft={state.drafts[actingGuestId]}
+                  events={data.events}
+                  invitationNotesSchema={data.invitationNotesSchema}
+                  showRespondingToggle={false}
+                  onEventStatusChange={(eventId, status) =>
+                    setEventStatus(actingGuestId, eventId, status)
+                  }
+                  onEventNoteChange={(eventId, key, value) =>
+                    setEventNote(actingGuestId, eventId, key, value)
+                  }
+                  onInviteNoteChange={(key, value) =>
+                    setInviteNote(actingGuestId, key, value)
+                  }
+                  onRespondingForChange={() => {}}
+                />
+
+                {otherGuestIds.length > 0 && (
+                  <>
+                    <div className={styles.sectionDivider}>
+                      <span className={styles.dividerLine} aria-hidden="true" />
+                      <span className={styles.dividerLabel}>
+                        Responding for anyone else?
+                      </span>
+                      <span className={styles.dividerLine} aria-hidden="true" />
+                    </div>
+                    <p className={styles.dividerHint}>
+                      Each guest defaults to "responding for them" — toggle off
+                      to let them reply on their own.
+                    </p>
+                    {otherGuestIds.map((id) => (
+                      <GuestResponseCard
+                        key={id}
+                        guestName={guestById.get(id)?.displayName ?? ''}
+                        draft={state.drafts[id]}
+                        events={data.events}
+                        invitationNotesSchema={data.invitationNotesSchema}
+                        showRespondingToggle
+                        onEventStatusChange={(eventId, status) =>
+                          setEventStatus(id, eventId, status)
+                        }
+                        onEventNoteChange={(eventId, key, value) =>
+                          setEventNote(id, eventId, key, value)
+                        }
+                        onInviteNoteChange={(key, value) =>
+                          setInviteNote(id, key, value)
+                        }
+                        onRespondingForChange={(next) =>
+                          setRespondingFor(id, next)
+                        }
+                      />
+                    ))}
+                  </>
+                )}
               </>
             )}
+
+            <div className={styles.submitRow}>
+              <button
+                type="button"
+                className={styles.submit}
+                onClick={onSubmit}
+                disabled={submitting}
+              >
+                {submitting ? 'Saving…' : 'Save response'}
+              </button>
+            </div>
+            <ErrorMessage>{submitError}</ErrorMessage>
           </>
         )}
-
-        <div className={styles.submitRow}>
-          <button
-            type="button"
-            className={styles.submit}
-            onClick={onSubmit}
-            disabled={submitting}
-          >
-            {submitting
-              ? showSaveLabel
-                ? 'Saving…'
-                : 'Sending…'
-              : showSaveLabel
-                ? 'Save response'
-                : 'Send response'}
-          </button>
-        </div>
-        <ErrorMessage>{submitError}</ErrorMessage>
       </div>
     </div>
   )
