@@ -177,15 +177,19 @@ export function RsvpFull() {
 
         {data && state && submitted && (
           <div className={styles.success}>
-            <h1>Thank you!</h1>
-            <p>
+            <h2 className={styles.successHeading}>Thank you!</h2>
+            <p className={styles.successCopy}>
               Your response has been recorded. You may return to this page{' '}
               {hasDeadline
                 ? 'any time before the deadline'
                 : 'at any time before the wedding'}{' '}
               to revise it.
             </p>
-            <button type="button" onClick={() => setSubmitted(false)}>
+            <button
+              type="button"
+              className={styles.editButton}
+              onClick={() => setSubmitted(false)}
+            >
               Edit RSVP
             </button>
           </div>
