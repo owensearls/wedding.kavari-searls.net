@@ -110,10 +110,83 @@
 }
 
 .success {
+  position: relative;
   text-align: center;
-  padding: 30px 20px;
+  padding: 48px 32px 40px;
+  margin-top: 32px;
+  background: rgba(253, 251, 244, 0.96);
+  border: 1px solid rgba(110, 107, 96, 0.4);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 18px 40px -28px rgba(74, 72, 66, 0.35);
+}
+
+.success::before,
+.success::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: rgba(110, 107, 96, 0.18);
+  pointer-events: none;
+}
+
+.success::before {
+  top: 12px;
+}
+
+.success::after {
+  bottom: 12px;
+}
+
+.successHeading {
+  font-family:
+    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #4a4842;
+  font-size: clamp(28px, 4vw, 36px);
+  letter-spacing: 0.005em;
+  line-height: 1.05;
+  margin: 0 0 14px;
+}
+
+.successCopy {
+  font-family: inherit;
+  font-style: italic;
+  color: #6e6b60;
+  font-size: 17px;
+  line-height: 1.55;
+  max-width: 440px;
+  margin: 0 auto 26px;
+}
+
+.editButton {
+  padding: 8px 18px;
+  font-size: 15px;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.85);
+  color: #6e6b60;
   border: 1px solid #6e6b60;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 0;
+  cursor: pointer;
+  transition: none;
+}
+
+.editButton:hover {
+  background: #6e6b60;
+  color: white;
+  border-color: #6e6b60;
+}
+
+.editButton:focus {
+  outline: none;
+}
+
+.editButton:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #4a4842;
 }
 
 @keyframes fadeUp {
