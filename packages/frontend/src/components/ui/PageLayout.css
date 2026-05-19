@@ -27,7 +27,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100lvh;
-  background-color: #e4e7e2;
+  background: transparent;
 }
 
 body::before {
