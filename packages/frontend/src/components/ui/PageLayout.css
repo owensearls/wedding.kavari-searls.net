@@ -36,7 +36,9 @@ html {
       url('/background.avif') 1x type('image/avif'),
       url('/background.jpg') 1x type('image/jpeg')
     );
-  background-size: 100% auto, 100% calc(100% + 200px);
+  background-size:
+    100% auto,
+    100% calc(100% + 200px);
   background-position:
     center calc(100lvh - var(--mountain-band-height)),
     center bottom;
@@ -47,7 +49,9 @@ html {
 
 @keyframes mountainParallax {
   0% {
-    background-position: center 100lvh, center bottom;
+    background-position:
+      center 100lvh,
+      center bottom;
   }
   100% {
     background-position:
