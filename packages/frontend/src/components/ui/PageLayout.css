@@ -33,8 +33,8 @@ body {
 body::before {
   content: '';
   position: fixed;
-  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
-    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
+  inset: calc(-1 * env(safe-area-inset-top, 0px) - 62px) 0
+    calc(-1 * env(safe-area-inset-bottom, 0px) - 136px) 0;
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),
