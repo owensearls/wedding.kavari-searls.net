@@ -179,6 +179,52 @@
   border: 1px solid #6e6b60;
 }
 
+.toggleGroupInvalid {
+  border-color: #b85c5c;
+  box-shadow: 0 0 0 1px rgba(184, 92, 92, 0.25);
+}
+
+.toggleGroupInvalid .toggleButton {
+  border-left-color: #b85c5c;
+}
+
+.statusError {
+  font-size: 13px;
+  font-style: italic;
+  color: #a04040;
+  margin-top: 6px;
+  text-align: right;
+}
+
+@media (max-width: 480px) {
+  .statusError {
+    text-align: left;
+  }
+}
+
+.toggleGroupInvalid {
+  border-color: #b85c5c;
+  box-shadow: 0 0 0 1px rgba(184, 92, 92, 0.25);
+}
+
+.toggleGroupInvalid .toggleButton {
+  border-left-color: #b85c5c;
+}
+
+.statusError {
+  font-size: 13px;
+  font-style: italic;
+  color: #a04040;
+  margin-top: 6px;
+  text-align: right;
+}
+
+@media (max-width: 480px) {
+  .statusError {
+    text-align: left;
+  }
+}
+
 .toggleButton {
   padding: 8px 14px;
   font-size: 15px;

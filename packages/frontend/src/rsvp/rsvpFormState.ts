@@ -1,22 +1,51 @@
-import type {
-  GuestEventResponse,
-  GuestResponseSubmission,
-  RsvpGroupResponse,
-} from '../schema'
+import { rsvpStatusSchema } from 'db'
+import { z } from 'zod'
+import type { RsvpGroupResponse } from '../schema'
 
-// The form owns one draft per guest in the party. When a draft's
-// `respondingFor` is false, the guest is excluded from the final submission
-// payload (the acting user opted not to respond on their behalf).
-export interface GuestResponseDraft extends GuestResponseSubmission {
-  respondingFor: boolean
-}
+// Form values shape for the public RSVP form. We keep an entry per guest in
+// the party and a sub-entry per event the leader is invited to. Status is
+// '' until the user picks a response so react-hook-form can register it as
+// a normal value; we exclude empty statuses (and not-responding guests)
+// when assembling the submission payload.
 
-export interface RsvpFormState {
-  drafts: Record<string, GuestResponseDraft>
-  // Ordered ids the UI walks through. The acting guest is first.
-  guestOrder: string[]
-  respondedByGuestId: string
-}
+export const eventStatusFormSchema = z.union([z.literal(''), rsvpStatusSchema])
+
+export const eventDraftFormSchema = z.object({
+  eventId: z.string(),
+  status: eventStatusFormSchema,
+  notesJson: z.record(z.string(), z.string().nullable()),
+})
+
+const notesJsonShape = z.record(z.string(), z.string().nullable())
+
+export const guestDraftFormSchema = z
+  .object({
+    guestId: z.string(),
+    respondingFor: z.boolean(),
+    notesJson: notesJsonShape,
+    events: z.array(eventDraftFormSchema),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.respondingFor) return
+    // When responding for a guest, every event must have a chosen status.
+    data.events.forEach((ev, idx) => {
+      if (ev.status === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['events', idx, 'status'],
+          message: 'Please choose a response for this event.',
+        })
+      }
+    })
+  })
+
+export const rsvpFormSchema = z.object({
+  drafts: z.array(guestDraftFormSchema),
+})
+
+export type EventDraftForm = z.infer<typeof eventDraftFormSchema>
+export type GuestDraftForm = z.infer<typeof guestDraftFormSchema>
+export type RsvpFormValues = z.infer<typeof rsvpFormSchema>
 
 export function formatRsvpDate(iso: string | null): string | null {
   if (!iso) return null
@@ -34,32 +63,33 @@ export function formatRsvpDate(iso: string | null): string | null {
   }
 }
 
-export function buildInitialRsvpFormState(
+export function buildInitialRsvpFormValues(
   data: RsvpGroupResponse
-): RsvpFormState {
+): RsvpFormValues {
   const responsesByGuestId = new Map(data.responses.map((r) => [r.guestId, r]))
   const ordered = [
     ...data.guests.filter((g) => g.id === data.actingGuestId),
     ...data.guests.filter((g) => g.id !== data.actingGuestId),
   ]
-  const drafts: Record<string, GuestResponseDraft> = {}
-  for (const g of ordered) {
-    const r = responsesByGuestId.get(g.id)
-    const events: GuestEventResponse[] = (r?.events ?? []).map((e) => ({
-      eventId: e.eventId,
-      status: e.status,
-      notesJson: { ...e.notesJson },
-    }))
-    drafts[g.id] = {
-      guestId: g.id,
-      notesJson: { ...(r?.notesJson ?? {}) },
-      events,
-      respondingFor: true,
-    }
-  }
   return {
-    drafts,
-    guestOrder: ordered.map((g) => g.id),
-    respondedByGuestId: data.actingGuestId || ordered[0]?.id || '',
+    drafts: ordered.map((g) => {
+      const lr = responsesByGuestId.get(g.id)
+      const eventByEventId = new Map(
+        (lr?.events ?? []).map((e) => [e.eventId, e])
+      )
+      return {
+        guestId: g.id,
+        respondingFor: true,
+        notesJson: { ...(lr?.notesJson ?? {}) },
+        events: data.events.map((ev) => {
+          const stored = eventByEventId.get(ev.id)
+          return {
+            eventId: ev.id,
+            status: stored?.status ?? '',
+            notesJson: { ...(stored?.notesJson ?? {}) },
+          }
+        }),
+      }
+    }),
   }
 }
