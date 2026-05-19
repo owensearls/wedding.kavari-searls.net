@@ -233,13 +233,10 @@ export function RsvpFull() {
           ← Back to home
         </a>
 
-        <header className={styles.pageHead}>
-          <p className={styles.eyebrow}>Kindly respond</p>
-          <h1 className={styles.heading}>RSVP</h1>
-          {data.group.label && (
-            <p className={styles.subheading}>{data.group.label}</p>
-          )}
-        </header>
+        <h1 className={styles.heading}>RSVP</h1>
+        {data.group.label && (
+          <div className={styles.subheading}>{data.group.label}</div>
+        )}
 
         {data.events.length === 0 ? (
           <p className={styles.empty}>

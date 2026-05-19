@@ -174,42 +174,30 @@
   color: #6e6b60;
 }
 
-.statusToggle {
+.toggleGroup {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  border: 1px solid #6e6b60;
+}
+
+.toggleButton {
+  padding: 8px 14px;
   font-size: 15px;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.85);
   color: #6e6b60;
-  font-style: italic;
-  letter-spacing: 0.02em;
-}
-
-.statusOption {
-  background: none;
   border: none;
-  padding: 4px 2px;
-  margin: 0;
-  font: inherit;
-  font-style: italic;
-  color: rgba(110, 107, 96, 0.55);
+  border-radius: 0;
   cursor: pointer;
-  border-bottom: 1px solid transparent;
-  transition:
-    color 160ms ease,
-    border-color 160ms ease;
+  border-left: 1px solid #6e6b60;
 }
 
-.statusOption:hover {
-  color: #4a4842;
+.toggleButton:first-child {
+  border-left: none;
 }
 
-.statusActive {
-  color: #4a4842;
-  border-bottom-color: #4a4842;
-}
-
-.statusDivider {
-  color: rgba(110, 107, 96, 0.4);
+.toggleButtonActive {
+  background: #6e6b60;
+  color: white;
 }
 
 .eventFields {

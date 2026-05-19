@@ -28,3 +28,46 @@
 .table tbody tr:last-child td {
   border-bottom: none;
 }
+
+.skeletonRow td {
+  /* The bar carries the visible height; keep the cell padding consistent with
+     real rows so the column header doesn't jump when data arrives. */
+  vertical-align: middle;
+}
+
+.skeletonBar {
+  height: 1em;
+  width: 100%;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(110, 107, 96, 0.08) 0%,
+    rgba(110, 107, 96, 0.2) 50%,
+    rgba(110, 107, 96, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: tableSkeletonShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes tableSkeletonShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonBar {
+    animation: none;
+    background: rgba(110, 107, 96, 0.14);
+  }
+}
+
+.emptyCell {
+  text-align: center;
+  font-style: italic;
+  color: #6e6b60;
+  padding: 24px 16px;
+}
