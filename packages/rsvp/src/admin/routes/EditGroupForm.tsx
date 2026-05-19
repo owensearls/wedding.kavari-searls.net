@@ -227,7 +227,10 @@ export function EditGroupForm({
 
         <EditFormSection>
           <SectionLabel>Custom fields for this invite</SectionLabel>
-          <p className={styles.muted} style={{ marginTop: 0 }}>
+          <p
+            className={styles.muted}
+            style={{ marginTop: 0, marginBottom: 16 }}
+          >
             Questions every guest in this invite will see at submit time.
             Defaults come from Settings; edit per invite as needed.
           </p>

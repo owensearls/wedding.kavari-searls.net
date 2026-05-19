@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
-import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
-import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
 import { PageHeader } from '../../components/ui/PageHeader'
-import { Table } from '../../components/ui/Table'
+import {
+  Table,
+  TableEmptyRow,
+  TableSkeletonRows,
+} from '../../components/ui/Table'
 import {
   deleteEvent,
   listEvents,
@@ -115,25 +117,25 @@ export function EventSettings() {
 
       <ErrorMessage>{error}</ErrorMessage>
 
-      {loading ? (
-        <LoadingIndicator />
-      ) : events.length === 0 ? (
-        <EmptyState>No events yet.</EmptyState>
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Slug</th>
-              <th>Starts</th>
-              <th>Location</th>
-              <th>Invited</th>
-              <th>Attending</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((ev) => {
+      <Table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Slug</th>
+            <th>Starts</th>
+            <th>Location</th>
+            <th>Invited</th>
+            <th>Attending</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <TableSkeletonRows colSpan={7} />
+          ) : events.length === 0 ? (
+            <TableEmptyRow colSpan={7}>No events yet.</TableEmptyRow>
+          ) : (
+            events.map((ev) => {
               const s = statsByEvent.get(ev.id)
               return (
                 <tr key={ev.id}>
@@ -185,10 +187,10 @@ export function EventSettings() {
                   </td>
                 </tr>
               )
-            })}
-          </tbody>
-        </Table>
-      )}
+            })
+          )}
+        </tbody>
+      </Table>
     </div>
   )
 }

@@ -149,23 +149,20 @@ function StatusToggle({
   onChange: (next: RsvpStatus | null) => void
 }) {
   return (
-    <div className={styles.statusToggle} role="group" aria-label="RSVP status">
+    <div className={styles.toggleGroup} role="group" aria-label="RSVP status">
       <button
         type="button"
-        className={`${styles.statusOption} ${value === 'attending' ? styles.statusActive : ''}`}
+        className={`${styles.toggleButton} ${value === 'attending' ? styles.toggleButtonActive : ''}`}
         onClick={() => onChange(value === 'attending' ? null : 'attending')}
       >
-        Will attend
+        Attending
       </button>
-      <span className={styles.statusDivider} aria-hidden="true">
-        ·
-      </span>
       <button
         type="button"
-        className={`${styles.statusOption} ${value === 'declined' ? styles.statusActive : ''}`}
+        className={`${styles.toggleButton} ${value === 'declined' ? styles.toggleButtonActive : ''}`}
         onClick={() => onChange(value === 'declined' ? null : 'declined')}
       >
-        With regrets
+        Can't make it
       </button>
     </div>
   )

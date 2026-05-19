@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
-import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
-import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
 import { PageHeader } from '../../components/ui/PageHeader'
-import { Table } from '../../components/ui/Table'
+import {
+  Table,
+  TableEmptyRow,
+  TableSkeletonRows,
+} from '../../components/ui/Table'
 import { listEvents, type AdminEventRecord } from '../../server/admin/events'
 import {
   deleteGroup,
@@ -178,26 +180,26 @@ export function GuestList() {
 
       <ErrorMessage>{error}</ErrorMessage>
 
-      {loading ? (
-        <LoadingIndicator />
-      ) : groups.length === 0 ? (
-        <EmptyState>
-          No guests yet — create an invite or use the Import page.
-        </EmptyState>
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Invite code</th>
-              {eventColumns.map((ev) => (
-                <th key={ev.id}>{ev.name}</th>
-              ))}
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {groups.map((g) => (
+      <Table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Invite code</th>
+            {eventColumns.map((ev) => (
+              <th key={ev.id}>{ev.name}</th>
+            ))}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <TableSkeletonRows colSpan={colCount} />
+          ) : groups.length === 0 ? (
+            <TableEmptyRow colSpan={colCount}>
+              No guests yet — create an invite or use the Import page.
+            </TableEmptyRow>
+          ) : (
+            groups.map((g) => (
               <GroupBlock
                 key={g.id}
                 group={g}
@@ -206,10 +208,10 @@ export function GuestList() {
                 onEdit={() => startEdit(g.id)}
                 onOpenGuest={(guestId) => setDetailGuestId(guestId)}
               />
-            ))}
-          </tbody>
-        </Table>
-      )}
+            ))
+          )}
+        </tbody>
+      </Table>
 
       {detailGuestId && (
         <GuestDetailModal

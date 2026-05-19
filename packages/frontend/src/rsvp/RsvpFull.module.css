@@ -27,38 +27,17 @@
   border-bottom-color: #4a4842;
 }
 
-.pageHead {
-  text-align: center;
-  margin-bottom: 44px;
-  animation: fadeUp 600ms ease both;
-}
-
-.eyebrow {
-  font-size: 12px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: #6e6b60;
-  margin: 0 0 12px;
-  font-style: normal;
-}
-
 .heading {
-  font-family:
-    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(54px, 9vw, 78px);
-  line-height: 1;
-  color: #4a4842;
-  margin: 0;
-  letter-spacing: -0.005em;
+  text-align: center;
+  margin-bottom: 0.5em;
 }
 
 .subheading {
+  text-align: center;
   font-style: italic;
-  font-size: clamp(18px, 2.4vw, 22px);
+  font-size: 20px;
   color: #6e6b60;
-  margin: 14px 0 0;
+  margin-bottom: 32px;
 }
 
 .empty {
@@ -111,37 +90,22 @@
 .submitRow {
   display: flex;
   justify-content: center;
-  margin-top: 40px;
+  margin-top: 24px;
 }
 
 .submit {
-  position: relative;
-  padding: 16px 48px;
+  padding: 14px 32px;
+  font-size: 20px;
   font-family: inherit;
-  font-size: 15px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: #fdfbf4;
-  background: #4a4842;
-  border: 1px solid #4a4842;
+  color: white;
+  background: #6e6b60;
+  border: 1px solid #6e6b60;
   border-radius: 0;
   cursor: pointer;
-  transition:
-    background 220ms ease,
-    transform 200ms ease,
-    box-shadow 220ms ease;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.15) inset,
-    0 14px 30px -16px rgba(74, 72, 66, 0.6);
-}
-
-.submit:hover:not(:disabled) {
-  background: #2d2c28;
-  transform: translateY(-1px);
 }
 
 .submit:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
