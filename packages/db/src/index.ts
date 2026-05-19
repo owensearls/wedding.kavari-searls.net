@@ -10,6 +10,7 @@ export {
 export {
   canonicalNotesJson,
   diffGuestResponse,
+  type GuestDiffEventInsert,
   type GuestDiffInput,
   type GuestDiffResult,
   type GuestEventState,

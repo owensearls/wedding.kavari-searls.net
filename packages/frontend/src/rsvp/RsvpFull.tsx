@@ -266,17 +266,21 @@ export function RsvpFull() {
               </>
             )}
 
-            <div className={styles.submitRow}>
-              <button
-                type="button"
-                className={styles.submit}
-                onClick={onSubmit}
-                disabled={submitting}
-              >
-                {submitting ? 'Saving…' : 'Save response'}
-              </button>
-            </div>
-            <ErrorMessage>{submitError}</ErrorMessage>
+            {data.events.length > 0 && (
+              <>
+                <div className={styles.submitRow}>
+                  <button
+                    type="button"
+                    className={styles.submit}
+                    onClick={onSubmit}
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Saving…' : 'Save response'}
+                  </button>
+                </div>
+                <ErrorMessage>{submitError}</ErrorMessage>
+              </>
+            )}
           </>
         )}
       </div>

@@ -1,13 +1,11 @@
 'use server'
 
 import {
-  fieldsInOrder,
   getDb,
   latestGuestResponses,
   newId,
   newInviteCode,
   nowIso,
-  parseNotesSchema,
   stringifyNotesSchema,
   type NotesJsonSchema,
 } from 'db'
@@ -15,40 +13,19 @@ import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
 import {
   adminGroupInputSchema,
-  type AdminFieldDraft,
   type AdminGroupInput,
   type AdminGroupListItem,
   type AdminGuestEventStatus,
 } from '../../schema'
+import {
+  draftsToSchema,
+  parseNotesJson,
+  safeParseNotesSchema,
+  schemaToDrafts,
+} from './utils'
 
 function getDbConn() {
   return getDb(getEnv().DB)
-}
-
-function parseNotesJson(raw: string | null): Record<string, string | null> {
-  if (!raw) return {}
-  try {
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function schemaToDrafts(schema: NotesJsonSchema | null): AdminFieldDraft[] {
-  if (!schema) return []
-  return fieldsInOrder(schema).map(({ key, field }) => ({ key, field }))
-}
-
-function draftsToSchema(drafts: AdminFieldDraft[]): NotesJsonSchema | null {
-  if (drafts.length === 0) return null
-  return {
-    $schema: 'https://json-schema.org/draft/2020-12/schema',
-    type: 'object',
-    additionalProperties: false,
-    'x-fieldOrder': drafts.map((d) => d.key),
-    properties: Object.fromEntries(drafts.map((d) => [d.key, d.field])),
-  }
 }
 
 export async function listGroups(): Promise<{
@@ -98,11 +75,7 @@ export async function listGroups(): Promise<{
   const schemaByLeader = new Map<string, NotesJsonSchema | null>()
   for (const inv of invitations) {
     if (schemaByLeader.has(inv.guest_id)) continue
-    try {
-      schemaByLeader.set(inv.guest_id, parseNotesSchema(inv.notes_schema))
-    } catch {
-      schemaByLeader.set(inv.guest_id, null)
-    }
+    schemaByLeader.set(inv.guest_id, safeParseNotesSchema(inv.notes_schema))
   }
 
   const items: AdminGroupListItem[] = leaders.map((leader) => {
@@ -183,16 +156,11 @@ export async function saveGroup(
   const leaderId = data.id ?? newId('gst')
   const isUpdate = !!data.id
 
-  if (isUpdate) {
-    await db
-      .updateTable('guest')
-      .set({
-        group_label: data.label.trim() ? data.label : null,
-        updated_at: now,
-      })
-      .where('id', '=', leaderId)
-      .execute()
-  } else {
+  // On create, the leader row is inserted up-front (the guest-id loop below
+  // skips the leader on creates because that path only handles members). On
+  // update, the leader is touched along with the rest of the party inside
+  // the loop, which writes its full field set including name/email/phone.
+  if (!isUpdate) {
     const first = data.guests[0]
     const displayName = `${first.firstName}${first.lastName ? ` ${first.lastName}` : ''}`
     await db
@@ -233,7 +201,12 @@ export async function saveGroup(
   for (let i = 0; i < data.guests.length; i++) {
     const g = data.guests[i]
     const isLeaderRow = isUpdate ? g.id === leaderId : i === 0
-    const id = isLeaderRow ? leaderId : (g.id ?? newId('gst'))
+    // On creates the leader was already inserted above; skip it here so we
+    // don't double-write. On updates we still want to update the leader's
+    // fields, so fall through.
+    if (!isUpdate && isLeaderRow) continue
+
+    const id = g.id ?? newId('gst')
     const displayName = `${g.firstName}${g.lastName ? ` ${g.lastName}` : ''}`
 
     if (g.id && submittedIds.has(g.id)) {
@@ -250,7 +223,7 @@ export async function saveGroup(
         })
         .where('id', '=', g.id)
         .execute()
-    } else if (!isLeaderRow) {
+    } else {
       await db
         .insertInto('guest')
         .values({
@@ -316,12 +289,9 @@ export async function getGroup(
     .where('guest_id', '=', id)
     .execute()
 
-  let invitationSchema: NotesJsonSchema | null = null
-  try {
-    invitationSchema = parseNotesSchema(invitations[0]?.notes_schema ?? null)
-  } catch {
-    invitationSchema = null
-  }
+  const invitationSchema = safeParseNotesSchema(
+    invitations[0]?.notes_schema ?? null
+  )
 
   return {
     id: leader.id,

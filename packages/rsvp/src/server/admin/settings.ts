@@ -1,45 +1,19 @@
 'use server'
 
-import {
-  getDb,
-  parseNotesSchema,
-  stringifyNotesSchema,
-  type NotesJsonSchema,
-} from 'db'
+import { getDb, stringifyNotesSchema, type NotesJsonSchema } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
 import {
   adminSettingsInputSchema,
-  type AdminFieldDraft,
   type AdminSettingsInput,
   type AdminSettingsView,
 } from '../../schema'
+import { draftsToSchema, safeParseNotesSchema, schemaToDrafts } from './utils'
 
 const SETTINGS_ID = 'default'
 
 function getDbConn() {
   return getDb(getEnv().DB)
-}
-
-function schemaToDrafts(schema: NotesJsonSchema | null): AdminFieldDraft[] {
-  if (!schema) return []
-  const out: AdminFieldDraft[] = []
-  for (const key of schema['x-fieldOrder']) {
-    const field = schema.properties[key]
-    if (field) out.push({ key, field })
-  }
-  return out
-}
-
-function draftsToSchema(drafts: AdminFieldDraft[]): NotesJsonSchema | null {
-  if (drafts.length === 0) return null
-  return {
-    $schema: 'https://json-schema.org/draft/2020-12/schema',
-    type: 'object',
-    additionalProperties: false,
-    'x-fieldOrder': drafts.map((d) => d.key),
-    properties: Object.fromEntries(drafts.map((d) => [d.key, d.field])),
-  }
 }
 
 export async function getAdminSettings(): Promise<AdminSettingsView> {
@@ -49,7 +23,9 @@ export async function getAdminSettings(): Promise<AdminSettingsView> {
     .select(['default_invitation_notes_schema', 'lookup_by_name_enabled'])
     .where('id', '=', SETTINGS_ID)
     .executeTakeFirst()
-  const parsed = parseNotesSchema(row?.default_invitation_notes_schema ?? null)
+  const parsed = safeParseNotesSchema(
+    row?.default_invitation_notes_schema ?? null
+  )
   return {
     notesSchema: schemaToDrafts(parsed),
     lookupByNameEnabled: row ? row.lookup_by_name_enabled !== 0 : true,
@@ -75,7 +51,7 @@ export async function saveAdminSettings(
     .select('default_invitation_notes_schema')
     .where('id', '=', SETTINGS_ID)
     .executeTakeFirst()
-  const oldDefault = parseNotesSchema(
+  const oldDefault = safeParseNotesSchema(
     existing?.default_invitation_notes_schema ?? null
   )
 
@@ -158,7 +134,7 @@ async function propagateDefaultChange(
 
   let touched = 0
   for (const [leaderId, leaderRows] of byLeader) {
-    const current = parseNotesSchema(leaderRows[0]?.notes_schema ?? null)
+    const current = safeParseNotesSchema(leaderRows[0]?.notes_schema ?? null)
     const merged = mergeSchemaWithDiff(
       current,
       removed,

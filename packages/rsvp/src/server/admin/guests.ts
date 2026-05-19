@@ -1,27 +1,13 @@
 'use server'
 
-import {
-  getDb,
-  latestGuestResponses,
-  parseNotesSchema,
-  type NotesJsonSchema,
-} from 'db'
+import { getDb, latestGuestResponses, type NotesJsonSchema } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
+import { parseNotesJson, safeParseNotesSchema } from './utils'
 import type { AdminGuestDetail } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
-}
-
-function parseNotesJson(raw: string | null): Record<string, string | null> {
-  if (!raw) return {}
-  try {
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
 }
 
 export async function getGuest(id: string): Promise<
@@ -66,24 +52,15 @@ export async function getGuest(id: string): Promise<
     .orderBy('event.sort_order')
     .execute()
 
-  let invitationNotesSchema: NotesJsonSchema | null = null
-  try {
-    invitationNotesSchema = parseNotesSchema(
-      invitations[0]?.invitationNotesSchemaRaw ?? null
-    )
-  } catch {
-    invitationNotesSchema = null
-  }
+  const invitationNotesSchema = safeParseNotesSchema(
+    invitations[0]?.invitationNotesSchemaRaw ?? null
+  )
 
   const eventNotesSchemaByEvent: Record<string, NotesJsonSchema | null> = {}
   for (const inv of invitations) {
-    try {
-      eventNotesSchemaByEvent[inv.eventId] = parseNotesSchema(
-        inv.eventNotesSchemaRaw
-      )
-    } catch {
-      eventNotesSchemaByEvent[inv.eventId] = null
-    }
+    eventNotesSchemaByEvent[inv.eventId] = safeParseNotesSchema(
+      inv.eventNotesSchemaRaw
+    )
   }
 
   const latestResponses = await latestGuestResponses(db, { guestIds: [id] })

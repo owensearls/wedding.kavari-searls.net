@@ -63,10 +63,3 @@ export function buildInitialRsvpFormState(
     respondedByGuestId: data.actingGuestId || ordered[0]?.id || '',
   }
 }
-
-export function getEventState(
-  draft: GuestResponseDraft,
-  eventId: string
-): GuestEventResponse | undefined {
-  return draft.events.find((e) => e.eventId === eventId)
-}

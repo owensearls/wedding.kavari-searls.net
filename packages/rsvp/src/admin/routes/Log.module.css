@@ -166,6 +166,11 @@
   white-space: nowrap;
 }
 
+.customLabel {
+  color: var(--admin-muted, #6b7280);
+  margin-right: 4px;
+}
+
 .dash {
   color: #b0aca0;
 }

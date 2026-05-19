@@ -55,7 +55,7 @@ export interface LookupCandidate {
   lastName: string | null
   inviteCode: string
   partyLeaderId: string
-  groupLabel: string
+  groupLabel: string | null
 }
 
 export interface AggregatedLookupMatch {
@@ -104,7 +104,7 @@ export function aggregateLookupMatches(
     } else {
       byGroup.set(row.partyLeaderId, {
         partyLeaderId: row.partyLeaderId,
-        groupLabel: row.groupLabel,
+        groupLabel: row.groupLabel ?? '',
         inviteCode: row.inviteCode ?? '',
         bestScore: s,
         guestNames: new Set([row.displayName]),

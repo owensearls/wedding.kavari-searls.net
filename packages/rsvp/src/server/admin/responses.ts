@@ -7,44 +7,16 @@ import {
   isShortTextField,
   isSingleSelectField,
   latestGuestResponses,
-  parseNotesSchema,
   type NotesJson,
   type NotesJsonSchema,
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
+import { parseNotesJson, safeParseNotesSchema } from './utils'
 import type { AdminResponseRow } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
-}
-
-function parseNotesJson(raw: string | null): NotesJson {
-  if (!raw) return {}
-  try {
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-// Returns null on any parse error or structural mismatch, so downstream
-// renderers can safely treat the event as "no custom fields".
-function safeParseNotesSchema(raw: string | null): NotesJsonSchema | null {
-  let parsed: unknown
-  try {
-    parsed = parseNotesSchema(raw)
-  } catch {
-    return null
-  }
-  if (parsed === null) return null
-  if (typeof parsed !== 'object' || Array.isArray(parsed)) return null
-  const s = parsed as Partial<NotesJsonSchema>
-  if (s.type !== 'object') return null
-  if (!Array.isArray(s['x-fieldOrder'])) return null
-  if (!s.properties || typeof s.properties !== 'object') return null
-  return parsed as NotesJsonSchema
 }
 
 function formatAnswersForCsv(
@@ -98,12 +70,17 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
     .select(['guest_id', 'event_id', 'notes_schema'])
     .execute()
   const invitationSchemaByLeader = new Map<string, NotesJsonSchema | null>()
+  const eventIdsByLeader = new Map<string, string[]>()
   for (const inv of invitations) {
-    if (invitationSchemaByLeader.has(inv.guest_id)) continue
-    invitationSchemaByLeader.set(
-      inv.guest_id,
-      safeParseNotesSchema(inv.notes_schema)
-    )
+    if (!invitationSchemaByLeader.has(inv.guest_id)) {
+      invitationSchemaByLeader.set(
+        inv.guest_id,
+        safeParseNotesSchema(inv.notes_schema)
+      )
+    }
+    const arr = eventIdsByLeader.get(inv.guest_id) ?? []
+    arr.push(inv.event_id)
+    eventIdsByLeader.set(inv.guest_id, arr)
   }
 
   const latest = await latestGuestResponses(db)
@@ -112,9 +89,7 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
   const out: AdminResponseRow[] = []
   for (const g of guests) {
     const leaderId = g.partyLeaderId ?? g.guestId
-    const eventIdsForGroup = invitations
-      .filter((i) => i.guest_id === leaderId)
-      .map((i) => i.event_id)
+    const eventIdsForGroup = eventIdsByLeader.get(leaderId) ?? []
     const lr = latestByGuestId.get(g.guestId)
     const guestEventByEventId = new Map(
       (lr?.events ?? []).map((e) => [e.eventId, e])
