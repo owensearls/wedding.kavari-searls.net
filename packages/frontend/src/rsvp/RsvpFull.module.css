@@ -5,181 +5,250 @@
 
 .content {
   position: relative;
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 60px 25px 80px;
+  padding: 60px 25px 100px;
 }
 
 .backLink {
   display: inline-block;
   color: #6e6b60;
   text-decoration: none;
-  font-size: 16px;
-  border-bottom: 1px solid #6e6b60;
-  margin-bottom: 24px;
+  font-size: 14px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.4);
+  margin-bottom: 32px;
+  padding-bottom: 1px;
+  transition: border-color 160ms ease;
+}
+
+.backLink:hover {
+  border-bottom-color: #4a4842;
+}
+
+.pageHead {
+  text-align: center;
+  margin-bottom: 44px;
+  animation: fadeUp 600ms ease both;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #6e6b60;
+  margin: 0 0 12px;
+  font-style: normal;
 }
 
 .heading {
-  text-align: center;
-  margin-bottom: 0.5em;
+  font-family:
+    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(54px, 9vw, 78px);
+  line-height: 1;
+  color: #4a4842;
+  margin: 0;
+  letter-spacing: -0.005em;
 }
 
 .subheading {
+  font-style: italic;
+  font-size: clamp(18px, 2.4vw, 22px);
+  color: #6e6b60;
+  margin: 14px 0 0;
+}
+
+.empty {
   text-align: center;
   font-style: italic;
-  font-size: 20px;
   color: #6e6b60;
-  margin-bottom: 32px;
+  padding: 30px;
+  background: rgba(253, 251, 244, 0.7);
+  border: 1px dashed rgba(110, 107, 96, 0.3);
 }
 
-.eventCard {
-  border: 1px solid #6e6b60;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.eventName {
-  margin: 0 0 4px 0;
-}
-
-.eventMeta {
-  font-size: 16px;
-  color: #6e6b60;
-  font-style: italic;
-  margin-bottom: 18px;
-}
-
-.eventCardSingle {
+.sectionDivider {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
+  margin: 48px 0 8px;
+  animation: fadeUp 700ms ease both;
 }
 
-.eventCardSingle .eventName {
-  margin-bottom: 0;
-}
-
-.eventCardSingle .eventMeta {
-  margin-bottom: 0;
-}
-
-.guestRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px 16px;
-  align-items: center;
-  padding: 12px 0;
-  border-top: 1px solid rgba(110, 107, 96, 0.25);
-}
-
-.guestRow:first-of-type {
-  border-top: none;
-}
-
-.guestName {
-  font-size: 18px;
-  color: #6e6b60;
-}
-
-.toggleGroup {
-  display: inline-flex;
-  border: 1px solid #6e6b60;
-}
-
-.toggleButton {
-  padding: 8px 14px;
-  font-size: 15px;
-  font-family: inherit;
-  background: rgba(255, 255, 255, 0.85);
-  color: #6e6b60;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-  border-left: 1px solid #6e6b60;
-}
-
-.toggleButton:first-child {
-  border-left: none;
-}
-
-.toggleButtonActive {
-  background: #6e6b60;
-  color: white;
-}
-
-.mealRow {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 16px;
-  color: #6e6b60;
-}
-
-.select,
-.textarea {
-  padding: 8px 10px;
-  font-size: 16px;
-  font-family: inherit;
-  color: #6e6b60;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid #6e6b60;
-  border-radius: 0;
-  outline: none;
+.dividerLine {
   flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(110, 107, 96, 0.5),
+    transparent
+  );
 }
 
-.detailsCard {
-  border: 1px solid #6e6b60;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 24px;
-  margin-bottom: 24px;
+.dividerLabel {
+  font-family:
+    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: clamp(18px, 2.4vw, 22px);
+  color: #4a4842;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.fieldLabel {
-  display: block;
-  font-size: 16px;
-  color: #6e6b60;
-  margin-bottom: 6px;
-  margin-top: 14px;
+.dividerHint {
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+  color: rgba(110, 107, 96, 0.85);
+  margin: 0 0 22px;
+  letter-spacing: 0.02em;
 }
 
 .submitRow {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
+  margin-top: 40px;
 }
 
 .submit {
-  padding: 14px 32px;
-  font-size: 20px;
+  position: relative;
+  padding: 16px 48px;
   font-family: inherit;
-  color: white;
-  background: #6e6b60;
-  border: 1px solid #6e6b60;
+  font-size: 15px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #fdfbf4;
+  background: #4a4842;
+  border: 1px solid #4a4842;
   border-radius: 0;
   cursor: pointer;
+  transition:
+    background 220ms ease,
+    transform 200ms ease,
+    box-shadow 220ms ease;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 14px 30px -16px rgba(74, 72, 66, 0.6);
+}
+
+.submit:hover:not(:disabled) {
+  background: #2d2c28;
+  transform: translateY(-1px);
 }
 
 .submit:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
-}
-
-.centered {
-  text-align: center;
-}
-
-.detailsHeading {
-  margin: 0 0 8px 0;
 }
 
 .success {
   text-align: center;
-  padding: 30px 20px;
-  border: 1px solid #6e6b60;
-  background: rgba(255, 255, 255, 0.92);
+  padding: 56px 32px;
+  background: rgba(253, 251, 244, 0.96);
+  border: 1px solid rgba(110, 107, 96, 0.4);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 18px 40px -28px rgba(74, 72, 66, 0.35);
+  position: relative;
+  animation: fadeUp 600ms ease both;
+}
+
+.success::before,
+.success::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: rgba(110, 107, 96, 0.2);
+}
+
+.success::before {
+  top: 12px;
+}
+
+.success::after {
+  bottom: 12px;
+}
+
+.successOrnament {
+  font-size: 32px;
+  color: rgba(110, 107, 96, 0.55);
+  margin: 0 0 12px;
+  letter-spacing: 0.3em;
+}
+
+.successHeading {
+  font-family:
+    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(38px, 6vw, 52px);
+  color: #4a4842;
+  margin: 0 0 18px;
+}
+
+.successCopy {
+  font-size: 18px;
+  font-style: italic;
+  color: #6e6b60;
+  max-width: 480px;
+  margin: 0 auto 30px;
+  line-height: 1.55;
+}
+
+.successActions {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.linkBtn {
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #6e6b60;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.5);
+  padding: 4px 2px;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.linkBtn:hover {
+  color: #4a4842;
+  border-bottom-color: #4a4842;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 36px 18px 80px;
+  }
+  .pageHead {
+    margin-bottom: 30px;
+  }
+  .sectionDivider {
+    margin-top: 32px;
+  }
 }

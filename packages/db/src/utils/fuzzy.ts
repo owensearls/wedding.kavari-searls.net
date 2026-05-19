@@ -5,7 +5,7 @@ export function normalize(s: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '') // strip accents
-    .replace(/[^a-z0-9@.\s'-]/g, ' ')
+    .replace(/[^a-z0-9\s'-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -14,14 +14,14 @@ export function tokens(s: string): string[] {
   return normalize(s).split(/\s+/).filter(Boolean)
 }
 
-// Score a candidate (e.g. "Sanam Kavari" or "owen@searls.net") against a query.
+// Score a candidate (e.g. "Sanam Kavari") against a query.
 // Higher = better. 0 = no plausible match.
 export function score(query: string, candidate: string): number {
   const q = normalize(query)
   const c = normalize(candidate)
   if (!q || !c) return 0
 
-  // Exact email or full string equality is the strongest signal.
+  // Exact full-string equality is the strongest signal.
   if (q === c) return 1000
 
   // Substring match on the whole query.
@@ -45,12 +45,14 @@ export function score(query: string, candidate: string): number {
 // One guest-row candidate the lookup query can match against. Flattened from
 // the DB join so the aggregation is pure and unit-testable. Each guest has
 // their own invite_code now.
+//
+// Email is deliberately excluded — looking guests up by email is disabled so
+// the invite list can't be enumerated by typing arbitrary addresses.
 export interface LookupCandidate {
   guestId: string
   displayName: string
   firstName: string
   lastName: string | null
-  email: string | null
   inviteCode: string
   partyLeaderId: string
   groupLabel: string
@@ -88,9 +90,7 @@ export function aggregateLookupMatches(
   for (const row of candidates) {
     const fullName =
       `${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() || row.displayName
-    const candidateText = [row.displayName, fullName, row.email]
-      .filter(Boolean)
-      .join(' ')
+    const candidateText = [row.displayName, fullName].filter(Boolean).join(' ')
     const s = score(query, candidateText)
     if (s <= 0) continue
 

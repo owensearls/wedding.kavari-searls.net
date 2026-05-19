@@ -7,7 +7,6 @@ const HEADER = [
   'eventName',
   'status',
   'customAnswers',
-  'notes',
   'respondedAt',
 ] as const
 
@@ -26,7 +25,6 @@ export function responsesToCsv(rows: AdminResponseRow[]): string {
         r.eventName,
         r.status,
         r.customAnswers,
-        r.notes,
         r.respondedAt,
       ]
         .map(escapeCsv)

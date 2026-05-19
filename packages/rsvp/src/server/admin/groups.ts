@@ -1,17 +1,21 @@
 'use server'
 
 import {
+  fieldsInOrder,
   getDb,
   latestGuestResponses,
-  latestRsvpResponses,
   newId,
   newInviteCode,
   nowIso,
+  parseNotesSchema,
+  stringifyNotesSchema,
+  type NotesJsonSchema,
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
 import {
   adminGroupInputSchema,
+  type AdminFieldDraft,
   type AdminGroupInput,
   type AdminGroupListItem,
   type AdminGuestEventStatus,
@@ -28,6 +32,22 @@ function parseNotesJson(raw: string | null): Record<string, string | null> {
     return parsed && typeof parsed === 'object' ? parsed : {}
   } catch {
     return {}
+  }
+}
+
+function schemaToDrafts(schema: NotesJsonSchema | null): AdminFieldDraft[] {
+  if (!schema) return []
+  return fieldsInOrder(schema).map(({ key, field }) => ({ key, field }))
+}
+
+function draftsToSchema(drafts: AdminFieldDraft[]): NotesJsonSchema | null {
+  if (drafts.length === 0) return null
+  return {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    additionalProperties: false,
+    'x-fieldOrder': drafts.map((d) => d.key),
+    properties: Object.fromEntries(drafts.map((d) => [d.key, d.field])),
   }
 }
 
@@ -64,19 +84,26 @@ export async function listGroups(): Promise<{
 
   const invitations = await db
     .selectFrom('invitation')
-    .select(['id', 'guest_id', 'event_id'])
+    .select(['id', 'guest_id', 'event_id', 'notes_schema'])
     .where('guest_id', 'in', leaderIds)
     .execute()
 
   const allGuestIds = [...leaderIds, ...members.map((m) => m.id)]
+  const latestResponses = await latestGuestResponses(db, {
+    guestIds: allGuestIds,
+  })
+  const latestByGuestId = new Map(latestResponses.map((r) => [r.guestId, r]))
 
-  const latestRsvps = await latestRsvpResponses(db, { guestIds: allGuestIds })
-  const latestGuests = await latestGuestResponses(db, { guestIds: allGuestIds })
-  const latestRsvpKey = (g: string, e: string) => `${g}::${e}`
-  const latestRsvpMap = new Map(
-    latestRsvps.map((r) => [latestRsvpKey(r.guestId, r.eventId), r])
-  )
-  const latestGuestMap = new Map(latestGuests.map((r) => [r.guestId, r]))
+  // Invitation schema per leader (same across that leader's rows).
+  const schemaByLeader = new Map<string, NotesJsonSchema | null>()
+  for (const inv of invitations) {
+    if (schemaByLeader.has(inv.guest_id)) continue
+    try {
+      schemaByLeader.set(inv.guest_id, parseNotesSchema(inv.notes_schema))
+    } catch {
+      schemaByLeader.set(inv.guest_id, null)
+    }
+  }
 
   const items: AdminGroupListItem[] = leaders.map((leader) => {
     const groupMembers = members.filter((m) => m.party_leader_id === leader.id)
@@ -89,37 +116,53 @@ export async function listGroups(): Promise<{
       },
       ...groupMembers,
     ]
-    const groupGuestIds = new Set(allGroupGuests.map((g) => g.id))
-    const groupRsvps = latestRsvps.filter((r) => groupGuestIds.has(r.guestId))
     const groupInvitations = invitations.filter((i) => i.guest_id === leader.id)
+
+    let attendingCount = 0
+    let declinedCount = 0
+    let answeredCount = 0
+    for (const g of allGroupGuests) {
+      const lr = latestByGuestId.get(g.id)
+      for (const e of lr?.events ?? []) {
+        if (!groupInvitations.some((inv) => inv.event_id === e.eventId))
+          continue
+        if (e.status === 'attending') attendingCount++
+        else if (e.status === 'declined') declinedCount++
+        answeredCount++
+      }
+    }
+    const expectedResponses = allGroupGuests.length * groupInvitations.length
+    const pendingCount = expectedResponses - answeredCount
 
     return {
       id: leader.id,
       label: leader.group_label ?? '',
       guestCount: allGroupGuests.length,
-      attendingCount: groupRsvps.filter((r) => r.status === 'attending').length,
-      declinedCount: groupRsvps.filter((r) => r.status === 'declined').length,
-      pendingCount:
-        allGroupGuests.length * groupInvitations.length - groupRsvps.length,
+      attendingCount,
+      declinedCount,
+      pendingCount,
       updatedAt: leader.updated_at,
+      notesSchema: schemaToDrafts(schemaByLeader.get(leader.id) ?? null),
       guests: allGroupGuests.map((gst) => {
+        const lr = latestByGuestId.get(gst.id)
+        const eventByEventId = new Map(
+          (lr?.events ?? []).map((e) => [e.eventId, e])
+        )
         const eventStatuses: AdminGuestEventStatus[] = []
         for (const inv of groupInvitations) {
-          const r = latestRsvpMap.get(latestRsvpKey(gst.id, inv.event_id))
+          const e = eventByEventId.get(inv.event_id)
           eventStatuses.push({
             eventId: inv.event_id,
-            status: r?.status ?? 'pending',
-            notesJson: parseNotesJson(r?.notesJson ?? null),
+            status: e?.status ?? 'pending',
+            notesJson: parseNotesJson(e?.notesJson ?? null),
           })
         }
-        const lg = latestGuestMap.get(gst.id)
         return {
           id: gst.id,
           displayName: gst.display_name,
           email: gst.email,
           inviteCode: gst.invite_code ?? '',
-          notes: lg?.notes ?? null,
-          notesJson: parseNotesJson(lg?.notesJson ?? null),
+          notesJson: parseNotesJson(lr?.notesJson ?? null),
           eventStatuses,
         }
       }),
@@ -227,6 +270,9 @@ export async function saveGroup(
     }
   }
 
+  const notesSchema = draftsToSchema(data.notesSchema)
+  const notesSchemaJson = notesSchema ? stringifyNotesSchema(notesSchema) : null
+
   await db.deleteFrom('invitation').where('guest_id', '=', leaderId).execute()
   for (const eventId of data.invitedEventIds ?? []) {
     await db
@@ -235,6 +281,7 @@ export async function saveGroup(
         id: newId('inv'),
         guest_id: leaderId,
         event_id: eventId,
+        notes_schema: notesSchemaJson,
       })
       .execute()
   }
@@ -265,14 +312,22 @@ export async function getGroup(
 
   const invitations = await db
     .selectFrom('invitation')
-    .select(['event_id'])
+    .select(['event_id', 'notes_schema'])
     .where('guest_id', '=', id)
     .execute()
+
+  let invitationSchema: NotesJsonSchema | null = null
+  try {
+    invitationSchema = parseNotesSchema(invitations[0]?.notes_schema ?? null)
+  } catch {
+    invitationSchema = null
+  }
 
   return {
     id: leader.id,
     label: leader.group_label ?? '',
     invitedEventIds: invitations.map((i) => i.event_id),
+    notesSchema: schemaToDrafts(invitationSchema),
     guests: allGuests.map((g) => ({
       id: g.id,
       firstName: g.first_name,

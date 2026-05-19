@@ -1,5 +1,12 @@
 -- Initial schema (consolidated). Pre-launch single migration.
 
+-- ── Admin settings (singleton row, id = 'default') ──────────────────────
+CREATE TABLE admin_settings (
+  id TEXT PRIMARY KEY,
+  default_invitation_notes_schema TEXT,
+  lookup_by_name_enabled INTEGER NOT NULL DEFAULT 1
+);
+
 -- ── Guests ──────────────────────────────────────────────────────────────
 CREATE TABLE guest (
   id TEXT PRIMARY KEY,
@@ -33,41 +40,45 @@ CREATE TABLE event (
 );
 
 -- ── Invitations ─────────────────────────────────────────────────────────
+-- `notes_schema` defines invite-level questions (the same JSON Schema
+-- shape used by event.notes_schema). It is logically a per-invite value
+-- (one schema per party leader), but is stored on every (leader, event)
+-- row for simplicity; saveGroup keeps them in sync.
 CREATE TABLE invitation (
   id TEXT PRIMARY KEY,
   guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
   event_id TEXT NOT NULL REFERENCES event(id) ON DELETE CASCADE,
+  notes_schema TEXT,
   UNIQUE (guest_id, event_id)
 );
 CREATE INDEX idx_invitation_guest ON invitation(guest_id);
 CREATE INDEX idx_invitation_event ON invitation(event_id);
 
 -- ── Append-only response tables ─────────────────────────────────────────
-CREATE TABLE rsvp_response (
-  id TEXT PRIMARY KEY,
-  guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
-  event_id TEXT NOT NULL REFERENCES event(id) ON DELETE CASCADE,
-  status TEXT NOT NULL CHECK (status IN ('attending', 'declined')),
-  notes_json TEXT,
-  responded_at TEXT NOT NULL,
-  responded_by_guest_id TEXT REFERENCES guest(id) ON DELETE SET NULL
-);
-CREATE INDEX idx_rsvp_response_guest_event_at
-  ON rsvp_response(guest_id, event_id, responded_at);
-
--- One row per guest per public submit, when something changed.
--- The `notes` column is the hardcoded long-text "anything else?" field
--- on the public form; `notes_json` holds answers for the hardcoded
--- guest-profile schema. Asymmetric vs. rsvp_response (which has no
--- `notes`) because there's no equivalent free-text field in the
--- per-event RSVP UI.
+-- A guest_response captures the full state submitted for one guest at
+-- one moment: their invite-level notes plus a set of per-event responses
+-- (stored as child guest_invitation_response rows). One submit can write
+-- multiple guest_responses (one per guest whose state changed); per-guest
+-- state is rewritten in full each time it changes.
 CREATE TABLE guest_response (
   id TEXT PRIMARY KEY,
   guest_id TEXT NOT NULL REFERENCES guest(id) ON DELETE CASCADE,
-  notes TEXT,
   notes_json TEXT,
   responded_at TEXT NOT NULL,
   responded_by_guest_id TEXT REFERENCES guest(id) ON DELETE SET NULL
 );
 CREATE INDEX idx_guest_response_guest_at
   ON guest_response(guest_id, responded_at);
+
+CREATE TABLE guest_invitation_response (
+  id TEXT PRIMARY KEY,
+  guest_response_id TEXT NOT NULL REFERENCES guest_response(id) ON DELETE CASCADE,
+  event_id TEXT NOT NULL REFERENCES event(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (status IN ('attending', 'declined')),
+  notes_json TEXT,
+  UNIQUE (guest_response_id, event_id)
+);
+CREATE INDEX idx_guest_invitation_response_response
+  ON guest_invitation_response(guest_response_id);
+CREATE INDEX idx_guest_invitation_response_event
+  ON guest_invitation_response(event_id);

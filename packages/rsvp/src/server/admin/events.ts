@@ -3,7 +3,7 @@
 import {
   fieldsInOrder,
   getDb,
-  latestRsvpResponses,
+  latestGuestResponses,
   newId,
   parseNotesSchema,
   stringifyNotesSchema,
@@ -110,12 +110,16 @@ export async function listEventStats(): Promise<{ stats: AdminEventStats[] }> {
   }
 
   const allGuestIds = [...new Set(partyMembers.map((m) => m.id))]
-  const rsvps =
+  const latest =
     allGuestIds.length > 0
-      ? await latestRsvpResponses(db, { eventIds, guestIds: allGuestIds })
+      ? await latestGuestResponses(db, { guestIds: allGuestIds })
       : []
   const statusByKey = new Map<string, 'attending' | 'declined'>()
-  for (const r of rsvps) statusByKey.set(`${r.guestId}::${r.eventId}`, r.status)
+  for (const lr of latest) {
+    for (const e of lr.events) {
+      statusByKey.set(`${lr.guestId}::${e.eventId}`, e.status)
+    }
+  }
 
   return {
     stats: events.map((e) => {

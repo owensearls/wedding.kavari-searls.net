@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
-import { lookupGuests } from '../server/rsvp'
+import { useEffect, useState, type FormEvent } from 'react'
+import { getPublicConfig, lookupGuests } from '../server/rsvp'
 import styles from './RsvpLookup.module.css'
 import type { LookupMatch } from '../schema'
 
@@ -10,6 +10,22 @@ export function RsvpLookup() {
   const [matches, setMatches] = useState<LookupMatch[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lookupByNameEnabled, setLookupByNameEnabled] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    getPublicConfig()
+      .then((c) => {
+        if (!cancelled) setLookupByNameEnabled(c.lookupByNameEnabled)
+      })
+      .catch(() => {
+        // Default to permissive on transient failure — the server still
+        // enforces the toggle, so this only affects UX text.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -21,7 +37,14 @@ export function RsvpLookup() {
       const res = await lookupGuests(query.trim())
       if (res.matches.length === 0) {
         setError(
-          "We couldn't find your invitation. Try a different spelling, or reach out to Sanam or Owen."
+          lookupByNameEnabled
+            ? "We couldn't find your invitation. Try a different spelling of your name, or reach out to Sanam or Owen."
+            : "We couldn't find that code. Double-check the code from your invitation, or reach out to Sanam or Owen."
+        )
+      } else if (res.matches.length === 1) {
+        // Single match — send the guest straight in. Saves a click.
+        window.location.assign(
+          `/rsvp?code=${encodeURIComponent(res.matches[0].inviteCode)}`
         )
       } else {
         setMatches(res.matches)
@@ -36,20 +59,24 @@ export function RsvpLookup() {
   return (
     <div className={styles.wrap}>
       <p className={styles.intro}>
-        Enter your name or email to find your invitation.
+        {lookupByNameEnabled
+          ? 'Enter your name to find your invitation.'
+          : 'Enter the invite code from your invitation.'}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <div className={styles.row}>
           <input
             type="text"
             className={styles.input}
-            placeholder="Your name or email"
+            placeholder={
+              lookupByNameEnabled ? 'Your name' : 'Invite code'
+            }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            autoComplete="name"
+            autoComplete={lookupByNameEnabled ? 'name' : 'off'}
           />
           <button type="submit" className={styles.button} disabled={loading}>
-            {loading ? 'Looking…' : 'Find me'}
+            {loading ? 'Looking…' : lookupByNameEnabled ? 'Find me' : 'Go'}
           </button>
         </div>
         {error && <div className={styles.error}>{error}</div>}

@@ -1,0 +1,49 @@
+.status {
+  background: #eef6ee;
+  border: 1px solid #c8e2c8;
+  color: #2c5f2c;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+
+.helper {
+  color: #6e6b60;
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+.toggle,
+.applyCheckbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.toggle input,
+.applyCheckbox input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.toggle span,
+.applyCheckbox span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggleHelp {
+  font-size: 13px;
+  color: #6e6b60;
+  font-weight: normal;
+}
+
+.applyCheckbox {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e3e1d8;
+}
