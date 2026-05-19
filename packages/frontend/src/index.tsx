@@ -2,6 +2,7 @@ import { BackgroundLayout } from './components/BackgroundLayout'
 import { RsvpLookup } from './components/RsvpLookup'
 import { Section } from './components/Section'
 import { PageLayout } from './components/ui/PageLayout'
+import styles from './index.module.css'
 import typography from './typography.module.css'
 
 export default function Home() {
@@ -36,7 +37,10 @@ export default function Home() {
           </div>
         }
         footer={
-          <div style={{ textAlign: 'center', padding: '25px' }}>
+          <div
+            className={styles.credits}
+            style={{ textAlign: 'center', padding: '25px' }}
+          >
             <h2>
               Web Development{' '}
               <span className={typography.italicConnector}>by</span> Owen Searls
