@@ -68,9 +68,7 @@ export function RsvpLookup() {
           <input
             type="text"
             className={styles.input}
-            placeholder={
-              lookupByNameEnabled ? 'Your name' : 'Invite code'
-            }
+            placeholder={lookupByNameEnabled ? 'Your name' : 'Invite code'}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoComplete={lookupByNameEnabled ? 'name' : 'off'}

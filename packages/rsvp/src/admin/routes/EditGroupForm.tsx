@@ -11,13 +11,13 @@ import { FieldGroup } from '../../components/ui/FieldGroup'
 import { FormGrid } from '../../components/ui/FormGrid'
 import { RemoveButton } from '../../components/ui/RemoveButton'
 import { SectionLabel } from '../../components/ui/SectionLabel'
-import { CustomFieldsEditor } from './CustomFieldsEditor'
 import {
   adminGroupInputSchema,
   type AdminFieldDraft,
   type AdminGroupInput,
   type AdminGuestInput,
 } from '../../schema'
+import { CustomFieldsEditor } from './CustomFieldsEditor'
 import styles from './EditGroupForm.module.css'
 import type { AdminEventRecord } from '../../server/admin/events'
 import type { z } from 'zod'
