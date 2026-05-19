@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
 import { Section } from './Section'
@@ -19,6 +19,41 @@ export function BackgroundLayout({
   footer,
 }: BackgroundLayoutProps) {
   const [currentAnchor, setCurrentAnchor] = useState('')
+  const [navOverText, setNavOverText] = useState(false)
+  const navRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    let rafId = 0
+    const update = () => {
+      rafId = 0
+      const navEl = navRef.current
+      if (!navEl) return
+      const navRect = navEl.getBoundingClientRect()
+      const textEls = document.querySelectorAll<HTMLElement>('h1, h2, h3, p')
+      let over = false
+      for (const el of textEls) {
+        if (navEl.contains(el)) continue
+        const r = el.getBoundingClientRect()
+        if (r.bottom > navRect.top && r.top < navRect.bottom) {
+          over = true
+          break
+        }
+      }
+      setNavOverText(over)
+    }
+    const onScroll = () => {
+      if (rafId) return
+      rafId = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [])
 
   useEffect(() => {
     const sections = Array.from(
@@ -70,7 +105,11 @@ export function BackgroundLayout({
   return (
     <AnchorContext.Provider value={currentAnchor}>
       <div className={styles.container}>
-        <div className={styles.nav}>
+        <div
+          className={styles.nav}
+          ref={navRef}
+          data-over-text={navOverText ? 'true' : undefined}
+        >
           <div className={styles.navContent}>
             <a href={navData.href} className={styles.navLink}>
               <Chevron direction={navData.direction} /> {navData.text}

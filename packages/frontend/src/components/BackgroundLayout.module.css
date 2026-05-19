@@ -29,6 +29,35 @@
   border-bottom: #6e6b60 solid 1px;
 }
 
+@media (max-width: 768px) {
+  .navLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background-color: rgba(251, 247, 238, 0.08);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-top: 1px solid rgba(110, 107, 96, 0.16);
+    border-bottom: 1px solid rgba(110, 107, 96, 0.16);
+    border-left: 1px solid rgba(110, 107, 96, 0.07);
+    border-right: 1px solid rgba(110, 107, 96, 0.07);
+    transition:
+      background-color 240ms ease,
+      border-color 240ms ease;
+  }
+
+  .nav[data-over-text] .navLink {
+    background-color: rgba(251, 247, 238, 0.55);
+    border-top-color: rgba(110, 107, 96, 0.4);
+    border-bottom-color: rgba(110, 107, 96, 0.4);
+    border-left-color: rgba(110, 107, 96, 0.22);
+    border-right-color: rgba(110, 107, 96, 0.22);
+  }
+}
+
 .contentInner {
   position: relative;
   z-index: 1;
