@@ -92,6 +92,7 @@ export default defineConfig([
       'packages/rsvp/src/admin/events.tsx',
       'packages/rsvp/src/admin/import.tsx',
       'packages/rsvp/src/admin/log.tsx',
+      'packages/rsvp/src/admin/settings.tsx',
     ],
     rules: {
       'import-x/no-default-export': 'off',

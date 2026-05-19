@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react'
 import './admin.css'
 import './AdminShell.css'
 import styles from './AdminShell.module.css'
+import type { ReactNode } from 'react'
 
 type AdminNavSection = 'guests' | 'events' | 'log' | 'settings'
 
