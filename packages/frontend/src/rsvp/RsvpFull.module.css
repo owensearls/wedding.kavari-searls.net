@@ -111,87 +111,9 @@
 
 .success {
   text-align: center;
-  padding: 56px 32px;
-  background: rgba(253, 251, 244, 0.96);
-  border: 1px solid rgba(110, 107, 96, 0.4);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.5) inset,
-    0 18px 40px -28px rgba(74, 72, 66, 0.35);
-  position: relative;
-  animation: fadeUp 600ms ease both;
-}
-
-.success::before,
-.success::after {
-  content: '';
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  height: 1px;
-  background: rgba(110, 107, 96, 0.2);
-}
-
-.success::before {
-  top: 12px;
-}
-
-.success::after {
-  bottom: 12px;
-}
-
-.successOrnament {
-  font-size: 32px;
-  color: rgba(110, 107, 96, 0.55);
-  margin: 0 0 12px;
-  letter-spacing: 0.3em;
-}
-
-.successHeading {
-  font-family:
-    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(38px, 6vw, 52px);
-  color: #4a4842;
-  margin: 0 0 18px;
-}
-
-.successCopy {
-  font-size: 18px;
-  font-style: italic;
-  color: #6e6b60;
-  max-width: 480px;
-  margin: 0 auto 30px;
-  line-height: 1.55;
-}
-
-.successActions {
-  display: flex;
-  gap: 24px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.linkBtn {
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: #6e6b60;
-  background: none;
-  border: none;
-  border-bottom: 1px solid rgba(110, 107, 96, 0.5);
-  padding: 4px 2px;
-  cursor: pointer;
-  text-decoration: none;
-  transition:
-    color 160ms ease,
-    border-color 160ms ease;
-}
-
-.linkBtn:hover {
-  color: #4a4842;
-  border-bottom-color: #4a4842;
+  padding: 30px 20px;
+  border: 1px solid #6e6b60;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 @keyframes fadeUp {
