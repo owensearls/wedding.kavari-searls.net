@@ -21,15 +21,20 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
   background-color: #e4e7e2;
-  background-image: url('/background.jpg');
-  background-image: image-set(
-    url('/background.avif') 1x type('image/avif'),
-    url('/background.jpg') 1x type('image/jpeg')
-  );
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-image: url('/mountains.png'), url('/background.jpg');
+  background-image:
+    image-set(
+      url('/mountains.avif') 1x type('image/avif'),
+      url('/mountains.png') 1x type('image/png')
+    ),
+    image-set(
+      url('/background.avif') 1x type('image/avif'),
+      url('/background.jpg') 1x type('image/jpeg')
+    );
+  background-size: 100% auto, 100% calc(100% + 200px);
+  background-position: center bottom, center bottom;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
 }
 
 body {

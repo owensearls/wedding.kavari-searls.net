@@ -32,60 +32,9 @@
 .contentInner {
   position: relative;
   z-index: 1;
-  timeline-scope: --home-view;
 }
 
 .footerContent {
   position: relative;
   z-index: 5;
-}
-
-.footerFixed {
-  position: fixed;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
-  left: 0;
-  right: 0;
-  z-index: 3;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.footerImage {
-  width: 100%;
-  height: auto;
-  max-height: 50lvh;
-  object-fit: cover;
-  object-position: top;
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-:global(section[data-anchor='']) {
-  view-timeline-name: --home-view;
-  view-timeline-axis: block;
-}
-
-@keyframes mountainParallax {
-  0% {
-    max-height: 0lvh;
-  }
-  50% {
-    max-height: 50lvh;
-  }
-  100% {
-    max-height: 250lvh;
-  }
-}
-
-@supports (animation-timeline: scroll()) {
-  .footerImage {
-    animation: mountainParallax linear both;
-    animation-timeline: --home-view;
-    animation-range: cover 0% cover 100%;
-  }
 }
