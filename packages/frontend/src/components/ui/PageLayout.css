@@ -17,6 +17,15 @@
   scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
 }
 
+:root {
+  --mountain-aspect: 1.391;
+  --mountain-target-width: min(
+    100vw,
+    calc(50lvh * var(--mountain-aspect))
+  );
+  --mountain-target-height: min(calc(100vw / var(--mountain-aspect)), 50lvh);
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
@@ -31,10 +40,32 @@ html {
       url('/background.avif') 1x type('image/avif'),
       url('/background.jpg') 1x type('image/jpeg')
     );
-  background-size: 100% auto, 100% calc(100% + 200px);
+  background-size:
+    var(--mountain-target-width) var(--mountain-target-height),
+    100% calc(100% + 200px);
   background-position: center bottom, center bottom;
   background-repeat: no-repeat, no-repeat;
   background-attachment: fixed, fixed;
+  timeline-scope: --home-view;
+}
+
+@keyframes mountainParallax {
+  0% {
+    background-size: 0 0, 100% calc(100% + 200px);
+  }
+  100% {
+    background-size:
+      var(--mountain-target-width) var(--mountain-target-height),
+      100% calc(100% + 200px);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  html {
+    animation: mountainParallax linear both;
+    animation-timeline: --home-view;
+    animation-range: cover 0% cover 100%;
+  }
 }
 
 body {

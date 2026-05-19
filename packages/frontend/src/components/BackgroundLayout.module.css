@@ -67,3 +67,8 @@
   position: relative;
   z-index: 5;
 }
+
+:global(section[data-anchor='']) {
+  view-timeline-name: --home-view;
+  view-timeline-axis: block;
+}
