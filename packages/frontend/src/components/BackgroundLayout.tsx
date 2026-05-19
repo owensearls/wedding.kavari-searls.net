@@ -83,18 +83,6 @@ export function BackgroundLayout({
             <Section id="home" anchor="">
               {header}
             </Section>
-            <div className={styles.footerFixed}>
-              <picture>
-                <source srcSet="/mountains.avif" type="image/avif" />
-                <img
-                  src="/mountains.png"
-                  width={2687}
-                  height={1931}
-                  className={styles.footerImage}
-                  alt="Watercolor painting of Mt. Ascutney, Vermont"
-                />
-              </picture>
-            </div>
           </div>
           <div className={styles.footerContent}>
             <Section
