@@ -19,11 +19,7 @@
 
 :root {
   --mountain-aspect: 1.391;
-  --mountain-target-width: min(
-    100vw,
-    calc(50lvh * var(--mountain-aspect))
-  );
-  --mountain-target-height: min(calc(100vw / var(--mountain-aspect)), 50lvh);
+  --mountain-band-height: min(calc(100vw / var(--mountain-aspect)), 50lvh);
 }
 
 html {
@@ -40,10 +36,10 @@ html {
       url('/background.avif') 1x type('image/avif'),
       url('/background.jpg') 1x type('image/jpeg')
     );
-  background-size:
-    var(--mountain-target-width) var(--mountain-target-height),
-    100% calc(100% + 200px);
-  background-position: center bottom, center bottom;
+  background-size: 100% auto, 100% calc(100% + 200px);
+  background-position:
+    center calc(100lvh - var(--mountain-band-height)),
+    center bottom;
   background-repeat: no-repeat, no-repeat;
   background-attachment: fixed, fixed;
   timeline-scope: --home-view;
@@ -51,12 +47,12 @@ html {
 
 @keyframes mountainParallax {
   0% {
-    background-size: 0 0, 100% calc(100% + 200px);
+    background-position: center 100lvh, center bottom;
   }
   100% {
-    background-size:
-      var(--mountain-target-width) var(--mountain-target-height),
-      100% calc(100% + 200px);
+    background-position:
+      center calc(100lvh - var(--mountain-band-height)),
+      center bottom;
   }
 }
 
