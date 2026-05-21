@@ -20,7 +20,13 @@
 :root {
   --mountain-aspect: 1.391;
   --mountain-band-height: calc(100vw / var(--mountain-aspect));
-  --mountain-peak-reveal: min(60vh, var(--mountain-band-height));
+  --mountain-peak-reveal: var(--mountain-band-height);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --mountain-peak-reveal: 540px;
+  }
 }
 
 html {
@@ -41,7 +47,8 @@ html {
     100% var(--mountain-band-height),
     auto calc(100% + 200px);
   background-position:
-    center calc(100vh - var(--mountain-peak-reveal)),
+    center
+      calc(100% + var(--mountain-band-height) - var(--mountain-peak-reveal)),
     center bottom;
   background-repeat: no-repeat, no-repeat;
   background-attachment: fixed, fixed;
@@ -50,13 +57,15 @@ html {
 
 @keyframes mountainReveal {
   0% {
-    background-position-y: calc(100vh + var(--mountain-band-height)), 100%;
+    background-position-y: calc(100% + var(--mountain-band-height)), 100%;
   }
   60% {
-    background-position-y: calc(100vh - var(--mountain-peak-reveal)), 100%;
+    background-position-y:
+      calc(100% + var(--mountain-band-height) - var(--mountain-peak-reveal)),
+      100%;
   }
   100% {
-    background-position-y: calc(100vh - var(--mountain-band-height)), 100%;
+    background-position-y: 100%, 100%;
   }
 }
 
