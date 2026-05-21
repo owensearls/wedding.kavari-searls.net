@@ -50,19 +50,13 @@ html {
 
 @keyframes mountainReveal {
   0% {
-    background-position-y:
-      calc(100vh + var(--mountain-band-height)),
-      100%;
+    background-position-y: calc(100vh + var(--mountain-band-height)), 100%;
   }
   60% {
-    background-position-y:
-      calc(100vh - var(--mountain-peak-reveal)),
-      100%;
+    background-position-y: calc(100vh - var(--mountain-peak-reveal)), 100%;
   }
   100% {
-    background-position-y:
-      calc(100vh - var(--mountain-band-height)),
-      100%;
+    background-position-y: calc(100vh - var(--mountain-band-height)), 100%;
   }
 }
 
