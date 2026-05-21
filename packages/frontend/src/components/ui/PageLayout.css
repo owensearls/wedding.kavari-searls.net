@@ -20,6 +20,7 @@
 :root {
   --mountain-aspect: 1.391;
   --mountain-band-height: calc(100vw / var(--mountain-aspect));
+  --mountain-peak-reveal: min(60vh, var(--mountain-band-height));
 }
 
 html {
@@ -38,33 +39,38 @@ html {
     );
   background-size:
     100% var(--mountain-band-height),
-    100% calc(100% + 200px);
+    auto calc(100% + 200px);
   background-position:
-    center 100%,
+    center calc(100vh - var(--mountain-peak-reveal)),
     center bottom;
   background-repeat: no-repeat, no-repeat;
   background-attachment: fixed, fixed;
   timeline-scope: --home-view;
 }
 
-@keyframes mountainParallax {
+@keyframes mountainReveal {
   0% {
     background-position-y:
-      calc(100% + var(--mountain-band-height)),
+      calc(100vh + var(--mountain-band-height)),
+      100%;
+  }
+  60% {
+    background-position-y:
+      calc(100vh - var(--mountain-peak-reveal)),
       100%;
   }
   100% {
     background-position-y:
-      100%,
+      calc(100vh - var(--mountain-band-height)),
       100%;
   }
 }
 
 @supports (animation-timeline: scroll()) {
   html {
-    animation: mountainParallax linear both;
+    animation: mountainReveal linear both;
     animation-timeline: --home-view;
-    animation-range: cover 0% cover 100%;
+    animation-range: cover -25% cover 100%;
   }
 }
 
