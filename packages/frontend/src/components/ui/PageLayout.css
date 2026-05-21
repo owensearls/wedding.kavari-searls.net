@@ -29,6 +29,12 @@
   }
 }
 
+@media (min-width: 768px) and (max-height: 900px) {
+  :root {
+    --mountain-peak-reveal: 430px;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
