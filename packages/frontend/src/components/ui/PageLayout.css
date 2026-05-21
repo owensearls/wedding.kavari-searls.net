@@ -37,10 +37,10 @@ html {
       url('/background.jpg') 1x type('image/jpeg')
     );
   background-size:
-    100% auto,
+    100% var(--mountain-band-height),
     100% calc(100% + 200px);
   background-position:
-    center calc(100lvh - var(--mountain-band-height)),
+    center 100%,
     center bottom;
   background-repeat: no-repeat, no-repeat;
   background-attachment: fixed, fixed;
@@ -49,14 +49,14 @@ html {
 
 @keyframes mountainParallax {
   0% {
-    background-position:
-      center 100lvh,
-      center bottom;
+    background-position-y:
+      calc(100% + var(--mountain-band-height)),
+      100%;
   }
   100% {
-    background-position:
-      center calc(100lvh - var(--mountain-band-height)),
-      center bottom;
+    background-position-y:
+      100%,
+      100%;
   }
 }
 
