@@ -40,8 +40,7 @@ html {
   scroll-padding-top: 44px;
   background-color: #e4e7e2;
   background-image:
-    url('/mountains.png'),
-    url('/background.jpg'),
+    url('/mountains.png'), url('/background.jpg'),
     linear-gradient(to bottom, #c3cee0, #dde6b6);
   background-image:
     image-set(
