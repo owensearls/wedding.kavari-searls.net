@@ -39,9 +39,7 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
   background-color: #e4e7e2;
-  background-image:
-    url('/mountains.png'), url('/background.jpg'),
-    linear-gradient(to bottom, #c3cee0, #dde6b6);
+  background-image: url('/mountains.png'), url('/background.jpg');
   background-image:
     image-set(
       url('/mountains.avif') 1x type('image/avif'),
@@ -50,29 +48,17 @@ html {
     image-set(
       url('/background.avif') 1x type('image/avif'),
       url('/background.jpg') 1x type('image/jpeg')
-    ),
-    linear-gradient(to bottom, #c3cee0, #dde6b6);
+    );
   background-size:
     100% var(--mountain-band-height),
-    cover,
-    100vw calc(100lvh + 400px);
+    cover;
   background-position:
     center
       calc(100% + var(--mountain-band-height) - var(--mountain-peak-reveal)),
-    center bottom,
-    center;
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-attachment: fixed, fixed, fixed;
+    center bottom;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
   timeline-scope: --home-view;
-}
-
-@media (max-width: 768px) {
-  html {
-    background-size:
-      100% var(--mountain-band-height),
-      auto 100lvh,
-      100vw calc(100lvh + 400px);
-  }
 }
 
 @keyframes mountainReveal {
