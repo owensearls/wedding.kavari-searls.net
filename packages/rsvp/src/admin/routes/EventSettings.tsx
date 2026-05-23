@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { StatusTally } from '../../components/ui/StatusTally'
 import {
   Table,
   TableEmptyRow,
@@ -125,7 +126,7 @@ export function EventSettings() {
             <th>Starts</th>
             <th>Location</th>
             <th>Invited</th>
-            <th>Attending</th>
+            <th>Responded</th>
             <th></th>
           </tr>
         </thead>
@@ -170,10 +171,11 @@ export function EventSettings() {
                   <td>{ev.locationName ?? ''}</td>
                   <td>{s?.invitedCount ?? 0}</td>
                   <td>
-                    {s?.attendingCount ?? 0}
-                    {s && s.declinedCount > 0
-                      ? ` (${s.declinedCount} declined)`
-                      : ''}
+                    <StatusTally
+                      attending={s?.attendingCount ?? 0}
+                      declined={s?.declinedCount ?? 0}
+                      pending={s?.pendingCount ?? 0}
+                    />
                   </td>
                   <td>
                     {!ev.schemaMalformed && (

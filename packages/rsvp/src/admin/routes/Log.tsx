@@ -1,15 +1,17 @@
 'use client'
 
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import {
+  GroupedList,
+  GroupedListBlock,
+  GroupedListEmptyBlock,
+  GroupedListHeaderCell,
+  GroupedListHeaderRow,
+} from '../../components/ui/GroupedList'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
-import {
-  Table,
-  TableEmptyRow,
-  TableSkeletonRows,
-} from '../../components/ui/Table'
 import { listLog, type AdminLogRow } from '../../server/admin/responses'
 import { formatCustomAnswers } from '../lib/customFieldRender'
 import styles from './Log.module.css'
@@ -64,141 +66,150 @@ export function Log() {
     <div className={styles.page}>
       <PageHeader title="Activity log" />
       <ErrorMessage>{error}</ErrorMessage>
-      <Table>
-        <colgroup>
-          <col className={styles.colEvent} />
-          <col className={styles.colStatus} />
-          <col className={styles.colAnswers} />
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Event</th>
-            <th>Status</th>
-            <th>Answers</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <TableSkeletonRows colSpan={3} />
-          ) : rows.length === 0 ? (
-            <TableEmptyRow colSpan={3}>No activity yet.</TableEmptyRow>
-          ) : (
-            rows.map((row) => {
-              const inviteAnswers = formatCustomAnswers(
-                row.invitationNotesSchema,
-                row.notesJson
-              )
-              const ts = formatTimestamp(row.respondedAt)
-              return (
-                <Fragment key={row.id}>
-                  <tr className={styles.bannerRow}>
-                    <td colSpan={3}>
-                      <div className={styles.bannerTop}>
-                        <span className={styles.guestName}>
-                          {row.guestName}
-                        </span>
-                        <span
-                          className={styles.timestamp}
-                          title={row.respondedAt}
-                        >
-                          <span className={styles.timestampDate}>
-                            {ts.date}
-                          </span>
-                          <span className={styles.timestampDot} aria-hidden>
-                            ·
-                          </span>
-                          <span className={styles.timestampTime}>
-                            {ts.time}
-                          </span>
-                        </span>
-                      </div>
-                      {(inviteAnswers.length > 0 ||
-                        row.respondedByDisplayName) && (
-                        <div className={styles.bannerMeta}>
-                          {inviteAnswers.length > 0 && (
-                            <div className={styles.bannerAnswers}>
-                              {inviteAnswers.map((a) => (
-                                <span
-                                  key={a.label}
-                                  className={styles.answerChip}
-                                >
-                                  <span className={styles.customLabel}>
-                                    {a.label}:
-                                  </span>
-                                  {a.value}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <div className={styles.bannerByline}>
-                            {row.respondedByDisplayName && (
-                              <span className={styles.respondedBy}>
-                                <span className={styles.bylineLabel}>by</span>{' '}
-                                {row.respondedByDisplayName}
-                              </span>
-                            )}
-                            <span className={styles.responseId} title={row.id}>
-                              #{row.id.slice(0, 8)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                  {row.events.length === 0 ? (
-                    <tr className={styles.eventRow}>
-                      <td colSpan={3} className={styles.noEvents}>
-                        No event responses recorded.
-                      </td>
-                    </tr>
-                  ) : (
-                    row.events.map((e) => {
-                      const eventAnswers = formatCustomAnswers(
-                        e.eventNotesSchema,
-                        e.notesJson
-                      )
-                      return (
-                        <tr
-                          key={`${row.id}-${e.eventId}`}
-                          className={styles.eventRow}
-                        >
-                          <td className={styles.eventCell}>
-                            <span className={styles.eventName}>
-                              {e.eventName}
-                            </span>
-                          </td>
-                          <td className={statusClassName(e.status)}>
-                            <StatusBadge status={e.status} />
-                          </td>
-                          <td className={styles.answersCell}>
-                            {eventAnswers.length === 0 ? (
-                              <span className={styles.dash}>—</span>
-                            ) : (
-                              <div className={styles.answersList}>
-                                {eventAnswers.map((a) => (
-                                  <span
-                                    key={a.label}
-                                    className={styles.answerChip}
-                                  >
-                                    <span className={styles.customLabel}>
-                                      {a.label}:
-                                    </span>
-                                    {a.value}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </Fragment>
-              )
-            })
-          )}
-        </tbody>
-      </Table>
+      <GroupedList className={styles.list} ariaLabel="Activity log">
+        <GroupedListHeaderRow>
+          <GroupedListHeaderCell gutter>Guest response</GroupedListHeaderCell>
+          <GroupedListHeaderCell>Event</GroupedListHeaderCell>
+          <GroupedListHeaderCell>Status</GroupedListHeaderCell>
+          <GroupedListHeaderCell>Answers</GroupedListHeaderCell>
+        </GroupedListHeaderRow>
+
+        {loading ? (
+          <>
+            {[2, 1, 2].map((rowCount, i) => (
+              <LoadingBlock key={i} rowCount={rowCount} />
+            ))}
+          </>
+        ) : rows.length === 0 ? (
+          <GroupedListEmptyBlock>No activity yet.</GroupedListEmptyBlock>
+        ) : (
+          rows.map((row) => <ResponseBlock key={row.id} row={row} />)
+        )}
+      </GroupedList>
     </div>
+  )
+}
+
+function ResponseBlock({ row }: { row: AdminLogRow }) {
+  const ts = formatTimestamp(row.respondedAt)
+  const inviteAnswers = formatCustomAnswers(
+    row.invitationNotesSchema,
+    row.notesJson
+  )
+  const rowSpan = Math.max(row.events.length, 1)
+  const isSolo = rowSpan === 1
+  return (
+    <GroupedListBlock
+      solo={isSolo}
+      rowSpan={rowSpan}
+      gutterClassName={styles.gutterCell}
+      gutter={
+        <div className={styles.gutterBody}>
+          <div className={styles.gutterHeader}>
+            <span className={styles.guestName}>{row.guestName}</span>
+            <span className={styles.timestamp} title={row.respondedAt}>
+              <span className={styles.timestampDate}>{ts.date}</span>
+              <span className={styles.timestampDot} aria-hidden>
+                ·
+              </span>
+              <span className={styles.timestampTime}>{ts.time}</span>
+            </span>
+          </div>
+          {inviteAnswers.length > 0 && (
+            <div className={styles.gutterAnswers}>
+              {inviteAnswers.map((a) => (
+                <span key={a.label} className={styles.answerChip}>
+                  <span className={styles.customLabel}>{a.label}:</span>
+                  {a.value}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className={styles.gutterByline}>
+            {row.respondedByDisplayName && (
+              <span className={styles.respondedBy}>
+                <span className={styles.bylineLabel}>by</span>{' '}
+                {row.respondedByDisplayName}
+              </span>
+            )}
+            <span className={styles.responseId} title={row.id}>
+              #{row.id.slice(0, 8)}
+            </span>
+          </div>
+        </div>
+      }
+    >
+      {row.events.length === 0 ? (
+        <div className={styles.eventRow}>
+          <div className={styles.noEvents}>No event responses recorded.</div>
+        </div>
+      ) : (
+        row.events.map((e) => {
+          const eventAnswers = formatCustomAnswers(
+            e.eventNotesSchema,
+            e.notesJson
+          )
+          return (
+            <div key={e.eventId} className={styles.eventRow}>
+              <div className={styles.eventCell}>{e.eventName}</div>
+              <div
+                className={`${styles.statusCell} ${statusClassName(e.status)}`}
+              >
+                <StatusBadge status={e.status} />
+              </div>
+              <div className={styles.answersCell}>
+                {eventAnswers.length === 0 ? (
+                  <span className={styles.dash}>—</span>
+                ) : (
+                  <div className={styles.answersList}>
+                    {eventAnswers.map((a) => (
+                      <span key={a.label} className={styles.answerChip}>
+                        <span className={styles.customLabel}>{a.label}:</span>
+                        {a.value}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })
+      )}
+    </GroupedListBlock>
+  )
+}
+
+function LoadingBlock({ rowCount }: { rowCount: number }) {
+  const isSolo = rowCount === 1
+  return (
+    <GroupedListBlock
+      solo={isSolo}
+      rowSpan={rowCount}
+      ariaHidden
+      gutterClassName={styles.gutterCell}
+      gutter={
+        <div className={styles.gutterBody}>
+          <div className={styles.gutterHeader}>
+            <div className={`${styles.loadingBar} ${styles.loadingBarName}`} />
+            <div className={`${styles.loadingBar} ${styles.loadingBarMeta}`} />
+          </div>
+          <div className={styles.gutterByline}>
+            <div className={`${styles.loadingBar} ${styles.loadingBarMeta}`} />
+          </div>
+        </div>
+      }
+    >
+      {Array.from({ length: rowCount }, (_, i) => (
+        <div
+          key={i}
+          className={`${styles.eventRow} ${styles.eventRowStatic}`}
+          aria-hidden="true"
+        >
+          <div className={styles.loadingRowCell}>
+            <div className={styles.loadingBar} />
+          </div>
+        </div>
+      ))}
+    </GroupedListBlock>
   )
 }

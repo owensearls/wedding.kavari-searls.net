@@ -1,0 +1,99 @@
+/* Shared chrome for "grouped list" tables: an outer CSS grid whose direct
+   children (header row, blocks, empty block) all become subgrid containers
+   spanning the full row. A block's left "gutter" cell spans multiple grid
+   rows vertically — pages set `grid-template-columns` and provide their own
+   row/gutter content, and inherit the same border treatment, sticky header
+   chrome, solo/multi background swap, and empty-state styling. */
+
+.wrap {
+  /* Intentionally empty: the page handles horizontal scroll when the table
+     can't fit. Wrapping the list in a div keeps a hook for future chrome
+     (sticky toolbars, gradients) without restructuring callers. */
+}
+
+.list {
+  /* grid-template-columns is set by the caller (page CSS or inline style). */
+  display: grid;
+  min-width: 100%;
+  width: max-content;
+  border: 1px solid #6e6b60;
+  background: white;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #4a4842;
+}
+
+.list > * {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+}
+
+/* ── Sticky column header ───────────────────────────────────────────── */
+
+.headerRow {
+  background: #f5f3ec;
+  border-bottom: 1px solid #6e6b60;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.headerCell {
+  padding: 11px 16px;
+  font-weight: 600;
+  font-size: 11px;
+  color: #4a4842;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.headerCell.headerGutter {
+  border-right: 1px solid #6e6b60;
+  text-align: right;
+}
+
+/* ── Block (row group) ──────────────────────────────────────────────── */
+
+.block {
+  border-top: 1px solid #6e6b60;
+}
+
+.list > .block:first-of-type,
+.list > .headerRow + .block {
+  border-top: none;
+}
+
+/* ── Hanging gutter (first column, spans rowgroup vertically) ───────── */
+
+.gutter {
+  grid-column: 1 / 2;
+  /* grid-row set inline per block so it spans the block's rows. */
+  background: #ede8dc;
+  border-right: 1px solid #6e6b60;
+  padding: 0;
+}
+
+.blockSolo .gutter {
+  background: white;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────── */
+
+.emptyBlock {
+  border-top: 1px solid #6e6b60;
+}
+
+.list > .emptyBlock:first-of-type,
+.list > .headerRow + .emptyBlock {
+  border-top: none;
+}
+
+.emptyBlock > .emptyCell {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-style: italic;
+  color: #6e6b60;
+  padding: 28px 16px;
+}

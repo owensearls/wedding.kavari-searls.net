@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
-import { PageHeader } from '../../components/ui/PageHeader'
 import {
-  Table,
-  TableEmptyRow,
-  TableSkeletonRows,
-} from '../../components/ui/Table'
+  GroupedList,
+  GroupedListEmptyBlock,
+  GroupedListHeaderCell,
+  GroupedListHeaderRow,
+} from '../../components/ui/GroupedList'
+import { PageHeader } from '../../components/ui/PageHeader'
 import { listEvents, type AdminEventRecord } from '../../server/admin/events'
 import {
   deleteGroup,
@@ -22,6 +23,7 @@ import { downloadCsv, responsesToCsv } from '../lib/rsvpCsv'
 import { EditGroupForm } from './EditGroupForm'
 import { GroupBlock } from './GroupBlock'
 import { GuestDetailModal } from './GuestDetailModal'
+import styles from './GuestList.module.css'
 import type {
   AdminFieldDraft,
   AdminGroupInput,
@@ -147,8 +149,6 @@ export function GuestList() {
     if (ao !== bo) return ao - bo
     return a.name.localeCompare(b.name)
   })
-  // Header columns: name + code + events + edit
-  const colCount = 2 + eventColumns.length + 1
 
   return (
     <div>
@@ -180,38 +180,45 @@ export function GuestList() {
 
       <ErrorMessage>{error}</ErrorMessage>
 
-      <Table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Invite code</th>
+      <GroupedList className={styles.list} ariaLabel="Guests by group">
+        <GroupedListHeaderRow>
+          <GroupedListHeaderCell gutter>Group</GroupedListHeaderCell>
+          <GroupedListHeaderCell>Name</GroupedListHeaderCell>
+          <GroupedListHeaderCell>Invite code</GroupedListHeaderCell>
+          <div className={styles.eventsHeader} role="presentation">
             {eventColumns.map((ev) => (
-              <th key={ev.id}>{ev.name}</th>
+              <GroupedListHeaderCell
+                key={ev.id}
+                className={styles.eventsHeaderCell}
+              >
+                {ev.name}
+              </GroupedListHeaderCell>
             ))}
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <TableSkeletonRows colSpan={colCount} />
-          ) : groups.length === 0 ? (
-            <TableEmptyRow colSpan={colCount}>
-              No guests yet — create an invite or use the Import page.
-            </TableEmptyRow>
-          ) : (
-            groups.map((g) => (
-              <GroupBlock
-                key={g.id}
-                group={g}
-                eventColumns={eventColumns}
-                colCount={colCount}
-                onEdit={() => startEdit(g.id)}
-                onOpenGuest={(guestId) => setDetailGuestId(guestId)}
-              />
-            ))
-          )}
-        </tbody>
-      </Table>
+          </div>
+        </GroupedListHeaderRow>
+
+        {loading ? (
+          <>
+            {[2, 1, 2].map((rowCount, blockIdx) => (
+              <GroupBlock key={blockIdx} loading rowCount={rowCount} />
+            ))}
+          </>
+        ) : groups.length === 0 ? (
+          <GroupedListEmptyBlock>
+            No guests yet — create an invite or use the Import page.
+          </GroupedListEmptyBlock>
+        ) : (
+          groups.map((g) => (
+            <GroupBlock
+              key={g.id}
+              group={g}
+              eventColumns={eventColumns}
+              onEdit={() => startEdit(g.id)}
+              onOpenGuest={(guestId) => setDetailGuestId(guestId)}
+            />
+          ))
+        )}
+      </GroupedList>
 
       {detailGuestId && (
         <GuestDetailModal

@@ -1,94 +1,108 @@
-import { StatusBadge } from '../../components/ui/StatusBadge'
-import { statusClassName } from '../../components/ui/statusHelpers'
+import { GroupedListBlock } from '../../components/ui/GroupedList'
+import { StatusTally } from '../../components/ui/StatusTally'
 import styles from './GuestList.module.css'
+import { GuestRow } from './GuestRow'
 import type { AdminGroupListItem } from '../../schema'
 import type { AdminEventRecord } from '../../server/admin/events'
 
-interface GroupBlockProps {
-  group: AdminGroupListItem
-  eventColumns: AdminEventRecord[]
-  colCount: number
-  onEdit: () => void
-  onOpenGuest: (guestId: string) => void
-}
+type GroupBlockProps =
+  | {
+      loading: true
+      rowCount: number
+    }
+  | {
+      loading?: false
+      group: AdminGroupListItem
+      eventColumns: AdminEventRecord[]
+      onEdit: () => void
+      onOpenGuest: (guestId: string) => void
+    }
 
-export function GroupBlock({
-  group,
-  eventColumns,
-  colCount,
-  onEdit,
-  onOpenGuest,
-}: GroupBlockProps) {
-  const showHeader = group.guestCount > 1
-  return (
-    <>
-      {showHeader && (
-        <tr className={styles.groupHeaderRow}>
-          <td colSpan={colCount}>
-            <div className={styles.groupHeaderContent}>
-              <span className={styles.groupHeaderLabel}>{group.label}</span>
-              <span className={styles.groupHeaderStats}>
-                {group.guestCount} guests ·{' '}
-                <StatusBadge
-                  status="attending"
-                  label={`${group.attendingCount} attending`}
-                />{' '}
-                ·{' '}
-                <StatusBadge
-                  status="declined"
-                  label={`${group.declinedCount} declined`}
-                />{' '}
-                ·{' '}
-                <StatusBadge
-                  status="pending"
-                  label={`${group.pendingCount} pending`}
+export function GroupBlock(props: GroupBlockProps) {
+  if (props.loading) {
+    const { rowCount } = props
+    const isSolo = rowCount === 1
+    return (
+      <GroupedListBlock
+        solo={isSolo}
+        rowSpan={rowCount}
+        ariaHidden
+        gutter={
+          <div className={`${styles.gutterEdit} ${styles.gutterEditStatic}`}>
+            {!isSolo && (
+              <>
+                <div
+                  className={`${styles.loadingBar} ${styles.loadingBarGroupName}`}
                 />
-              </span>
+                <div
+                  className={`${styles.loadingBar} ${styles.loadingBarTally}`}
+                />
+              </>
+            )}
+            <div
+              className={`${styles.gutterStats} ${isSolo ? styles.gutterStatsSolo : ''}`}
+            >
+              <div
+                className={`${styles.loadingBar} ${styles.loadingBarTally}`}
+              />
             </div>
-          </td>
-        </tr>
-      )}
-      {group.guests.map((guest) => (
-        <tr
-          key={guest.id}
-          className={styles.guestClickRow}
-          onClick={() => onOpenGuest(guest.id)}
+          </div>
+        }
+      >
+        {Array.from({ length: rowCount }, (_, i) => (
+          <GuestRow key={i} loading />
+        ))}
+      </GroupedListBlock>
+    )
+  }
+
+  const { group, eventColumns, onEdit, onOpenGuest } = props
+  const isSolo = group.guestCount <= 1
+  const rowSpan = Math.max(group.guests.length, 1)
+
+  return (
+    <GroupedListBlock
+      solo={isSolo}
+      rowSpan={rowSpan}
+      gutter={
+        <button
+          type="button"
+          className={styles.gutterEdit}
+          onClick={onEdit}
+          title="Edit invite"
+          aria-label={`Edit ${group.label}`}
         >
-          <td>{guest.displayName}</td>
-          <td>
-            <a
-              href={`${import.meta.env.VITE_FRONTEND_URL}/rsvp?code=${encodeURIComponent(guest.inviteCode)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className={styles.codeLink}
-            >
-              {guest.inviteCode}
-            </a>
-          </td>
-          {eventColumns.map((ev) => {
-            const s = guest.eventStatuses.find((es) => es.eventId === ev.id)
-            return (
-              <td key={ev.id} className={statusClassName(s?.status)}>
-                <StatusBadge status={s?.status} />
-              </td>
-            )
-          })}
-          <td className={styles.editCell}>
-            <button
-              type="button"
-              className={styles.editIcon}
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit()
-              }}
-              title="Edit invite"
-            >
-              ✎
-            </button>
-          </td>
-        </tr>
+          {!isSolo && (
+            <>
+              <span className={styles.gutterName}>{group.label}</span>
+              <span
+                className={styles.gutterMeta}
+              >{`${group.guestCount} guests`}</span>
+            </>
+          )}
+          <span
+            className={`${styles.gutterStats} ${isSolo ? styles.gutterStatsSolo : ''}`}
+          >
+            <StatusTally
+              attending={group.attendingCount}
+              declined={group.declinedCount}
+              pending={group.pendingCount}
+            />
+          </span>
+          <span className={styles.gutterEditLabel} aria-hidden="true">
+            Edit
+          </span>
+        </button>
+      }
+    >
+      {group.guests.map((guest) => (
+        <GuestRow
+          key={guest.id}
+          guest={guest}
+          eventColumns={eventColumns}
+          onClick={() => onOpenGuest(guest.id)}
+        />
       ))}
-    </>
+    </GroupedListBlock>
   )
 }
