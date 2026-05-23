@@ -81,6 +81,27 @@ html {
     animation-timeline: --home-view;
     animation-range: cover -25% cover 100%;
   }
+
+  @media (max-width: 768px) and (hover: none) and (pointer: coarse) {
+    html {
+      animation: none;
+    }
+  }
+}
+
+@media (max-width: 768px) and (hover: none) and (pointer: coarse) {
+  html {
+    background-size:
+      100% var(--mountain-band-height),
+      auto calc(100lvh + 250px);
+    background-position:
+      center
+        calc(
+          var(--home-offset, 200lvh) + 100lvh - var(--mountain-band-height)
+        ),
+      center calc(var(--home-offset, 200lvh) - 125px);
+    background-attachment: scroll, scroll;
+  }
 }
 
 body {

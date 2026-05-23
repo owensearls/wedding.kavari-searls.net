@@ -56,6 +56,27 @@ export function BackgroundLayout({
   }, [])
 
   useEffect(() => {
+    const update = () => {
+      const home = document.getElementById('home')
+      if (!home) return
+      document.documentElement.style.setProperty(
+        '--home-offset',
+        `${home.offsetTop}px`
+      )
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(document.body)
+    window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
+    }
+  }, [])
+
+  useEffect(() => {
     const sections = Array.from(
       document.querySelectorAll('[data-anchor]')
     ) as HTMLElement[]
@@ -119,7 +140,7 @@ export function BackgroundLayout({
         <div className={styles.content}>
           <div className={styles.contentInner}>
             {children}
-            <Section id="home" anchor="">
+            <Section id="home" anchor="" height="100lvh">
               {header}
             </Section>
           </div>

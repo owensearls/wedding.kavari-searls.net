@@ -6,6 +6,7 @@ interface SectionProps {
   anchor?: string
   children?: ReactNode
   minHeight?: string
+  height?: string
   contentPosition?: 'top' | 'bottom'
 }
 
@@ -14,12 +15,13 @@ export function Section({
   anchor,
   children,
   minHeight = '100dvh',
+  height,
   contentPosition = 'top',
 }: SectionProps) {
   const sectionAnchor = anchor ?? id
 
   const sectionStyle: React.CSSProperties = {
-    minHeight,
+    ...(height ? { height } : { minHeight }),
     ...(contentPosition === 'bottom' && {
       display: 'flex',
       flexDirection: 'column',
