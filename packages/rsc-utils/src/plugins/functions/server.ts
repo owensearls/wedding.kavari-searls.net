@@ -26,7 +26,7 @@ export class RscFunctionError extends Error {
 const FALLBACK_MESSAGE = 'Internal server error, please try again.'
 
 export function createRscHandlers(): RscHandler {
-  const allowedIds = collectActionIds(modules)
+  const allowedIdsPromise = collectActionIds(modules)
 
   return {
     async handle(request) {
@@ -38,6 +38,7 @@ export function createRscHandlers(): RscHandler {
       }
 
       const actionId = decodeURIComponent(url.pathname.slice(endpoint.length))
+      const allowedIds = await allowedIdsPromise
       if (!allowedIds.has(actionId)) {
         return new Response('Forbidden', { status: 403 })
       }
@@ -84,11 +85,12 @@ function serializeError(err: unknown) {
   return { value: err }
 }
 
-function collectActionIds(
-  mods: Record<string, Record<string, unknown>>
-): Set<string> {
+async function collectActionIds(
+  mods: Record<string, () => Promise<Record<string, unknown>>>
+): Promise<Set<string>> {
+  const loaded = await Promise.all(Object.values(mods).map((load) => load()))
   const ids = new Set<string>()
-  for (const mod of Object.values(mods)) {
+  for (const mod of loaded) {
     for (const value of Object.values(mod)) {
       if (typeof value !== 'function') continue
       const $$id = (value as { $$id?: unknown }).$$id
