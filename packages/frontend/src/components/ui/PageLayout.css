@@ -21,20 +21,6 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
   background-color: #e4e7e2;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100lvh;
-  background: transparent;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: calc(-1 * env(safe-area-inset-top, 0px) - 62px) 0
-    calc(-1 * env(safe-area-inset-bottom, 0px) - 136px) 0;
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),
@@ -43,8 +29,14 @@ body::before {
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
-  z-index: -1;
-  pointer-events: none;
+  background-attachment: fixed;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100lvh;
+  background: transparent;
 }
 
 ::-webkit-scrollbar {

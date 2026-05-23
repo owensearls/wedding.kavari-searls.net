@@ -42,7 +42,7 @@
 
 .footerFixed {
   position: fixed;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px) - 136px);
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
   z-index: 3;
