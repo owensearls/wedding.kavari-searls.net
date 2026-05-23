@@ -1,14 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Button } from '../../components/ui/Button'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { PageHeader } from '../../components/ui/PageHeader'
-import {
-  Table,
-  TableEmptyRow,
-  TableSkeletonRows,
-} from '../../components/ui/Table'
 import { listEvents, type AdminEventRecord } from '../../server/admin/events'
 import {
   deleteGroup,
@@ -22,6 +17,7 @@ import { downloadCsv, responsesToCsv } from '../lib/rsvpCsv'
 import { EditGroupForm } from './EditGroupForm'
 import { GroupBlock } from './GroupBlock'
 import { GuestDetailModal } from './GuestDetailModal'
+import styles from './GuestList.module.css'
 import type {
   AdminFieldDraft,
   AdminGroupInput,
@@ -147,8 +143,6 @@ export function GuestList() {
     if (ao !== bo) return ao - bo
     return a.name.localeCompare(b.name)
   })
-  // Header columns: name + code + events + edit
-  const colCount = 2 + eventColumns.length + 1
 
   return (
     <div>
@@ -180,38 +174,78 @@ export function GuestList() {
 
       <ErrorMessage>{error}</ErrorMessage>
 
-      <Table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Invite code</th>
+      <div className={styles.wrap}>
+        <div
+          className={styles.list}
+          role="table"
+          aria-label="Guests by group"
+          style={
+            {
+              '--event-count': eventColumns.length,
+            } as CSSProperties
+          }
+        >
+          <div className={styles.headerRow} role="row">
+            <div
+              role="columnheader"
+              className={`${styles.headerCell} ${styles.headerGutter}`}
+            >
+              Group
+            </div>
+            <div role="columnheader" className={styles.headerCell}>
+              Name
+            </div>
+            <div role="columnheader" className={styles.headerCell}>
+              Invite code
+            </div>
             {eventColumns.map((ev) => (
-              <th key={ev.id}>{ev.name}</th>
+              <div
+                key={ev.id}
+                role="columnheader"
+                className={styles.headerCell}
+              >
+                {ev.name}
+              </div>
             ))}
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
+          </div>
+
           {loading ? (
-            <TableSkeletonRows colSpan={colCount} />
+            <>
+              <div className={styles.loadingBlock}>
+                <div>
+                  <div className={styles.loadingBar} />
+                </div>
+              </div>
+              <div className={styles.loadingBlock}>
+                <div>
+                  <div className={styles.loadingBar} />
+                </div>
+              </div>
+              <div className={styles.loadingBlock}>
+                <div>
+                  <div className={styles.loadingBar} />
+                </div>
+              </div>
+            </>
           ) : groups.length === 0 ? (
-            <TableEmptyRow colSpan={colCount}>
-              No guests yet — create an invite or use the Import page.
-            </TableEmptyRow>
+            <div className={styles.emptyBlock}>
+              <div className={styles.emptyCell}>
+                No guests yet — create an invite or use the Import page.
+              </div>
+            </div>
           ) : (
             groups.map((g) => (
               <GroupBlock
                 key={g.id}
                 group={g}
                 eventColumns={eventColumns}
-                colCount={colCount}
                 onEdit={() => startEdit(g.id)}
                 onOpenGuest={(guestId) => setDetailGuestId(guestId)}
               />
             ))
           )}
-        </tbody>
-      </Table>
+        </div>
+      </div>
 
       {detailGuestId && (
         <GuestDetailModal

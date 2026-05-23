@@ -3,49 +3,249 @@
   font-style: italic;
 }
 
-/* ── Group block (banner row + guest rows) ───────────────────────────── */
+/* ── Outer chrome ───────────────────────────────────────────────────── */
 
-.groupHeaderRow td {
-  background: #ede8dc;
-  padding: 4px 12px;
-  border-top: 1px solid #6e6b60;
-  border-bottom: 1px solid rgba(110, 107, 96, 0.3);
-  font-size: 13px;
+.wrap {
+  overflow-x: auto;
+  border: 1px solid #6e6b60;
+  background: white;
 }
 
-.groupHeaderContent {
-  display: flex;
-  gap: 18px;
-  align-items: center;
-  flex-wrap: wrap;
-}
+/* ── Grid skeleton ──────────────────────────────────────────────────── */
 
-.groupHeaderLabel {
-  font-weight: 600;
+/* The outer grid defines column tracks once; every group (rowgroup) and
+   every guest row picks them up via `grid-template-columns: subgrid`. That
+   way the column alignment is shared across the whole list while each
+   group remains a real container with its own borders/backgrounds — a
+   layout that's impossible with native <table>. */
+.list {
+  --col-label: 232px;
+  --col-name: minmax(160px, 1.4fr);
+  --col-code: minmax(112px, 0.9fr);
+  --col-event: minmax(108px, 0.8fr);
+
+  display: grid;
+  grid-template-columns:
+    [label] var(--col-label)
+    [name] var(--col-name)
+    [code] var(--col-code)
+    repeat(var(--event-count, 0), var(--col-event));
+  min-width: 100%;
+  width: max-content;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
   color: #4a4842;
-  font-size: 13px;
 }
 
-.groupHeaderStats {
-  color: #6e6b60;
-  font-size: 12px;
+.list > * {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
 }
 
-.guestClickRow {
+/* ── Column header ──────────────────────────────────────────────────── */
+
+.headerRow {
+  background: #f5f3ec;
+  border-bottom: 1px solid #6e6b60;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.headerCell {
+  padding: 11px 16px;
+  font-weight: 600;
+  font-size: 11px;
+  color: #4a4842;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.headerCell.headerGutter {
+  border-right: 1px solid rgba(110, 107, 96, 0.3);
+  text-align: right;
+}
+
+/* ── Group block (row group) ────────────────────────────────────────── */
+
+.block {
+  border-top: 1px solid #6e6b60;
+}
+
+.list > .block:first-of-type,
+.list > .headerRow + .block {
+  border-top: none;
+}
+
+/* ── Hanging gutter label (left column) ─────────────────────────────── */
+
+.gutter {
+  grid-column: label;
+  /* grid-row set inline per block to span all guest rows */
+  background: #ede8dc;
+  border-right: 1px solid #6e6b60;
+  padding: 0;
+}
+
+.blockSolo .gutter {
+  background: white;
+}
+
+.gutterEdit {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 18px 24px 18px 22px;
+  background: none;
+  border: none;
+  text-align: right;
   cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background 0.12s ease;
 }
 
-.guestClickRow:hover td {
+.gutterEdit:hover,
+.gutterEdit:focus-visible {
+  background: rgba(74, 72, 66, 0.06);
+  outline: none;
+}
+
+.gutterEdit:focus-visible {
+  box-shadow: inset 0 0 0 2px #4a4842;
+}
+
+.gutterEditIcon {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  color: #6e6b60;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.gutterEdit:hover .gutterEditIcon,
+.gutterEdit:focus-visible .gutterEditIcon {
+  opacity: 1;
+}
+
+.gutterName {
+  font-family:
+    Baskerville, 'Baskerville Old Face', 'Goudy Old Style', Garamond,
+    'Times New Roman', serif;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.08;
+  color: #2a2925;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+.blockSolo .gutterName {
+  font-size: 18px;
+}
+
+.gutterMeta {
+  font-size: 11px;
+  color: #6e6b60;
+  letter-spacing: 0.02em;
+  font-style: italic;
+  font-family:
+    Baskerville, 'Baskerville Old Face', 'Goudy Old Style', Garamond,
+    'Times New Roman', serif;
+  font-weight: 400;
+}
+
+.gutterStats {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(110, 107, 96, 0.22);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.tally {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tallyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 0.5px rgba(74, 72, 66, 0.35);
+}
+
+.tallyNum {
+  font-size: 12px;
+  color: #4a4842;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.dotAttending {
+  background: #2d6a3f;
+}
+.dotDeclined {
+  background: #8b3a2f;
+}
+.dotPending {
+  background: #8a6a1a;
+}
+
+/* ── Guest rows ─────────────────────────────────────────────────────── */
+
+.guestRow {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: name / -1;
+  cursor: pointer;
+  background: white;
+  transition: background 0.1s ease;
+}
+
+.block > .guestRow + .guestRow > * {
+  border-top: 1px solid rgba(110, 107, 96, 0.18);
+}
+
+.guestRow > * {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+}
+
+.guestRow:hover {
   background: #fafaf5;
 }
 
-.guestClickRow td {
-  background: white;
+.nameCell {
+  font-weight: 500;
+}
+
+.statusCell {
   font-size: 14px;
 }
 
 .codeLink {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
   color: #4a4842;
   border-bottom: 1px dashed #6e6b60;
   text-decoration: none;
@@ -55,23 +255,70 @@
   color: #1a1a1a;
 }
 
-.mealHint {
-  color: #6e6b60;
-  font-style: italic;
-  font-size: 13px;
+/* ── Loading / empty states ─────────────────────────────────────────── */
+
+.loadingBlock {
+  border-top: 1px solid #6e6b60;
+  padding: 0;
 }
 
-.notesCell {
-  font-style: italic;
-  color: #6e6b60;
-  font-size: 13px;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.list > .loadingBlock:first-of-type,
+.list > .headerRow + .loadingBlock {
+  border-top: none;
 }
 
-/* ── Guest detail modal body ─────────────────────────────────────────── */
+.loadingBlock > * {
+  grid-column: 1 / -1;
+  padding: 12px 16px;
+}
+
+.loadingBar {
+  height: 1em;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(110, 107, 96, 0.08) 0%,
+    rgba(110, 107, 96, 0.2) 50%,
+    rgba(110, 107, 96, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: listShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes listShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingBar {
+    animation: none;
+    background: rgba(110, 107, 96, 0.14);
+  }
+}
+
+.emptyBlock {
+  border-top: 1px solid #6e6b60;
+}
+
+.list > .emptyBlock:first-of-type,
+.list > .headerRow + .emptyBlock {
+  border-top: none;
+}
+
+.emptyBlock > .emptyCell {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-style: italic;
+  color: #6e6b60;
+  padding: 28px 16px;
+}
+
+/* ── Modal detail grid (unchanged) ─────────────────────────────────── */
 
 .detailGrid {
   display: grid;
@@ -96,30 +343,20 @@
   color: #4a4842;
 }
 
-.editCell {
-  width: 32px;
-  padding: 0 8px !important;
-  text-align: center;
+.mealHint {
+  color: #6e6b60;
+  font-style: italic;
+  font-size: 13px;
 }
 
-.editIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  background: none;
-  border: 1px solid transparent;
-  color: #b0aca0;
-  font-size: 14px;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.editIcon:hover {
-  color: #4a4842;
-  border-color: #6e6b60;
+.notesCell {
+  font-style: italic;
+  color: #6e6b60;
+  font-size: 13px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {
