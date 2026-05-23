@@ -24,17 +24,28 @@
 
 /* ── Gutter inner content (per-response banner) ─────────────────────── */
 
-.gutterBody {
+/* Applied to the gutter cell itself via GroupedListBlock's gutterClassName.
+   Turns it into a flex column so the inner gutterBody can stretch to fill
+   the full row-track height (which may be taller than the banner content
+   when there are many event rows). The inset rail lives here, not on the
+   inner body, so it always spans the whole cell. */
+.gutterCell {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  height: 100%;
-  padding: 14px 16px 14px 18px;
   box-shadow: inset 4px 0 0 #6e6b60;
 }
 
-/* Solo blocks (single event) get a white gutter from shared chrome — keep
-   the same inset rail so the visual signal is consistent. */
+.gutterBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 14px 18px;
+  /* min-height: 0 lets flex compute the cell height from event rows when
+     they're the dominant contributor — without it, gutterBody's intrinsic
+     content would force a min-content size and overflow the cell. */
+  min-height: 0;
+}
 
 .gutterHeader {
   display: flex;
@@ -132,7 +143,7 @@
 .eventRow > * {
   padding: 12px 14px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   min-width: 0;
 }
 

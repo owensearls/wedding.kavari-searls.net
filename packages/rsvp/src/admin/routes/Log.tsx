@@ -102,6 +102,7 @@ function ResponseBlock({ row }: { row: AdminLogRow }) {
     <GroupedListBlock
       solo={isSolo}
       rowSpan={rowSpan}
+      gutterClassName={styles.gutterCell}
       gutter={
         <div className={styles.gutterBody}>
           <div className={styles.gutterHeader}>
@@ -185,6 +186,7 @@ function LoadingBlock({ rowCount }: { rowCount: number }) {
       solo={isSolo}
       rowSpan={rowCount}
       ariaHidden
+      gutterClassName={styles.gutterCell}
       gutter={
         <div className={styles.gutterBody}>
           <div className={styles.gutterHeader}>

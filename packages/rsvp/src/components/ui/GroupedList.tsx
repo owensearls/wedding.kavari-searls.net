@@ -73,6 +73,11 @@ interface GroupedListBlockProps {
   solo?: boolean
   rowSpan: number
   gutter: ReactNode
+  // Optional extra class applied to the gutter cell itself (the full-height
+  // grid item). Use this when the page needs to extend the gutter chrome —
+  // e.g. an inset left rail or a flex container so the inner content can
+  // stretch to fill the cell.
+  gutterClassName?: string
   ariaHidden?: boolean
   children: ReactNode
 }
@@ -81,6 +86,7 @@ export function GroupedListBlock({
   solo = false,
   rowSpan,
   gutter,
+  gutterClassName,
   ariaHidden,
   children,
 }: GroupedListBlockProps) {
@@ -90,7 +96,10 @@ export function GroupedListBlock({
       role="rowgroup"
       aria-hidden={ariaHidden}
     >
-      <div className={styles.gutter} style={{ gridRow: `1 / span ${rowSpan}` }}>
+      <div
+        className={[styles.gutter, gutterClassName].filter(Boolean).join(' ')}
+        style={{ gridRow: `1 / span ${rowSpan}` }}
+      >
         {gutter}
       </div>
       {children}
