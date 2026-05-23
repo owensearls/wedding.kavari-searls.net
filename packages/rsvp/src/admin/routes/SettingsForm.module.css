@@ -47,3 +47,29 @@
   padding-top: 16px;
   border-top: 1px solid #e3e1d8;
 }
+
+.dangerZone {
+  border-color: #d4b1b1;
+  background: #fbf1f1;
+}
+
+.dangerLabel {
+  color: #8a2424;
+}
+
+.dangerCounts {
+  font-size: 13px;
+  color: #6e6b60;
+  margin: 0 0 12px;
+}
+
+.dangerButton {
+  background: #b03030;
+  border-color: #b03030;
+  color: #fff;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: #962424;
+  border-color: #962424;
+}

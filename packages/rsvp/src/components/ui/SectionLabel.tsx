@@ -6,16 +6,22 @@ interface SectionLabelProps {
   // Render the label inline with trailing content (e.g., an "Add" button).
   // When true, children is the label text and `action` is the trailing content.
   action?: ReactNode
+  className?: string
 }
 
-export function SectionLabel({ children, action }: SectionLabelProps) {
+export function SectionLabel({
+  children,
+  action,
+  className,
+}: SectionLabelProps) {
+  const labelClass = [styles.sectionLabel, className].filter(Boolean).join(' ')
   if (action) {
     return (
       <div className={styles.row}>
-        <span className={styles.sectionLabel}>{children}</span>
+        <span className={labelClass}>{children}</span>
         {action}
       </div>
     )
   }
-  return <div className={styles.sectionLabel}>{children}</div>
+  return <div className={labelClass}>{children}</div>
 }

@@ -9,8 +9,11 @@ import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
 import { SectionLabel } from '../../components/ui/SectionLabel'
 import {
+  deleteAllInvites,
   getAdminSettings,
+  getInviteCounts,
   saveAdminSettings,
+  type InviteCounts,
 } from '../../server/admin/settings'
 import { CustomFieldsEditor } from './CustomFieldsEditor'
 import styles from './SettingsForm.module.css'
@@ -25,15 +28,26 @@ export function SettingsForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [counts, setCounts] = useState<InviteCounts | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function refreshCounts() {
+    try {
+      setCounts(await getInviteCounts())
+    } catch {
+      setCounts(null)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
-    getAdminSettings()
-      .then((s) => {
+    Promise.all([getAdminSettings(), getInviteCounts()])
+      .then(([s, c]) => {
         if (cancelled) return
         setView(s)
         setNotesSchema(s.notesSchema)
         setLookupByNameEnabled(s.lookupByNameEnabled)
+        setCounts(c)
       })
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : 'Failed to load')
@@ -45,6 +59,33 @@ export function SettingsForm() {
       cancelled = true
     }
   }, [])
+
+  async function onDeleteAll() {
+    if (!counts) return
+    const parts = [
+      `${counts.guests} guests`,
+      `${counts.invitations} invitations`,
+    ]
+    if (counts.responses > 0) {
+      parts.push(`and ${counts.responses} RSVP responses (cascade)`)
+    }
+    const ok = confirm(`Delete ${parts.join(', ')}? This cannot be undone.`)
+    if (!ok) return
+    setDeleting(true)
+    setError(null)
+    setStatus(null)
+    try {
+      const r = await deleteAllInvites()
+      setStatus(
+        `Deleted ${r.deletedGuests} guests and ${r.deletedInvitations} invitations.`
+      )
+      await refreshCounts()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   async function onSave() {
     setSaving(true)
@@ -138,6 +179,33 @@ export function SettingsForm() {
               {saving ? 'Saving…' : 'Save settings'}
             </Button>
           </EditFormActions>
+
+          <EditFormSection className={styles.dangerZone}>
+            <SectionLabel className={styles.dangerLabel}>
+              Danger zone
+            </SectionLabel>
+            <p className={styles.helper}>
+              Wipe every guest and invitation in the database. RSVP responses
+              tied to those guests are also removed (cascade). Event definitions
+              and admin settings are kept.
+            </p>
+            <p className={styles.dangerCounts}>
+              {counts
+                ? `Currently: ${counts.guests} guests, ${counts.invitations} invitations, ${counts.responses} RSVP responses.`
+                : 'Loading counts…'}
+            </p>
+            <Button
+              className={styles.dangerButton}
+              onClick={onDeleteAll}
+              disabled={
+                deleting ||
+                !counts ||
+                (counts.guests === 0 && counts.invitations === 0)
+              }
+            >
+              {deleting ? 'Deleting…' : 'Delete all guests and invitations'}
+            </Button>
+          </EditFormSection>
         </>
       )}
     </EditFormShell>

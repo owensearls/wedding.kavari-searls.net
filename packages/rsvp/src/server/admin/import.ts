@@ -4,6 +4,7 @@ import { getDb, newId, newInviteCode, nowIso } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
 import { adminImportSchema } from '../../schema'
+import { findUnknownEventSlugs } from './importHelpers'
 
 function getDbConn() {
   return getDb(getEnv().DB)
@@ -54,6 +55,17 @@ export async function importRows(
   const events = await db.selectFrom('event').select(['id', 'slug']).execute()
   const eventBySlug = new Map(events.map((e) => [e.slug, e.id]))
   const defaultNotesSchemaRaw = await getDefaultInvitationNotesSchemaRaw()
+
+  const unknownSlugs = findUnknownEventSlugs(
+    parsed.data.rows,
+    eventBySlug.keys()
+  )
+  if (unknownSlugs.length > 0) {
+    throw new RscFunctionError(
+      400,
+      `Unknown event slug${unknownSlugs.length === 1 ? '' : 's'}: ${unknownSlugs.join(', ')}`
+    )
+  }
 
   // Rows with no groupLabel become solo invites; group each one under a unique
   // synthetic key so they don't collide with each other in the grouping map.
