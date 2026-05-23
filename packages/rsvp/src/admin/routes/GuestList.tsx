@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -175,16 +175,7 @@ export function GuestList() {
       <ErrorMessage>{error}</ErrorMessage>
 
       <div className={styles.wrap}>
-        <div
-          className={styles.list}
-          role="table"
-          aria-label="Guests by group"
-          style={
-            {
-              '--event-count': eventColumns.length,
-            } as CSSProperties
-          }
-        >
+        <div className={styles.list} role="table" aria-label="Guests by group">
           <div className={styles.headerRow} role="row">
             <div
               role="columnheader"
@@ -198,34 +189,24 @@ export function GuestList() {
             <div role="columnheader" className={styles.headerCell}>
               Invite code
             </div>
-            {eventColumns.map((ev) => (
-              <div
-                key={ev.id}
-                role="columnheader"
-                className={styles.headerCell}
-              >
-                {ev.name}
-              </div>
-            ))}
+            <div className={styles.eventsHeader} role="presentation">
+              {eventColumns.map((ev) => (
+                <div
+                  key={ev.id}
+                  role="columnheader"
+                  className={styles.headerCell}
+                >
+                  {ev.name}
+                </div>
+              ))}
+            </div>
           </div>
 
           {loading ? (
             <>
-              <div className={styles.loadingBlock}>
-                <div>
-                  <div className={styles.loadingBar} />
-                </div>
-              </div>
-              <div className={styles.loadingBlock}>
-                <div>
-                  <div className={styles.loadingBar} />
-                </div>
-              </div>
-              <div className={styles.loadingBlock}>
-                <div>
-                  <div className={styles.loadingBar} />
-                </div>
-              </div>
+              {[2, 1, 2].map((rowCount, blockIdx) => (
+                <GroupBlock key={blockIdx} loading rowCount={rowCount} />
+              ))}
             </>
           ) : groups.length === 0 ? (
             <div className={styles.emptyBlock}>
