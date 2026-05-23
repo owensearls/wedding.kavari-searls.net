@@ -1,3 +1,4 @@
+import { StatusTally } from '../../components/ui/StatusTally'
 import { GuestRow } from './GuestRow'
 import styles from './GuestList.module.css'
 import type { AdminGroupListItem } from '../../schema'
@@ -81,18 +82,11 @@ export function GroupBlock(props: GroupBlockProps) {
             </>
           )}
           <span className={styles.gutterStats}>
-            <span className={styles.tally}>
-              <span className={`${styles.tallyDot} ${styles.dotAttending}`} />
-              <span className={styles.tallyNum}>{group.attendingCount}</span>
-            </span>
-            <span className={styles.tally}>
-              <span className={`${styles.tallyDot} ${styles.dotDeclined}`} />
-              <span className={styles.tallyNum}>{group.declinedCount}</span>
-            </span>
-            <span className={styles.tally}>
-              <span className={`${styles.tallyDot} ${styles.dotPending}`} />
-              <span className={styles.tallyNum}>{group.pendingCount}</span>
-            </span>
+            <StatusTally
+              attending={group.attendingCount}
+              declined={group.declinedCount}
+              pending={group.pendingCount}
+            />
           </span>
           <span className={styles.gutterEditLabel} aria-hidden="true">
             Edit
