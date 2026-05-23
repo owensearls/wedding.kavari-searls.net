@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import {
+  GroupedList,
+  GroupedListEmptyBlock,
+  GroupedListHeaderCell,
+  GroupedListHeaderRow,
+} from '../../components/ui/GroupedList'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { listEvents, type AdminEventRecord } from '../../server/admin/events'
 import {
@@ -174,59 +180,45 @@ export function GuestList() {
 
       <ErrorMessage>{error}</ErrorMessage>
 
-      <div className={styles.wrap}>
-        <div className={styles.list} role="table" aria-label="Guests by group">
-          <div className={styles.headerRow} role="row">
-            <div
-              role="columnheader"
-              className={`${styles.headerCell} ${styles.headerGutter}`}
-            >
-              Group
-            </div>
-            <div role="columnheader" className={styles.headerCell}>
-              Name
-            </div>
-            <div role="columnheader" className={styles.headerCell}>
-              Invite code
-            </div>
-            <div className={styles.eventsHeader} role="presentation">
-              {eventColumns.map((ev) => (
-                <div
-                  key={ev.id}
-                  role="columnheader"
-                  className={styles.headerCell}
-                >
-                  {ev.name}
-                </div>
-              ))}
-            </div>
+      <GroupedList className={styles.list} ariaLabel="Guests by group">
+        <GroupedListHeaderRow>
+          <GroupedListHeaderCell gutter>Group</GroupedListHeaderCell>
+          <GroupedListHeaderCell>Name</GroupedListHeaderCell>
+          <GroupedListHeaderCell>Invite code</GroupedListHeaderCell>
+          <div className={styles.eventsHeader} role="presentation">
+            {eventColumns.map((ev) => (
+              <GroupedListHeaderCell
+                key={ev.id}
+                className={styles.eventsHeaderCell}
+              >
+                {ev.name}
+              </GroupedListHeaderCell>
+            ))}
           </div>
+        </GroupedListHeaderRow>
 
-          {loading ? (
-            <>
-              {[2, 1, 2].map((rowCount, blockIdx) => (
-                <GroupBlock key={blockIdx} loading rowCount={rowCount} />
-              ))}
-            </>
-          ) : groups.length === 0 ? (
-            <div className={styles.emptyBlock}>
-              <div className={styles.emptyCell}>
-                No guests yet — create an invite or use the Import page.
-              </div>
-            </div>
-          ) : (
-            groups.map((g) => (
-              <GroupBlock
-                key={g.id}
-                group={g}
-                eventColumns={eventColumns}
-                onEdit={() => startEdit(g.id)}
-                onOpenGuest={(guestId) => setDetailGuestId(guestId)}
-              />
-            ))
-          )}
-        </div>
-      </div>
+        {loading ? (
+          <>
+            {[2, 1, 2].map((rowCount, blockIdx) => (
+              <GroupBlock key={blockIdx} loading rowCount={rowCount} />
+            ))}
+          </>
+        ) : groups.length === 0 ? (
+          <GroupedListEmptyBlock>
+            No guests yet — create an invite or use the Import page.
+          </GroupedListEmptyBlock>
+        ) : (
+          groups.map((g) => (
+            <GroupBlock
+              key={g.id}
+              group={g}
+              eventColumns={eventColumns}
+              onEdit={() => startEdit(g.id)}
+              onOpenGuest={(guestId) => setDetailGuestId(guestId)}
+            />
+          ))
+        )}
+      </GroupedList>
 
       {detailGuestId && (
         <GuestDetailModal

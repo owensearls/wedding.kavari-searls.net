@@ -4,47 +4,48 @@
   gap: 24px;
 }
 
-/* ── Column widths ──────────────────────────────────────────────────── */
+/* ── Grid template ──────────────────────────────────────────────────── */
 
-.colEvent {
-  width: 28%;
+/* Four named tracks. The label gutter is wide enough to fit a guest name,
+   timestamp, invite-level answer chips, and the "by ... / #id" byline
+   stacked vertically. Event/status are fixed widths so they line up
+   across blocks; answers is 1fr so chips can wrap freely. */
+.list {
+  --col-label: 320px;
+  --col-event: 200px;
+  --col-status: 120px;
+
+  grid-template-columns:
+    [label] var(--col-label)
+    [event] var(--col-event)
+    [status] var(--col-status)
+    [answers] minmax(280px, 1fr);
 }
 
-.colStatus {
-  width: 110px;
-}
+/* ── Gutter inner content (per-response banner) ─────────────────────── */
 
-.colAnswers {
-  width: auto;
-}
-
-/* ── Banner row (one per guest_response) ────────────────────────────── */
-/*
- * The banner is the "header" of a complex grouped row — it carries all the
- * parent guest_response data (name, timestamp, invite-level answers,
- * responded-by, id) and visually opens a new group. A warm-cream background,
- * thicker top border, and a left rail tie the subsequent event sub-rows to
- * this header.
- */
-
-.bannerRow td {
-  background: #ebe5d6;
-  padding: 12px 16px 10px 18px;
-  border-top: 2px solid #6e6b60;
-  border-bottom: 1px solid rgba(110, 107, 96, 0.4);
+.gutterBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 14px 16px 14px 18px;
   box-shadow: inset 4px 0 0 #6e6b60;
 }
 
-.bannerTop {
+/* Solo blocks (single event) get a white gutter from shared chrome — keep
+   the same inset rail so the visual signal is consistent. */
+
+.gutterHeader {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 18px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .guestName {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   color: #3a3833;
   letter-spacing: -0.005em;
@@ -76,30 +77,23 @@
   color: #4a4842;
 }
 
-.bannerMeta {
-  margin-top: 6px;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.bannerAnswers {
+.gutterAnswers {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   font-size: 13px;
   color: #4a4842;
 }
 
-.bannerByline {
-  display: inline-flex;
+.gutterByline {
+  margin-top: auto;
+  display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: 12px;
   font-size: 12px;
   color: #6e6b60;
-  margin-left: auto;
+  flex-wrap: wrap;
 }
 
 .respondedBy {
@@ -125,30 +119,36 @@
   border-radius: 2px;
 }
 
-/* ── Event sub-rows ─────────────────────────────────────────────────── */
+/* ── Event rows (one per child event response) ──────────────────────── */
 
-.eventRow td {
+.eventRow {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: event / -1;
   background: white;
-  font-size: 14px;
-  padding: 7px 12px;
-  border-bottom: 1px solid rgba(110, 107, 96, 0.12);
+  border-bottom: 1px solid rgba(110, 107, 96, 0.14);
 }
 
-.eventRow td:first-child {
-  box-shadow: inset 4px 0 0 #d6cfba;
-  padding-left: 22px;
+.eventRow > * {
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
 }
 
-/* The last event sub-row inside a group sits flush against the next
- * banner's 2px top border, so drop its own bottom border to avoid a
- * doubled line. */
-.eventRow:last-of-type td {
+/* Drop the trailing border for the last event in a block — the block
+   border-top (from shared chrome) provides separation to the next. */
+.eventRow:last-of-type {
   border-bottom: none;
 }
 
-.eventName {
+.eventCell {
   font-weight: 500;
   color: #3a3833;
+}
+
+.statusCell {
+  /* Tinted by statusClassName helper (.attending/.declined/.pending/...) */
 }
 
 .answersCell {
@@ -158,7 +158,7 @@
 .answersList {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   font-size: 13px;
 }
 
@@ -175,38 +175,82 @@
   color: #b0aca0;
 }
 
+/* "No event responses recorded" — single cell that spans the whole right
+   side of the block. Spans columns event through answers so it takes the
+   place of a normal event row. */
 .noEvents {
+  grid-column: event / -1;
+  padding: 14px 16px;
   font-style: italic;
   color: #8a8576;
   font-size: 13px;
-  padding-left: 22px !important;
-  box-shadow: inset 4px 0 0 #d6cfba;
+}
+
+/* ── Loading state ──────────────────────────────────────────────────── */
+
+.eventRowStatic {
+  cursor: default;
+}
+
+.loadingRowCell {
+  grid-column: event / -1;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+}
+
+.loadingBar {
+  height: 1em;
+  width: 100%;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.1) 50%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: logShimmer 1.6s ease-in-out infinite;
+}
+
+.loadingBarName {
+  width: 50%;
+  max-width: 160px;
+}
+
+.loadingBarMeta {
+  width: 70%;
+  max-width: 180px;
+}
+
+@keyframes logShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingBar {
+    animation: none;
+    background: rgba(110, 107, 96, 0.14);
+  }
 }
 
 /* ── Mobile ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .bannerRow td {
-    padding: 10px 12px 8px 14px;
+  .gutterBody {
+    padding: 12px 14px;
   }
 
   .guestName {
     font-size: 15px;
   }
 
-  .bannerByline {
-    margin-left: 0;
-  }
-
-  .colEvent {
-    width: 40%;
-  }
-
-  .colStatus {
-    width: 90px;
-  }
-
-  .eventRow td {
-    font-size: 13px;
+  .gutterByline {
+    margin-top: 8px;
   }
 }

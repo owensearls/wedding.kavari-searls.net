@@ -1,6 +1,7 @@
+import { GroupedListBlock } from '../../components/ui/GroupedList'
 import { StatusTally } from '../../components/ui/StatusTally'
-import { GuestRow } from './GuestRow'
 import styles from './GuestList.module.css'
+import { GuestRow } from './GuestRow'
 import type { AdminGroupListItem } from '../../schema'
 import type { AdminEventRecord } from '../../server/admin/events'
 
@@ -22,15 +23,11 @@ export function GroupBlock(props: GroupBlockProps) {
     const { rowCount } = props
     const isSolo = rowCount === 1
     return (
-      <div
-        className={`${styles.block} ${isSolo ? styles.blockSolo : styles.blockMulti}`}
-        role="rowgroup"
-        aria-hidden="true"
-      >
-        <div
-          className={styles.gutter}
-          style={{ gridRow: `1 / span ${rowCount}` }}
-        >
+      <GroupedListBlock
+        solo={isSolo}
+        rowSpan={rowCount}
+        ariaHidden
+        gutter={
           <div className={`${styles.gutterEdit} ${styles.gutterEditStatic}`}>
             {!isSolo && (
               <>
@@ -42,17 +39,20 @@ export function GroupBlock(props: GroupBlockProps) {
                 />
               </>
             )}
-            <div className={styles.gutterStats}>
+            <div
+              className={`${styles.gutterStats} ${isSolo ? styles.gutterStatsSolo : ''}`}
+            >
               <div
                 className={`${styles.loadingBar} ${styles.loadingBarTally}`}
               />
             </div>
           </div>
-        </div>
+        }
+      >
         {Array.from({ length: rowCount }, (_, i) => (
           <GuestRow key={i} loading />
         ))}
-      </div>
+      </GroupedListBlock>
     )
   }
 
@@ -61,11 +61,10 @@ export function GroupBlock(props: GroupBlockProps) {
   const rowSpan = Math.max(group.guests.length, 1)
 
   return (
-    <div
-      className={`${styles.block} ${isSolo ? styles.blockSolo : styles.blockMulti}`}
-      role="rowgroup"
-    >
-      <div className={styles.gutter} style={{ gridRow: `1 / span ${rowSpan}` }}>
+    <GroupedListBlock
+      solo={isSolo}
+      rowSpan={rowSpan}
+      gutter={
         <button
           type="button"
           className={styles.gutterEdit}
@@ -81,7 +80,9 @@ export function GroupBlock(props: GroupBlockProps) {
               >{`${group.guestCount} guests`}</span>
             </>
           )}
-          <span className={styles.gutterStats}>
+          <span
+            className={`${styles.gutterStats} ${isSolo ? styles.gutterStatsSolo : ''}`}
+          >
             <StatusTally
               attending={group.attendingCount}
               declined={group.declinedCount}
@@ -92,7 +93,8 @@ export function GroupBlock(props: GroupBlockProps) {
             Edit
           </span>
         </button>
-      </div>
+      }
+    >
       {group.guests.map((guest) => (
         <GuestRow
           key={guest.id}
@@ -101,6 +103,6 @@ export function GroupBlock(props: GroupBlockProps) {
           onClick={() => onOpenGuest(guest.id)}
         />
       ))}
-    </div>
+    </GroupedListBlock>
   )
 }
