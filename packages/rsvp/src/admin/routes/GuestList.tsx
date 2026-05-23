@@ -1,13 +1,14 @@
 'use client'
 
-import { fieldsInOrder, GUEST_PROFILE_NOTES_SCHEMA } from 'db'
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
-import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
-import { LoadingIndicator } from '../../components/ui/LoadingIndicator'
 import { PageHeader } from '../../components/ui/PageHeader'
-import { Table } from '../../components/ui/Table'
+import {
+  Table,
+  TableEmptyRow,
+  TableSkeletonRows,
+} from '../../components/ui/Table'
 import { listEvents, type AdminEventRecord } from '../../server/admin/events'
 import {
   deleteGroup,
@@ -16,12 +17,13 @@ import {
   saveGroup,
 } from '../../server/admin/groups'
 import { listResponses } from '../../server/admin/responses'
+import { getAdminSettings } from '../../server/admin/settings'
 import { downloadCsv, responsesToCsv } from '../lib/rsvpCsv'
 import { EditGroupForm } from './EditGroupForm'
 import { GroupBlock } from './GroupBlock'
 import { GuestDetailModal } from './GuestDetailModal'
-import styles from './GuestList.module.css'
 import type {
+  AdminFieldDraft,
   AdminGroupInput,
   AdminGroupListItem,
   AdminGuestInput,
@@ -34,18 +36,19 @@ const blankGuest = (): AdminGuestInput => ({
   phone: '',
 })
 
-const blankGroup = (): AdminGroupInput => ({
+const blankGroup = (defaults: AdminFieldDraft[]): AdminGroupInput => ({
   label: '',
   guests: [blankGuest()],
   invitedEventIds: [],
+  notesSchema: defaults,
 })
-
-const guestNotesSchema = GUEST_PROFILE_NOTES_SCHEMA
-const guestFields = fieldsInOrder(guestNotesSchema)
 
 export function GuestList() {
   const [groups, setGroups] = useState<AdminGroupListItem[]>([])
   const [events, setEvents] = useState<AdminEventRecord[]>([])
+  const [defaultNotesSchema, setDefaultNotesSchema] = useState<
+    AdminFieldDraft[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<AdminGroupInput | null>(null)
@@ -56,9 +59,14 @@ export function GuestList() {
     setLoading(true)
     setError(null)
     try {
-      const [g, e] = await Promise.all([listGroups(), listEvents()])
+      const [g, e, s] = await Promise.all([
+        listGroups(),
+        listEvents(),
+        getAdminSettings(),
+      ])
       setGroups(g.groups)
       setEvents(e.events)
+      setDefaultNotesSchema(s.notesSchema)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load')
     } finally {
@@ -139,8 +147,8 @@ export function GuestList() {
     if (ao !== bo) return ao - bo
     return a.name.localeCompare(b.name)
   })
-  const colCount = 2 + eventColumns.length + 1 + guestFields.length + 1
-  // name + code + events + notes + custom + edit
+  // Header columns: name + code + events + edit
+  const colCount = 2 + eventColumns.length + 1
 
   return (
     <div>
@@ -163,55 +171,47 @@ export function GuestList() {
             >
               Export CSV
             </Button>
-            <Button onClick={() => setEditing(blankGroup())}>New invite</Button>
+            <Button onClick={() => setEditing(blankGroup(defaultNotesSchema))}>
+              New invite
+            </Button>
           </>
         }
       />
 
       <ErrorMessage>{error}</ErrorMessage>
 
-      {loading ? (
-        <LoadingIndicator />
-      ) : groups.length === 0 ? (
-        <EmptyState>
-          No guests yet — create an invite or use the Import page.
-        </EmptyState>
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Invite code</th>
-              {eventColumns.map((ev) => (
-                <th key={ev.id}>{ev.name}</th>
-              ))}
-              <th>Notes</th>
-              {guestFields.map(({ key, field }, i) => (
-                <th
-                  key={key}
-                  className={i === 0 ? styles.customDivider : undefined}
-                >
-                  {field.title}
-                </th>
-              ))}
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {groups.map((g) => (
+      <Table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Invite code</th>
+            {eventColumns.map((ev) => (
+              <th key={ev.id}>{ev.name}</th>
+            ))}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <TableSkeletonRows colSpan={colCount} />
+          ) : groups.length === 0 ? (
+            <TableEmptyRow colSpan={colCount}>
+              No guests yet — create an invite or use the Import page.
+            </TableEmptyRow>
+          ) : (
+            groups.map((g) => (
               <GroupBlock
                 key={g.id}
                 group={g}
                 eventColumns={eventColumns}
-                guestNotesSchema={guestNotesSchema}
                 colCount={colCount}
                 onEdit={() => startEdit(g.id)}
                 onOpenGuest={(guestId) => setDetailGuestId(guestId)}
               />
-            ))}
-          </tbody>
-        </Table>
-      )}
+            ))
+          )}
+        </tbody>
+      </Table>
 
       {detailGuestId && (
         <GuestDetailModal

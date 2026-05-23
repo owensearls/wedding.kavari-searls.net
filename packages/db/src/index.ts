@@ -6,23 +6,21 @@ export {
   tokens,
   type AggregatedLookupMatch,
   type LookupCandidate,
-} from './fuzzy'
+} from './utils/fuzzy'
 export {
   canonicalNotesJson,
   diffGuestResponse,
-  diffRsvpResponse,
+  type GuestDiffEventInsert,
   type GuestDiffInput,
   type GuestDiffResult,
+  type GuestEventState,
   type NotesJson,
   type NotesJsonValue,
-  type RsvpDiffInput,
-  type RsvpDiffResult,
-} from './diff'
+} from './utils/diff'
 export {
   latestGuestResponses,
-  latestRsvpResponses,
+  type LatestEventResponse,
   type LatestGuestResponseRow,
-  type LatestRsvpResponseRow,
 } from './latest'
 export {
   buildNotesValidator,
@@ -38,4 +36,13 @@ export {
   type SingleSelectFieldSchema,
   type SingleSelectOptionSchema,
 } from './notesSchema'
-export { GUEST_PROFILE_NOTES_SCHEMA } from './guestProfileSchema'
+export {
+  guestEventResponseSchema,
+  guestResponseSubmissionSchema,
+  rsvpStatusSchema,
+  rsvpSubmissionSchema,
+  type GuestEventResponse,
+  type GuestResponseSubmission,
+  type RsvpStatus,
+  type RsvpSubmission,
+} from './responseSchema'

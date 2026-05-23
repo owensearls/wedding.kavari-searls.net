@@ -1,9 +1,8 @@
 'use server'
 
 import {
-  fieldsInOrder,
   getDb,
-  latestRsvpResponses,
+  latestGuestResponses,
   newId,
   parseNotesSchema,
   stringifyNotesSchema,
@@ -11,11 +10,8 @@ import {
 } from 'db'
 import { getEnv } from 'db/context'
 import { RscFunctionError } from 'rsc-utils/functions/server'
-import {
-  adminEventInputSchema,
-  type AdminEventInput,
-  type AdminFieldDraft,
-} from '../../schema'
+import { adminEventInputSchema, type AdminEventInput } from '../../schema'
+import { draftsToSchema, schemaToDrafts } from './utils'
 
 function getDbConn() {
   return getDb(getEnv().DB)
@@ -23,22 +19,9 @@ function getDbConn() {
 
 export interface AdminEventRecord extends AdminEventInput {
   id: string
-}
-
-function schemaToDrafts(schema: NotesJsonSchema | null): AdminFieldDraft[] {
-  if (!schema) return []
-  return fieldsInOrder(schema).map(({ key, field }) => ({ key, field }))
-}
-
-function draftsToSchema(drafts: AdminFieldDraft[]): NotesJsonSchema | null {
-  if (drafts.length === 0) return null
-  return {
-    $schema: 'https://json-schema.org/draft/2020-12/schema',
-    type: 'object',
-    additionalProperties: false,
-    'x-fieldOrder': drafts.map((d) => d.key),
-    properties: Object.fromEntries(drafts.map((d) => [d.key, d.field])),
-  }
+  schemaMalformed?: boolean
+  schemaError?: string
+  schemaRaw?: string | null
 }
 
 export interface AdminEventStats {
@@ -107,12 +90,16 @@ export async function listEventStats(): Promise<{ stats: AdminEventStats[] }> {
   }
 
   const allGuestIds = [...new Set(partyMembers.map((m) => m.id))]
-  const rsvps =
+  const latest =
     allGuestIds.length > 0
-      ? await latestRsvpResponses(db, { eventIds, guestIds: allGuestIds })
+      ? await latestGuestResponses(db, { guestIds: allGuestIds })
       : []
   const statusByKey = new Map<string, 'attending' | 'declined'>()
-  for (const r of rsvps) statusByKey.set(`${r.guestId}::${r.eventId}`, r.status)
+  for (const lr of latest) {
+    for (const e of lr.events) {
+      statusByKey.set(`${lr.guestId}::${e.eventId}`, e.status)
+    }
+  }
 
   return {
     stats: events.map((e) => {
@@ -145,13 +132,7 @@ export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
   if (events.length === 0) return { events: [] }
   return {
     events: events.map((e) => {
-      let schema: NotesJsonSchema | null
-      try {
-        schema = parseNotesSchema(e.notes_schema)
-      } catch {
-        throw new RscFunctionError(500, `Event schema is malformed: ${e.slug}`)
-      }
-      return {
+      const base = {
         id: e.id,
         name: e.name,
         slug: e.slug,
@@ -161,15 +142,69 @@ export async function listEvents(): Promise<{ events: AdminEventRecord[] }> {
         address: e.address,
         rsvpDeadline: e.rsvp_deadline,
         sortOrder: e.sort_order,
-        notesSchema: schemaToDrafts(schema),
       }
+      let schema: NotesJsonSchema | null
+      try {
+        schema = parseNotesSchema(e.notes_schema)
+        validateNotesSchemaShape(schema)
+      } catch (err) {
+        return {
+          ...base,
+          notesSchema: [],
+          schemaMalformed: true,
+          schemaError:
+            err instanceof Error ? err.message : 'Unknown schema error',
+          schemaRaw: e.notes_schema,
+        }
+      }
+      return { ...base, notesSchema: schemaToDrafts(schema) }
     }),
+  }
+}
+
+function validateNotesSchemaShape(schema: NotesJsonSchema | null): void {
+  if (schema === null) return
+  if (typeof schema !== 'object' || Array.isArray(schema)) {
+    throw new Error('Schema must be a JSON object')
+  }
+  if (schema.type !== 'object') {
+    throw new Error('Schema "type" must be "object"')
+  }
+  if (!Array.isArray(schema['x-fieldOrder'])) {
+    throw new Error('Schema is missing "x-fieldOrder" array')
+  }
+  if (!schema.properties || typeof schema.properties !== 'object') {
+    throw new Error('Schema is missing "properties" object')
+  }
+  for (const key of schema['x-fieldOrder']) {
+    const field = schema.properties[key]
+    if (!field) {
+      throw new Error(`Field "${key}" listed in x-fieldOrder but not defined`)
+    }
+    const isShortText =
+      'type' in field && (field as { type: string }).type === 'string'
+    const isSingleSelect =
+      'oneOf' in field && Array.isArray((field as { oneOf: unknown }).oneOf)
+    if (!isShortText && !isSingleSelect) {
+      throw new Error(`Field "${key}" has unknown shape`)
+    }
   }
 }
 
 export async function saveEvent(
   input: AdminEventInput
 ): Promise<{ id: string }> {
+  try {
+    return await saveEventInner(input)
+  } catch (err) {
+    if (err instanceof RscFunctionError) throw err
+    const message =
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    throw new RscFunctionError(500, `Save failed: ${message}`)
+  }
+}
+
+async function saveEventInner(input: AdminEventInput): Promise<{ id: string }> {
   const parsed = adminEventInputSchema.safeParse(input)
   if (!parsed.success) throw new RscFunctionError(400, 'Invalid event data')
   const data = parsed.data

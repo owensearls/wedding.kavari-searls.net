@@ -1,39 +1,42 @@
 'use client'
 
-import {
-  fieldsInOrder,
-  isShortTextField,
-  isSingleSelectField,
-  type NotesFieldSchema,
-} from 'db'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo, useState } from 'react'
+import { useFieldArray, useForm } from 'react-hook-form'
 import { ErrorMessage } from '../components/ui/ErrorMessage'
 import { LoadingIndicator } from '../components/ui/LoadingIndicator'
 import { getRsvpGroup, submitRsvp } from '../server/rsvp'
-import { EventCardEditor } from './EventCardEditor'
+import { GuestResponseCard } from './GuestResponseCard'
 import {
-  buildInitialRsvpFormState,
-  rsvpKey,
-  type RsvpFormState,
+  buildInitialRsvpFormValues,
+  rsvpFormSchema,
+  type RsvpFormValues,
 } from './rsvpFormState'
 import styles from './RsvpFull.module.css'
 import type {
-  Guest,
+  GuestResponseSubmission,
   RsvpGroupResponse,
-  RsvpStatus,
   RsvpSubmission,
 } from '../schema'
 
 export function RsvpFull() {
   const [code, setCode] = useState<string | null>(null)
   const [data, setData] = useState<RsvpGroupResponse | null>(null)
-  const [state, setState] = useState<RsvpFormState | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [savedThisSession, setSavedThisSession] = useState(false)
+
+  const form = useForm<RsvpFormValues>({
+    resolver: zodResolver(rsvpFormSchema),
+    // Mode 'onSubmit' (the default) defers validation until the user tries
+    // to submit; once we've shown errors react-hook-form auto-revalidates
+    // on change so they clear as the user fills things in.
+    defaultValues: { drafts: [] },
+  })
+  const { control, handleSubmit, reset, formState } = form
+  const { fields } = useFieldArray({ control, name: 'drafts' })
 
   useEffect(() => {
     setCode(new URLSearchParams(window.location.search).get('code'))
@@ -53,7 +56,7 @@ export function RsvpFull() {
       .then((res) => {
         if (cancelled) return
         setData(res)
-        setState(buildInitialRsvpFormState(res))
+        reset(buildInitialRsvpFormValues(res))
       })
       .catch((err: unknown) => {
         if (cancelled) return
@@ -65,97 +68,47 @@ export function RsvpFull() {
     return () => {
       cancelled = true
     }
-  }, [code])
+  }, [code, reset])
 
   const guestById = useMemo(() => {
-    const m = new Map<string, Guest>()
-    if (data) for (const g of data.guests) m.set(g.id, g)
-    return m
+    if (!data) return new Map()
+    return new Map(data.guests.map((g) => [g.id, g]))
   }, [data])
 
-  function setStatus(guestId: string, eventId: string, status: RsvpStatus) {
-    setState((s) => {
-      if (!s) return s
-      const k = rsvpKey(guestId, eventId)
-      const current = s.rsvps[k] ?? { status: 'pending', notesJson: {} }
-      const nextNotes = status === 'attending' ? current.notesJson : {}
-      return {
-        ...s,
-        rsvps: { ...s.rsvps, [k]: { status, notesJson: nextNotes } },
-      }
-    })
-  }
-
-  function setCustom(
-    guestId: string,
-    eventId: string,
-    fieldKey: string,
-    value: string
-  ) {
-    setState((s) => {
-      if (!s) return s
-      const k = rsvpKey(guestId, eventId)
-      const current = s.rsvps[k] ?? { status: 'pending', notesJson: {} }
-      const nextNotes = { ...current.notesJson, [fieldKey]: value || null }
-      return {
-        ...s,
-        rsvps: { ...s.rsvps, [k]: { ...current, notesJson: nextNotes } },
-      }
-    })
-  }
-
-  function setGuestCustom(guestId: string, fieldKey: string, value: string) {
-    setState((s) =>
-      s
-        ? {
-            ...s,
-            guestNotesJson: {
-              ...s.guestNotesJson,
-              [guestId]: {
-                ...(s.guestNotesJson[guestId] ?? {}),
-                [fieldKey]: value || null,
-              },
-            },
-          }
-        : s
-    )
-  }
-
-  function setGuestNotes(guestId: string, value: string) {
-    setState((s) =>
-      s
-        ? {
-            ...s,
-            guestNotes: { ...s.guestNotes, [guestId]: value },
-          }
-        : s
-    )
-  }
-
-  async function onSubmit() {
-    if (!state || !data || !code) return
+  async function onValid(values: RsvpFormValues) {
+    if (!data || !code) return
     setSubmitting(true)
     setSubmitError(null)
     try {
+      const guestResponses: GuestResponseSubmission[] = values.drafts
+        .filter((d) => d.respondingFor)
+        .map((d) => ({
+          guestId: d.guestId,
+          notesJson: d.notesJson,
+          events: d.events
+            // After validation, statuses on responding-for guests are
+            // either 'attending' or 'declined' — never ''. Filter
+            // defensively so the type narrows.
+            .filter(
+              (
+                e
+              ): e is {
+                eventId: string
+                status: 'attending' | 'declined'
+                notesJson: Record<string, string | null>
+              } => e.status !== ''
+            )
+            .map((e) => ({
+              eventId: e.eventId,
+              status: e.status,
+              notesJson: e.notesJson,
+            })),
+        }))
       const submission: RsvpSubmission = {
-        respondedByGuestId: state.respondedByGuestId || data.guests[0].id,
-        rsvps: Object.entries(state.rsvps).map(([k, v]) => {
-          const [guestId, eventId] = k.split('::')
-          return {
-            guestId,
-            eventId,
-            status: v.status,
-            notesJson: v.notesJson,
-          }
-        }),
-        guestUpdates: data.guests.map((g) => ({
-          guestId: g.id,
-          notes: state.guestNotes[g.id]?.trim() || null,
-          notesJson: state.guestNotesJson[g.id] ?? {},
-        })),
+        respondedByGuestId: data.actingGuestId,
+        guestResponses,
       }
       await submitRsvp(code, submission)
-      setSavedThisSession(true)
       setSubmitted(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
@@ -165,46 +118,19 @@ export function RsvpFull() {
     }
   }
 
-  const primaryGuestId = data?.guests[0]?.id
-  const hasPriorRsvp = data?.rsvps.some((r) => r.respondedAt !== null) ?? false
-  const showSaveLabel = hasPriorRsvp || savedThisSession
-
-  function renderGuestCustomField(
-    g: Guest,
-    fieldKey: string,
-    field: NotesFieldSchema
-  ) {
-    const v = state?.guestNotesJson[g.id]?.[fieldKey]
-    const value = typeof v === 'string' ? v : ''
-    if (isSingleSelectField(field)) {
-      return (
-        <select
-          className={styles.select}
-          value={value}
-          onChange={(e) => setGuestCustom(g.id, fieldKey, e.target.value)}
-        >
-          <option value="">Choose…</option>
-          {field.oneOf.map((opt) => (
-            <option key={opt.const} value={opt.const}>
-              {opt.title}
-            </option>
-          ))}
-        </select>
-      )
-    }
-    if (isShortTextField(field)) {
-      return (
-        <input
-          type="text"
-          className={styles.select}
-          maxLength={field.maxLength}
-          value={value}
-          onChange={(e) => setGuestCustom(g.id, fieldKey, e.target.value)}
-        />
-      )
-    }
-    return null
+  function onInvalid() {
+    setSubmitError(
+      'Pick attending or can\'t make it for each event — or turn off "Respond for…" on guests you don\'t want to answer for.'
+    )
   }
+
+  const actingGuestIndex = data
+    ? fields.findIndex((f) => f.guestId === data.actingGuestId)
+    : -1
+  const otherGuestIndexes = fields
+    .map((_, i) => i)
+    .filter((i) => i !== actingGuestIndex)
+  const hasDeadline = data?.events.some((e) => e.rsvpDeadline) ?? false
 
   return (
     <div className={styles.page}>
@@ -216,99 +142,101 @@ export function RsvpFull() {
         {loading && <LoadingIndicator label="Loading your invitation…" />}
         {loadError && <ErrorMessage>{loadError}</ErrorMessage>}
 
-        {data && state && !submitted && (
-          <>
-            <h1 className={styles.heading}>RSVP</h1>
-            <div className={styles.subheading}>{data.group.label}</div>
-
-            {data.events.length === 0 && (
-              <p className={styles.centered}>
-                No events are open for RSVP yet — check back soon.
-              </p>
-            )}
-
-            {data.events.map((ev) => (
-              <EventCardEditor
-                key={ev.id}
-                event={ev}
-                guestById={guestById}
-                state={state}
-                singleGuest={data.guests.length === 1}
-                onStatusChange={setStatus}
-                onCustomChange={setCustom}
-              />
-            ))}
-
-            <div className={styles.detailsCard}>
-              <h2 className={styles.detailsHeading}>Other details</h2>
-              {data.guests.map((g) => (
-                <div key={g.id}>
-                  {fieldsInOrder(data.guestNotesSchema).map(
-                    ({ key, field }) => (
-                      <div key={key}>
-                        <label className={styles.fieldLabel}>
-                          {data.guests.length > 1
-                            ? `${g.displayName} — ${field.title}`
-                            : field.title}
-                        </label>
-                        {renderGuestCustomField(g, key, field)}
-                      </div>
-                    )
-                  )}
-                </div>
-              ))}
-
-              {primaryGuestId && (
-                <>
-                  <label className={styles.fieldLabel}>
-                    Anything else we should know?
-                  </label>
-                  <textarea
-                    className={styles.textarea}
-                    rows={3}
-                    value={state.guestNotes[primaryGuestId] ?? ''}
-                    onChange={(e) =>
-                      setGuestNotes(primaryGuestId, e.target.value)
-                    }
-                  />
-                </>
-              )}
-            </div>
-
-            <div className={styles.submitRow}>
-              <button
-                type="button"
-                className={styles.submit}
-                onClick={onSubmit}
-                disabled={submitting}
-              >
-                {submitting
-                  ? showSaveLabel
-                    ? 'Saving…'
-                    : 'Sending…'
-                  : showSaveLabel
-                    ? 'Save RSVP'
-                    : 'Send RSVP'}
-              </button>
-            </div>
-            <ErrorMessage>{submitError}</ErrorMessage>
-          </>
-        )}
-
-        {submitted && (
+        {data && submitted && (
           <div className={styles.success}>
-            <h1>Thank you!</h1>
-            <p>
-              We've recorded your RSVP. You can return to this page any time
-              before the deadline to change it.
+            <h2 className={styles.successHeading}>Thank you!</h2>
+            <p className={styles.successCopy}>
+              Your response has been recorded. You may return to this page{' '}
+              {hasDeadline
+                ? 'any time before the deadline'
+                : 'at any time before the wedding'}{' '}
+              to revise it.
             </p>
-            <button type="button" onClick={() => setSubmitted(false)}>
+            <button
+              type="button"
+              className={styles.editButton}
+              onClick={() => setSubmitted(false)}
+            >
               Edit RSVP
             </button>
-            <a href="/" className={styles.backLink}>
-              ← Back to home
-            </a>
           </div>
+        )}
+
+        {data && !submitted && actingGuestIndex >= 0 && (
+          <form onSubmit={handleSubmit(onValid, onInvalid)} noValidate>
+            <h1 className={styles.heading}>RSVP</h1>
+            {data.group.label && (
+              <div className={styles.subheading}>{data.group.label}</div>
+            )}
+
+            {data.events.length === 0 ? (
+              <p className={styles.empty}>
+                No events are open for RSVP yet — please check back soon.
+              </p>
+            ) : (
+              <>
+                <GuestResponseCard
+                  guestName={
+                    guestById.get(data.actingGuestId)?.displayName ?? ''
+                  }
+                  events={data.events}
+                  invitationNotesSchema={data.invitationNotesSchema}
+                  showRespondingToggle={false}
+                  control={control}
+                  draftIndex={actingGuestIndex}
+                  errors={formState.errors.drafts?.[actingGuestIndex]}
+                />
+
+                {otherGuestIndexes.length > 0 && (
+                  <>
+                    <div className={styles.sectionDivider}>
+                      <span className={styles.dividerLine} aria-hidden="true" />
+                      <span className={styles.dividerLabel}>
+                        Responding for anyone else?
+                      </span>
+                      <span className={styles.dividerLine} aria-hidden="true" />
+                    </div>
+                    <p className={styles.dividerHint}>
+                      Each guest defaults to "responding for them" — toggle off
+                      to let them reply on their own.
+                    </p>
+                    {otherGuestIndexes.map((i) => {
+                      const guestId = fields[i].guestId
+                      const g = guestById.get(guestId)
+                      return (
+                        <GuestResponseCard
+                          key={fields[i].id}
+                          guestName={g?.displayName ?? ''}
+                          guestFirstName={g?.firstName}
+                          events={data.events}
+                          invitationNotesSchema={data.invitationNotesSchema}
+                          showRespondingToggle
+                          control={control}
+                          draftIndex={i}
+                          errors={formState.errors.drafts?.[i]}
+                        />
+                      )
+                    })}
+                  </>
+                )}
+              </>
+            )}
+
+            {data.events.length > 0 && (
+              <>
+                <div className={styles.submitRow}>
+                  <button
+                    type="submit"
+                    className={styles.submit}
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Saving…' : 'Save response'}
+                  </button>
+                </div>
+                <ErrorMessage>{submitError}</ErrorMessage>
+              </>
+            )}
+          </form>
         )}
       </div>
     </div>

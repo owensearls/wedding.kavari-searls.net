@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useFieldArray, useForm, useWatch } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Button } from '../../components/ui/Button'
 import { EditFormActions } from '../../components/ui/EditFormActions'
 import { EditFormSection } from '../../components/ui/EditFormSection'
@@ -13,9 +13,11 @@ import { RemoveButton } from '../../components/ui/RemoveButton'
 import { SectionLabel } from '../../components/ui/SectionLabel'
 import {
   adminGroupInputSchema,
+  type AdminFieldDraft,
   type AdminGroupInput,
   type AdminGuestInput,
 } from '../../schema'
+import { CustomFieldsEditor } from './CustomFieldsEditor'
 import styles from './EditGroupForm.module.css'
 import type { AdminEventRecord } from '../../server/admin/events'
 import type { z } from 'zod'
@@ -221,6 +223,27 @@ export function EditGroupForm({
               ))}
             </div>
           )}
+        </EditFormSection>
+
+        <EditFormSection>
+          <SectionLabel>Custom fields for this invite</SectionLabel>
+          <p
+            className={styles.muted}
+            style={{ marginTop: 0, marginBottom: 16 }}
+          >
+            Questions every guest in this invite will see at submit time.
+            Defaults come from Settings; edit per invite as needed.
+          </p>
+          <Controller
+            control={control}
+            name="notesSchema"
+            render={({ field }) => (
+              <CustomFieldsEditor
+                fields={(field.value as AdminFieldDraft[] | undefined) ?? []}
+                onChange={field.onChange}
+              />
+            )}
+          />
         </EditFormSection>
 
         <EditFormActions>

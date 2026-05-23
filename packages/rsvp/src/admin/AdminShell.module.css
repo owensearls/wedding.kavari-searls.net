@@ -36,6 +36,18 @@
   border-bottom: 2px solid #6e6b60;
 }
 
+.navIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  padding: 6px;
+}
+
+.navIcon:hover {
+  color: #4a4842;
+}
+
 .main {
   padding: 24px;
   max-width: 1200px;

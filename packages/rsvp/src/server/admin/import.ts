@@ -9,6 +9,16 @@ function getDbConn() {
   return getDb(getEnv().DB)
 }
 
+async function getDefaultInvitationNotesSchemaRaw(): Promise<string | null> {
+  const db = getDbConn()
+  const row = await db
+    .selectFrom('admin_settings')
+    .select('default_invitation_notes_schema')
+    .where('id', '=', 'default')
+    .executeTakeFirst()
+  return row?.default_invitation_notes_schema ?? null
+}
+
 export interface ImportResult {
   created: {
     groupId: string
@@ -43,6 +53,7 @@ export async function importRows(
   const db = getDbConn()
   const events = await db.selectFrom('event').select(['id', 'slug']).execute()
   const eventBySlug = new Map(events.map((e) => [e.slug, e.id]))
+  const defaultNotesSchemaRaw = await getDefaultInvitationNotesSchemaRaw()
 
   // Rows with no groupLabel become solo invites; group each one under a unique
   // synthetic key so they don't collide with each other in the grouping map.
@@ -132,6 +143,7 @@ export async function importRows(
           id: newId('inv'),
           guest_id: leaderId!,
           event_id: eventId,
+          notes_schema: defaultNotesSchemaRaw,
         })
         .execute()
     }

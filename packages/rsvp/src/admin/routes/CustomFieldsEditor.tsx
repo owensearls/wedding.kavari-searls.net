@@ -1,6 +1,7 @@
 'use client'
 
 import { newId } from 'db'
+import { useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { FieldGroup } from '../../components/ui/FieldGroup'
 import { FormGrid } from '../../components/ui/FormGrid'
@@ -46,6 +47,16 @@ export function CustomFieldsEditor({
   fields,
   onChange,
 }: CustomFieldsEditorProps) {
+  // Stable per-slot ids for React keys. The draft type doesn't carry an
+  // id and the `key` field is user-editable (and starts empty), so we
+  // mint a uid per slot here and keep it in lock-step with add/remove.
+  // Initial length matches the incoming fields; subsequent length changes
+  // only happen through `add`/`remove` below.
+  const [ids, setIds] = useState<string[]>(() =>
+    fields.map(() => crypto.randomUUID())
+  )
+  const keyAt = (idx: number) => ids[idx] ?? `slot-${idx}`
+
   function update(idx: number, patch: Partial<AdminFieldDraft>) {
     const next = [...fields]
     next[idx] = { ...next[idx], ...patch }
@@ -57,6 +68,7 @@ export function CustomFieldsEditor({
   }
 
   function add() {
+    setIds((prev) => [...prev, crypto.randomUUID()])
     onChange([
       ...fields,
       {
@@ -67,6 +79,7 @@ export function CustomFieldsEditor({
   }
 
   function remove(idx: number) {
+    setIds((prev) => prev.filter((_, i) => i !== idx))
     onChange(fields.filter((_, i) => i !== idx))
   }
 
@@ -75,7 +88,7 @@ export function CustomFieldsEditor({
       {fields.map((draft, idx) => {
         const type = fieldType(draft.field)
         return (
-          <div key={idx} className={styles.fieldBlock}>
+          <div key={keyAt(idx)} className={styles.fieldBlock}>
             <FormGrid cols={3}>
               <FieldGroup label="Label">
                 <input
@@ -135,7 +148,7 @@ export function CustomFieldsEditor({
             {isSingleSelect(draft.field) && (
               <div className={styles.options}>
                 {draft.field.oneOf.map((opt, oi) => (
-                  <div key={oi} className={styles.optionRow}>
+                  <div key={opt.const} className={styles.optionRow}>
                     <input
                       className="admin-input"
                       placeholder="Option label"

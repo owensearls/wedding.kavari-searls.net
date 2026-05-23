@@ -5,18 +5,26 @@
 
 .content {
   position: relative;
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 60px 25px 80px;
+  padding: 60px 25px 100px;
 }
 
 .backLink {
   display: inline-block;
   color: #6e6b60;
   text-decoration: none;
-  font-size: 16px;
-  border-bottom: 1px solid #6e6b60;
-  margin-bottom: 24px;
+  font-size: 14px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.4);
+  margin-bottom: 32px;
+  padding-bottom: 1px;
+  transition: border-color 160ms ease;
+}
+
+.backLink:hover {
+  border-bottom-color: #4a4842;
 }
 
 .heading {
@@ -32,119 +40,51 @@
   margin-bottom: 32px;
 }
 
-.eventCard {
-  border: 1px solid #6e6b60;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.eventName {
-  margin: 0 0 4px 0;
-}
-
-.eventMeta {
-  font-size: 16px;
-  color: #6e6b60;
+.empty {
+  text-align: center;
   font-style: italic;
-  margin-bottom: 18px;
+  color: #6e6b60;
+  padding: 30px;
+  background: rgba(253, 251, 244, 0.7);
+  border: 1px dashed rgba(110, 107, 96, 0.3);
 }
 
-.eventCardSingle {
+.sectionDivider {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
+  margin: 48px 0 8px;
+  animation: fadeUp 700ms ease both;
 }
 
-.eventCardSingle .eventName {
-  margin-bottom: 0;
-}
-
-.eventCardSingle .eventMeta {
-  margin-bottom: 0;
-}
-
-.guestRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px 16px;
-  align-items: center;
-  padding: 12px 0;
-  border-top: 1px solid rgba(110, 107, 96, 0.25);
-}
-
-.guestRow:first-of-type {
-  border-top: none;
-}
-
-.guestName {
-  font-size: 18px;
-  color: #6e6b60;
-}
-
-.toggleGroup {
-  display: inline-flex;
-  border: 1px solid #6e6b60;
-}
-
-.toggleButton {
-  padding: 8px 14px;
-  font-size: 15px;
-  font-family: inherit;
-  background: rgba(255, 255, 255, 0.85);
-  color: #6e6b60;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-  border-left: 1px solid #6e6b60;
-}
-
-.toggleButton:first-child {
-  border-left: none;
-}
-
-.toggleButtonActive {
-  background: #6e6b60;
-  color: white;
-}
-
-.mealRow {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 16px;
-  color: #6e6b60;
-}
-
-.select,
-.textarea {
-  padding: 8px 10px;
-  font-size: 16px;
-  font-family: inherit;
-  color: #6e6b60;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid #6e6b60;
-  border-radius: 0;
-  outline: none;
+.dividerLine {
   flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(110, 107, 96, 0.5),
+    transparent
+  );
 }
 
-.detailsCard {
-  border: 1px solid #6e6b60;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 24px;
-  margin-bottom: 24px;
+.dividerLabel {
+  font-family:
+    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: clamp(18px, 2.4vw, 22px);
+  color: #4a4842;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.fieldLabel {
-  display: block;
-  font-size: 16px;
-  color: #6e6b60;
-  margin-bottom: 6px;
-  margin-top: 14px;
+.dividerHint {
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+  color: rgba(110, 107, 96, 0.85);
+  margin: 0 0 22px;
+  letter-spacing: 0.02em;
 }
 
 .submitRow {
@@ -169,17 +109,105 @@
   cursor: not-allowed;
 }
 
-.centered {
-  text-align: center;
-}
-
-.detailsHeading {
-  margin: 0 0 8px 0;
-}
-
 .success {
+  position: relative;
   text-align: center;
-  padding: 30px 20px;
+  padding: 48px 32px 40px;
+  margin-top: 32px;
+  background: rgba(253, 251, 244, 0.96);
+  border: 1px solid rgba(110, 107, 96, 0.4);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 18px 40px -28px rgba(74, 72, 66, 0.35);
+}
+
+.success::before,
+.success::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: rgba(110, 107, 96, 0.18);
+  pointer-events: none;
+}
+
+.success::before {
+  top: 12px;
+}
+
+.success::after {
+  bottom: 12px;
+}
+
+.successHeading {
+  font-family:
+    'Baskerville', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #4a4842;
+  font-size: clamp(28px, 4vw, 36px);
+  letter-spacing: 0.005em;
+  line-height: 1.05;
+  margin: 0 0 14px;
+}
+
+.successCopy {
+  font-family: inherit;
+  font-style: italic;
+  color: #6e6b60;
+  font-size: 17px;
+  line-height: 1.55;
+  max-width: 440px;
+  margin: 0 auto 26px;
+}
+
+.editButton {
+  padding: 8px 18px;
+  font-size: 15px;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.85);
+  color: #6e6b60;
   border: 1px solid #6e6b60;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 0;
+  cursor: pointer;
+  transition: none;
+}
+
+.editButton:hover {
+  background: #6e6b60;
+  color: white;
+  border-color: #6e6b60;
+}
+
+.editButton:focus {
+  outline: none;
+}
+
+.editButton:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #4a4842;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 36px 18px 80px;
+  }
+  .pageHead {
+    margin-bottom: 30px;
+  }
+  .sectionDivider {
+    margin-top: 32px;
+  }
 }

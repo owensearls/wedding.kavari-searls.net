@@ -4,30 +4,19 @@ import {
   fieldsInOrder,
   findOption,
   getDb,
-  GUEST_PROFILE_NOTES_SCHEMA,
   isShortTextField,
   isSingleSelectField,
   latestGuestResponses,
-  latestRsvpResponses,
-  parseNotesSchema,
   type NotesJson,
   type NotesJsonSchema,
 } from 'db'
 import { getEnv } from 'db/context'
+import { RscFunctionError } from 'rsc-utils/functions/server'
+import { parseNotesJson, safeParseNotesSchema } from './utils'
 import type { AdminResponseRow } from '../../schema'
 
 function getDbConn() {
   return getDb(getEnv().DB)
-}
-
-function parseNotesJson(raw: string | null): NotesJson {
-  if (!raw) return {}
-  try {
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
 }
 
 function formatAnswersForCsv(
@@ -73,45 +62,50 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
   const eventById = new Map(events.map((e) => [e.id, e]))
   const eventSchemaById = new Map<string, NotesJsonSchema | null>()
   for (const e of events) {
-    try {
-      eventSchemaById.set(e.id, parseNotesSchema(e.notes_schema))
-    } catch {
-      eventSchemaById.set(e.id, null)
-    }
+    eventSchemaById.set(e.id, safeParseNotesSchema(e.notes_schema))
   }
 
   const invitations = await db
     .selectFrom('invitation')
-    .select(['guest_id', 'event_id'])
+    .select(['guest_id', 'event_id', 'notes_schema'])
     .execute()
+  const invitationSchemaByLeader = new Map<string, NotesJsonSchema | null>()
+  const eventIdsByLeader = new Map<string, string[]>()
+  for (const inv of invitations) {
+    if (!invitationSchemaByLeader.has(inv.guest_id)) {
+      invitationSchemaByLeader.set(
+        inv.guest_id,
+        safeParseNotesSchema(inv.notes_schema)
+      )
+    }
+    const arr = eventIdsByLeader.get(inv.guest_id) ?? []
+    arr.push(inv.event_id)
+    eventIdsByLeader.set(inv.guest_id, arr)
+  }
 
-  const latestRsvps = await latestRsvpResponses(db)
-  const rsvpKey = (g: string, e: string) => `${g}::${e}`
-  const rsvpMap = new Map(
-    latestRsvps.map((r) => [rsvpKey(r.guestId, r.eventId), r])
-  )
-
-  const latestGuests = await latestGuestResponses(db)
-  const guestRespMap = new Map(latestGuests.map((r) => [r.guestId, r]))
+  const latest = await latestGuestResponses(db)
+  const latestByGuestId = new Map(latest.map((r) => [r.guestId, r]))
 
   const out: AdminResponseRow[] = []
   for (const g of guests) {
     const leaderId = g.partyLeaderId ?? g.guestId
-    const eventIdsForGroup = invitations
-      .filter((i) => i.guest_id === leaderId)
-      .map((i) => i.event_id)
-    const guestResponse = guestRespMap.get(g.guestId)
+    const eventIdsForGroup = eventIdsByLeader.get(leaderId) ?? []
+    const lr = latestByGuestId.get(g.guestId)
+    const guestEventByEventId = new Map(
+      (lr?.events ?? []).map((e) => [e.eventId, e])
+    )
+    const inviteSchema = invitationSchemaByLeader.get(leaderId) ?? null
     const guestAnswers = formatAnswersForCsv(
-      GUEST_PROFILE_NOTES_SCHEMA,
-      parseNotesJson(guestResponse?.notesJson ?? null)
+      inviteSchema,
+      parseNotesJson(lr?.notesJson ?? null)
     )
     for (const eid of eventIdsForGroup) {
       const ev = eventById.get(eid)
       if (!ev) continue
-      const r = rsvpMap.get(rsvpKey(g.guestId, eid))
+      const eventResp = guestEventByEventId.get(eid)
       const eventAnswers = formatAnswersForCsv(
         eventSchemaById.get(eid) ?? null,
-        parseNotesJson(r?.notesJson ?? null)
+        parseNotesJson(eventResp?.notesJson ?? null)
       )
       const customAnswers = [eventAnswers, guestAnswers]
         .filter((s) => s.length > 0)
@@ -121,10 +115,9 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
         inviteCode: g.inviteCode ?? '',
         guestName: g.guestName,
         eventName: ev.name,
-        status: r?.status ?? 'pending',
+        status: eventResp?.status ?? 'pending',
         customAnswers,
-        notes: guestResponse?.notes ?? null,
-        respondedAt: r?.respondedAt ?? null,
+        respondedAt: eventResp ? (lr?.respondedAt ?? null) : null,
       })
     }
   }
@@ -132,48 +125,43 @@ export async function listResponses(): Promise<{ rows: AdminResponseRow[] }> {
 }
 
 // ── Merged log ──────────────────────────────────────────────────────────
+//
+// One log row per guest_response (the parent). Each carries the guest's
+// invite-level notes plus the child event responses (status + per-event
+// notes), matching the canonical guest-response data model.
 
-export type LogRowKind = 'rsvp' | 'guest'
+export interface AdminLogEventEntry {
+  eventId: string
+  eventName: string
+  status: 'attending' | 'declined'
+  notesJson: NotesJson
+  eventNotesSchema: NotesJsonSchema | null
+}
 
 export interface AdminLogRow {
   id: string
-  kind: LogRowKind
   respondedAt: string
   guestName: string
-  subject: string | null
-  status: 'attending' | 'declined' | null
-  notes: string | null
   notesJson: NotesJson
-  notesSchema: NotesJsonSchema | null
+  invitationNotesSchema: NotesJsonSchema | null
+  events: AdminLogEventEntry[]
   respondedByDisplayName: string | null
 }
 
 export async function listLog(): Promise<{ rows: AdminLogRow[] }> {
+  try {
+    return await listLogInner()
+  } catch (err) {
+    const message =
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    throw new RscFunctionError(500, `Activity log failed: ${message}`)
+  }
+}
+
+async function listLogInner(): Promise<{ rows: AdminLogRow[] }> {
   const db = getDbConn()
 
-  const rsvpRows = await db
-    .selectFrom('rsvp_response')
-    .innerJoin('guest', 'guest.id', 'rsvp_response.guest_id')
-    .innerJoin('event', 'event.id', 'rsvp_response.event_id')
-    .leftJoin(
-      'guest as responder',
-      'responder.id',
-      'rsvp_response.responded_by_guest_id'
-    )
-    .select([
-      'rsvp_response.id as id',
-      'rsvp_response.responded_at as respondedAt',
-      'rsvp_response.event_id as eventId',
-      'rsvp_response.status as status',
-      'rsvp_response.notes_json as notesJson',
-      'guest.display_name as guestName',
-      'event.name as eventName',
-      'event.notes_schema as eventNotesSchema',
-      'responder.display_name as responderName',
-    ])
-    .execute()
-
-  const guestRows = await db
+  const parents = await db
     .selectFrom('guest_response')
     .innerJoin('guest', 'guest.id', 'guest_response.guest_id')
     .leftJoin(
@@ -184,51 +172,83 @@ export async function listLog(): Promise<{ rows: AdminLogRow[] }> {
     .select([
       'guest_response.id as id',
       'guest_response.responded_at as respondedAt',
-      'guest.display_name as guestName',
-      'guest_response.notes as notes',
       'guest_response.notes_json as notesJson',
+      'guest_response.guest_id as guestId',
+      'guest.display_name as guestName',
+      'guest.party_leader_id as partyLeaderId',
       'responder.display_name as responderName',
     ])
     .execute()
 
-  const rsvpMapped: AdminLogRow[] = rsvpRows.map((r) => {
-    let schema: NotesJsonSchema | null
-    try {
-      schema = parseNotesSchema(r.eventNotesSchema)
-    } catch {
-      schema = null
-    }
+  if (parents.length === 0) return { rows: [] }
+
+  const parentIds = parents.map((p) => p.id)
+  const children = await db
+    .selectFrom('guest_invitation_response')
+    .innerJoin('event', 'event.id', 'guest_invitation_response.event_id')
+    .select([
+      'guest_invitation_response.guest_response_id as guestResponseId',
+      'guest_invitation_response.event_id as eventId',
+      'guest_invitation_response.status as status',
+      'guest_invitation_response.notes_json as notesJson',
+      'event.name as eventName',
+      'event.notes_schema as eventNotesSchema',
+    ])
+    .where('guest_response_id', 'in', parentIds)
+    .execute()
+
+  const childrenByParent = new Map<string, typeof children>()
+  for (const c of children) {
+    const arr = childrenByParent.get(c.guestResponseId) ?? []
+    arr.push(c)
+    childrenByParent.set(c.guestResponseId, arr)
+  }
+
+  // Pull invitation notes_schema by leader (one per guest's party) so
+  // each log row can render the invite-level answers with labels.
+  const leaderIds = Array.from(
+    new Set(parents.map((p) => p.partyLeaderId ?? p.guestId))
+  )
+  const invitations = leaderIds.length
+    ? await db
+        .selectFrom('invitation')
+        .select(['guest_id', 'notes_schema'])
+        .where('guest_id', 'in', leaderIds)
+        .execute()
+    : []
+  const inviteSchemaByLeader = new Map<string, NotesJsonSchema | null>()
+  for (const inv of invitations) {
+    if (inviteSchemaByLeader.has(inv.guest_id)) continue
+    inviteSchemaByLeader.set(
+      inv.guest_id,
+      safeParseNotesSchema(inv.notes_schema)
+    )
+  }
+
+  const rows: AdminLogRow[] = parents.map((p) => {
+    const leader = p.partyLeaderId ?? p.guestId
+    const childRows = childrenByParent.get(p.id) ?? []
     return {
-      id: r.id,
-      kind: 'rsvp',
-      respondedAt: r.respondedAt,
-      guestName: r.guestName,
-      subject: r.eventName,
-      status: r.status,
-      notes: null,
-      notesJson: parseNotesJson(r.notesJson),
-      notesSchema: schema,
-      respondedByDisplayName: r.responderName ?? null,
+      id: p.id,
+      respondedAt: p.respondedAt,
+      guestName: p.guestName,
+      notesJson: parseNotesJson(p.notesJson),
+      invitationNotesSchema: inviteSchemaByLeader.get(leader) ?? null,
+      events: childRows.map((c) => ({
+        eventId: c.eventId,
+        eventName: c.eventName,
+        status: c.status,
+        notesJson: parseNotesJson(c.notesJson),
+        eventNotesSchema: safeParseNotesSchema(c.eventNotesSchema),
+      })),
+      respondedByDisplayName: p.responderName ?? null,
     }
   })
 
-  const guestMapped: AdminLogRow[] = guestRows.map((r) => ({
-    id: r.id,
-    kind: 'guest',
-    respondedAt: r.respondedAt,
-    guestName: r.guestName,
-    subject: null,
-    status: null,
-    notes: r.notes,
-    notesJson: parseNotesJson(r.notesJson),
-    notesSchema: GUEST_PROFILE_NOTES_SCHEMA,
-    respondedByDisplayName: r.responderName ?? null,
-  }))
-
-  const all = [...rsvpMapped, ...guestMapped].sort((a, b) => {
+  rows.sort((a, b) => {
     if (a.respondedAt === b.respondedAt) return a.id < b.id ? 1 : -1
     return a.respondedAt < b.respondedAt ? 1 : -1
   })
 
-  return { rows: all }
+  return { rows }
 }

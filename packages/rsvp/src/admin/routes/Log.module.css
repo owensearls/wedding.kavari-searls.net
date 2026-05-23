@@ -3,3 +3,210 @@
   flex-direction: column;
   gap: 24px;
 }
+
+/* ── Column widths ──────────────────────────────────────────────────── */
+
+.colEvent {
+  width: 28%;
+}
+
+.colStatus {
+  width: 110px;
+}
+
+.colAnswers {
+  width: auto;
+}
+
+/* ── Banner row (one per guest_response) ────────────────────────────── */
+/*
+ * The banner is the "header" of a complex grouped row — it carries all the
+ * parent guest_response data (name, timestamp, invite-level answers,
+ * responded-by, id) and visually opens a new group. A warm-cream background,
+ * thicker top border, and a left rail tie the subsequent event sub-rows to
+ * this header.
+ */
+
+.bannerRow td {
+  background: #ebe5d6;
+  padding: 12px 16px 10px 18px;
+  border-top: 2px solid #6e6b60;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.4);
+  box-shadow: inset 4px 0 0 #6e6b60;
+}
+
+.bannerTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.guestName {
+  font-size: 17px;
+  font-weight: 600;
+  color: #3a3833;
+  letter-spacing: -0.005em;
+}
+
+.timestamp {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6e6b60;
+  font-variant-numeric: tabular-nums;
+}
+
+.timestampDate {
+  font-weight: 600;
+}
+
+.timestampDot {
+  opacity: 0.5;
+}
+
+.timestampTime {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #4a4842;
+}
+
+.bannerMeta {
+  margin-top: 6px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.bannerAnswers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+  color: #4a4842;
+}
+
+.bannerByline {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12px;
+  color: #6e6b60;
+  margin-left: auto;
+}
+
+.respondedBy {
+  font-style: italic;
+}
+
+.bylineLabel {
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+  color: #8a8576;
+  margin-right: 2px;
+}
+
+.responseId {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: #8a8576;
+  padding: 1px 5px;
+  border: 1px solid rgba(110, 107, 96, 0.35);
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+
+/* ── Event sub-rows ─────────────────────────────────────────────────── */
+
+.eventRow td {
+  background: white;
+  font-size: 14px;
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(110, 107, 96, 0.12);
+}
+
+.eventRow td:first-child {
+  box-shadow: inset 4px 0 0 #d6cfba;
+  padding-left: 22px;
+}
+
+/* The last event sub-row inside a group sits flush against the next
+ * banner's 2px top border, so drop its own bottom border to avoid a
+ * doubled line. */
+.eventRow:last-of-type td {
+  border-bottom: none;
+}
+
+.eventName {
+  font-weight: 500;
+  color: #3a3833;
+}
+
+.answersCell {
+  color: #4a4842;
+}
+
+.answersList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.answerChip {
+  white-space: nowrap;
+}
+
+.customLabel {
+  color: var(--admin-muted, #6b7280);
+  margin-right: 4px;
+}
+
+.dash {
+  color: #b0aca0;
+}
+
+.noEvents {
+  font-style: italic;
+  color: #8a8576;
+  font-size: 13px;
+  padding-left: 22px !important;
+  box-shadow: inset 4px 0 0 #d6cfba;
+}
+
+/* ── Mobile ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .bannerRow td {
+    padding: 10px 12px 8px 14px;
+  }
+
+  .guestName {
+    font-size: 15px;
+  }
+
+  .bannerByline {
+    margin-left: 0;
+  }
+
+  .colEvent {
+    width: 40%;
+  }
+
+  .colStatus {
+    width: 90px;
+  }
+
+  .eventRow td {
+    font-size: 13px;
+  }
+}

@@ -1,7 +1,5 @@
-import { fieldsInOrder, type NotesJsonSchema } from 'db'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { statusClassName } from '../../components/ui/statusHelpers'
-import { renderFieldValue } from '../lib/customFieldRender'
 import styles from './GuestList.module.css'
 import type { AdminGroupListItem } from '../../schema'
 import type { AdminEventRecord } from '../../server/admin/events'
@@ -9,7 +7,6 @@ import type { AdminEventRecord } from '../../server/admin/events'
 interface GroupBlockProps {
   group: AdminGroupListItem
   eventColumns: AdminEventRecord[]
-  guestNotesSchema: NotesJsonSchema
   colCount: number
   onEdit: () => void
   onOpenGuest: (guestId: string) => void
@@ -18,13 +15,11 @@ interface GroupBlockProps {
 export function GroupBlock({
   group,
   eventColumns,
-  guestNotesSchema,
   colCount,
   onEdit,
   onOpenGuest,
 }: GroupBlockProps) {
   const showHeader = group.guestCount > 1
-  const guestFields = fieldsInOrder(guestNotesSchema)
   return (
     <>
       {showHeader && (
@@ -76,18 +71,6 @@ export function GroupBlock({
             return (
               <td key={ev.id} className={statusClassName(s?.status)}>
                 <StatusBadge status={s?.status} />
-              </td>
-            )
-          })}
-          <td>{guest.notes ?? ''}</td>
-          {guestFields.map(({ key, field }, i) => {
-            const value = renderFieldValue(field, guest.notesJson[key])
-            return (
-              <td
-                key={key}
-                className={i === 0 ? styles.customDivider : undefined}
-              >
-                {value === '—' ? '' : value}
               </td>
             )
           })}

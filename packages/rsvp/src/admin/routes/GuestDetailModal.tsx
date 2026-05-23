@@ -14,7 +14,7 @@ import styles from './GuestList.module.css'
 import type { AdminGuestDetail } from '../../schema'
 
 type GuestDetailWithFields = AdminGuestDetail & {
-  guestNotesSchema: NotesJsonSchema
+  invitationNotesSchema: NotesJsonSchema | null
   eventNotesSchemaByEvent: Record<string, NotesJsonSchema | null>
 }
 
@@ -43,6 +43,9 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
   }, [guestId])
 
   const title = data?.displayName ?? 'Guest details'
+  const inviteFields = data?.invitationNotesSchema
+    ? fieldsInOrder(data.invitationNotesSchema)
+    : []
 
   return (
     <Modal title={title} onClose={onClose}>
@@ -76,20 +79,14 @@ export function GuestDetailModal({ guestId, onClose }: GuestDetailModalProps) {
                 <div>{data.phone}</div>
               </>
             )}
-            {data.notes && (
-              <>
-                <div className={styles.detailLabel}>Notes</div>
-                <div>{data.notes}</div>
-              </>
-            )}
           </div>
 
-          {fieldsInOrder(data.guestNotesSchema).length > 0 && (
+          {inviteFields.length > 0 && (
             <div
               className={`${styles.detailGrid} ${styles.customDivider}`}
               style={{ marginTop: 12, paddingLeft: 12 }}
             >
-              {fieldsInOrder(data.guestNotesSchema).map(({ key, field }) => {
+              {inviteFields.map(({ key, field }) => {
                 const v = renderFieldValue(field, data.notesJson[key])
                 return (
                   <div key={key} style={{ display: 'contents' }}>
