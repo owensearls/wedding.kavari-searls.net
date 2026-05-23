@@ -112,11 +112,7 @@ export function SettingsForm() {
   }
 
   return (
-    <EditFormShell
-      title="Settings"
-      backLabel="← Back to guests"
-      onBack={() => window.location.assign('/admin/')}
-    >
+    <EditFormShell title="Settings">
       {loading ? (
         <LoadingIndicator />
       ) : (
