@@ -119,9 +119,7 @@ export function Log() {
                                   key={a.label}
                                   className={styles.answerChip}
                                 >
-                                  <span
-                                    className={guestListStyles.customLabel}
-                                  >
+                                  <span className={guestListStyles.customLabel}>
                                     {a.label}:
                                   </span>
                                   {a.value}

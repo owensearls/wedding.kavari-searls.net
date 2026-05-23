@@ -60,33 +60,40 @@ export function GuestResponseCard({
       {!isCollapsed && (
         <>
           <ul className={styles.events}>
-            {events.map((event) => (
-              <li key={event.id} className={styles.event}>
-                <div className={styles.eventHead}>
-                  <div className={styles.eventTitleBlock}>
-                    <span className={styles.eventName}>{event.name}</span>
-                    {(formatRsvpDate(event.startsAt) || event.locationName) && (
-                      <span className={styles.eventMeta}>
-                        {[formatRsvpDate(event.startsAt), event.locationName]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    )}
+            {events.map((event) => {
+              const eventState = eventByEventId.get(event.id)
+              const showNotes =
+                event.notesSchema !== null && eventState?.status === 'attending'
+              return (
+                <li key={event.id} className={styles.event}>
+                  <div className={styles.eventHead}>
+                    <div className={styles.eventTitleBlock}>
+                      <span className={styles.eventName}>{event.name}</span>
+                      {(formatRsvpDate(event.startsAt) ||
+                        event.locationName) && (
+                        <span className={styles.eventMeta}>
+                          {[formatRsvpDate(event.startsAt), event.locationName]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      )}
+                    </div>
+                    <StatusToggle
+                      value={eventState?.status ?? null}
+                      onChange={(next) => onEventStatusChange(event.id, next)}
+                    />
                   </div>
-                  <StatusToggle
-                    value={eventByEventId.get(event.id)?.status ?? null}
-                    onChange={(next) => onEventStatusChange(event.id, next)}
-                  />
-                </div>
-                {event.notesSchema && (
-                  <EventNotesGrid
-                    schema={event.notesSchema}
-                    values={eventByEventId.get(event.id)?.notesJson ?? {}}
-                    onChange={(k, v) => onEventNoteChange(event.id, k, v)}
-                  />
-                )}
-              </li>
-            ))}
+                  {showNotes && (
+                    <EventNotesGrid
+                      schema={event.notesSchema!}
+                      values={eventState?.notesJson ?? {}}
+                      onChange={(k, v) => onEventNoteChange(event.id, k, v)}
+                      idPrefix={`evt-${draft.guestId}-${event.id}`}
+                    />
+                  )}
+                </li>
+              )
+            })}
           </ul>
 
           {inviteFields.length > 0 && (
@@ -172,10 +179,12 @@ function EventNotesGrid({
   schema,
   values,
   onChange,
+  idPrefix,
 }: {
   schema: NotesJsonSchema
   values: Record<string, string | null>
   onChange: (key: string, value: string) => void
+  idPrefix: string
 }) {
   const fields = fieldsInOrder(schema)
   if (fields.length === 0) return null
@@ -187,7 +196,7 @@ function EventNotesGrid({
           field={field}
           value={values[key] ?? ''}
           onChange={(next) => onChange(key, next)}
-          id={`evt-${key}`}
+          id={`${idPrefix}-${key}`}
           variant="inline"
         />
       ))}
