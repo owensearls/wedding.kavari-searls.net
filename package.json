@@ -12,7 +12,7 @@
     "format:check": "prettier --check .",
     "preview": "pnpm --filter rsvp build && pnpm --filter rsvp preview & sleep 3 && pnpm --filter frontend build && pnpm --filter frontend preview --port 4173",
     "predev": "pnpm --filter rsvp db:migrate:local",
-    "dev": "pnpm --filter rsvp build && concurrently -k -n rsvp,frontend pnpm:dev:rsvp \"wait-on tcp:5173 && pnpm --filter frontend dev\"",
+    "dev": "pnpm --filter rsvp build && node scripts/dev.mjs",
     "dev:rsvp": "pnpm --filter rsvp dev",
     "dev:frontend": "pnpm --filter frontend dev",
     "clean": "rm -rf .wrangler/state"
