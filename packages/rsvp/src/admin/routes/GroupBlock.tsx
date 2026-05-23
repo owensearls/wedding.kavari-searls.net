@@ -25,10 +25,7 @@ export function GroupBlock({
       className={`${styles.block} ${isSolo ? styles.blockSolo : styles.blockMulti}`}
       role="rowgroup"
     >
-      <div
-        className={styles.gutter}
-        style={{ gridRow: `1 / span ${rowSpan}` }}
-      >
+      <div className={styles.gutter} style={{ gridRow: `1 / span ${rowSpan}` }}>
         <button
           type="button"
           className={styles.gutterEdit}
