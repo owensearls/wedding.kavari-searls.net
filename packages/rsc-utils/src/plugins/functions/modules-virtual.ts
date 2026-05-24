@@ -21,5 +21,9 @@ export function modulesVirtualPlugin(include: string[]): Plugin {
 }
 
 function normalizeGlob(glob: string): string {
+  if (glob.startsWith('!')) {
+    const rest = glob.slice(1)
+    return `!${rest.startsWith('/') ? rest : `/${rest}`}`
+  }
   return glob.startsWith('/') ? glob : `/${glob}`
 }
