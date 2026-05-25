@@ -67,10 +67,10 @@ export default function Home() {
 
             <h2>Where is the wedding?</h2>
             <p>
-              We will be married at North Chapel in Woodstock, VT. The
-              address is 7 Church St, Woodstock VT 05091. The reception will be
-              at the Searls' family cottage in West Windsor, VT, an approximately
-              15 minute drive from the ceremony.{' '}
+              We will be married at North Chapel in Woodstock, VT. The address
+              is 7 Church St, Woodstock VT 05091. The reception will be at the
+              Searls' family cottage in West Windsor, VT, an approximately 15
+              minute drive from the ceremony.{' '}
             </p>
 
             <h2>What should I wear?</h2>
