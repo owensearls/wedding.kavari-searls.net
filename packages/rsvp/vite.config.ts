@@ -26,7 +26,13 @@ export default defineConfig(({ command }) => ({
     }),
     rsc({ serverHandler: false, loadModuleDevProxy: true }),
     react(),
-    rscFunctions(['src/server/admin/*.ts']),
+    rscFunctions([
+      'src/server/admin/*.ts',
+      // Exclude colocated test files — they'd otherwise be evaluated when
+      // collectActionIds walks the lazy module factories at server load,
+      // pulling in vitest from outside a vitest context.
+      '!src/server/admin/*.test.ts',
+    ]),
     rscStaticPages({
       pages: {
         '/': './src/admin/index.tsx',

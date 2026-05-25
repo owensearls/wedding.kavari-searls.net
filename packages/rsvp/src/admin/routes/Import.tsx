@@ -48,9 +48,32 @@ export function Import() {
     })
   }, [csv])
 
+  const unknownSlugs = useMemo(() => {
+    if (!preview || events.length === 0) return []
+    const known = new Set(events.map((e) => e.slug))
+    const unknown = new Set<string>()
+    for (const row of preview.data) {
+      const cell = row['events']
+      if (!cell) continue
+      for (const slug of cell
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)) {
+        if (!known.has(slug)) unknown.add(slug)
+      }
+    }
+    return Array.from(unknown).sort()
+  }, [preview, events])
+
   async function onSubmit() {
     if (!preview || preview.errors.length > 0) {
       setError('Fix the CSV before submitting.')
+      return
+    }
+    if (unknownSlugs.length > 0) {
+      setError(
+        `Unknown event slug${unknownSlugs.length === 1 ? '' : 's'}: ${unknownSlugs.join(', ')}. Fix the CSV or add the event.`
+      )
       return
     }
     setSubmitting(true)
@@ -101,7 +124,10 @@ export function Import() {
           off, labels group rows during import only and aren't stored.
         </label>
         <div className={styles.row}>
-          <Button onClick={onSubmit} disabled={submitting || !csv.trim()}>
+          <Button
+            onClick={onSubmit}
+            disabled={submitting || !csv.trim() || unknownSlugs.length > 0}
+          >
             {submitting ? 'Importing…' : 'Import'}
           </Button>
           <Button variant="ghost" onClick={() => setCsv(EXAMPLE)}>
@@ -121,6 +147,11 @@ export function Import() {
                   .join('; ')}`
               : null}
           </ErrorMessage>
+          {unknownSlugs.length > 0 && (
+            <ErrorMessage>
+              {`Unknown event slug${unknownSlugs.length === 1 ? '' : 's'}: ${unknownSlugs.join(', ')}. Import is disabled until these are removed from the CSV or added as events.`}
+            </ErrorMessage>
+          )}
           <Table>
             <thead>
               <tr>

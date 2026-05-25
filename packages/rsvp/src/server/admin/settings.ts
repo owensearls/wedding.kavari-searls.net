@@ -16,6 +16,51 @@ function getDbConn() {
   return getDb(getEnv().DB)
 }
 
+export interface InviteCounts {
+  guests: number
+  invitations: number
+  responses: number
+}
+
+export async function getInviteCounts(): Promise<InviteCounts> {
+  const db = getDbConn()
+  const [guests, invitations, responses] = await Promise.all([
+    db
+      .selectFrom('guest')
+      .select((eb) => eb.fn.countAll<number>().as('n'))
+      .executeTakeFirstOrThrow(),
+    db
+      .selectFrom('invitation')
+      .select((eb) => eb.fn.countAll<number>().as('n'))
+      .executeTakeFirstOrThrow(),
+    db
+      .selectFrom('guest_response')
+      .select((eb) => eb.fn.countAll<number>().as('n'))
+      .executeTakeFirstOrThrow(),
+  ])
+  return {
+    guests: Number(guests.n),
+    invitations: Number(invitations.n),
+    responses: Number(responses.n),
+  }
+}
+
+export async function deleteAllInvites(): Promise<{
+  deletedGuests: number
+  deletedInvitations: number
+}> {
+  const db = getDbConn()
+  // guest_response rows reference guest.id with ON DELETE CASCADE, so any
+  // existing responses are cascade-deleted alongside their guest. The UI
+  // surfaces the response count in the confirmation so this isn't silent.
+  const invitations = await db.deleteFrom('invitation').execute()
+  const guests = await db.deleteFrom('guest').execute()
+  return {
+    deletedInvitations: Number(invitations[0]?.numDeletedRows ?? 0),
+    deletedGuests: Number(guests[0]?.numDeletedRows ?? 0),
+  }
+}
+
 export async function getAdminSettings(): Promise<AdminSettingsView> {
   const db = getDbConn()
   const row = await db

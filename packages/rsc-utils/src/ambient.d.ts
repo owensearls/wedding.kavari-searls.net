@@ -1,5 +1,5 @@
 declare module 'virtual:rsc-utils/functions/modules' {
-  export const modules: Record<string, Record<string, unknown>>
+  export const modules: Record<string, () => Promise<Record<string, unknown>>>
 }
 
 declare module 'virtual:rsc-utils/functions/config' {

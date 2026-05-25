@@ -12,11 +12,18 @@ export function modulesVirtualPlugin(include: string[]): Plugin {
     load(id) {
       if (id !== RESOLVED_ID) return
       const globs = include.map(normalizeGlob)
-      return `export const modules = import.meta.glob(${JSON.stringify(globs)}, { eager: true })\n`
+      // Lazy glob (no { eager: true }) so plugin-rsc's dynamic server-reference
+      // imports can actually code-split. Eager imports here would statically
+      // pin every server function file into the worker entry chunk.
+      return `export const modules = import.meta.glob(${JSON.stringify(globs)})\n`
     },
   }
 }
 
 function normalizeGlob(glob: string): string {
+  if (glob.startsWith('!')) {
+    const rest = glob.slice(1)
+    return `!${rest.startsWith('/') ? rest : `/${rest}`}`
+  }
   return glob.startsWith('/') ? glob : `/${glob}`
 }
