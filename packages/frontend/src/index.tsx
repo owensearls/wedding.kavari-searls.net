@@ -56,17 +56,30 @@ export default function Home() {
           <h1 style={{ textAlign: 'center', padding: '25px' }}>RSVP</h1>
           <RsvpLookup />
         </Section>
-        <Section id="faq" anchor="faq" minHeight="100dvh">
+        <Section id="faq" anchor="faq" minHeight="125dvh">
           <h1 style={{ textAlign: 'center', padding: '25px' }}>FAQ</h1>
           <div style={{ maxWidth: '600px', margin: '0 auto' }}>
             <h2>When is the wedding?</h2>
-            <p>September 19, 2026</p>
+            <p>
+              The ceremony will be at 2:30PM on September 19, 2026 followed by a
+              reception and dinner.
+            </p>
 
             <h2>Where is the wedding?</h2>
-            <p>Hartland, Vermont</p>
+            <p>
+              We will be married at North Chapel in Woodstock, VT. The address
+              is 7 Church St, Woodstock VT 05091. The reception will be at the
+              Searls' family cottage in West Windsor, VT, an approximately 15
+              minute drive from the ceremony.{' '}
+            </p>
 
             <h2>What should I wear?</h2>
-            <p>More details coming soon.</p>
+            <p>
+              The ceremony and reception will be semi-formal. However, the
+              reception will be primarily outdoors, so we encourage everyone to
+              dress comfortably for a fall evening in Vermont, with typical lows
+              in the mid-forties to fifies, and for walking on grass.{' '}
+            </p>
 
             <h2>Will there be accommodations nearby?</h2>
             <p>

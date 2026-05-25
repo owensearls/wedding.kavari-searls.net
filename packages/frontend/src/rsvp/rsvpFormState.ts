@@ -10,13 +10,18 @@ import type { RsvpGroupResponse } from '../schema'
 
 export const eventStatusFormSchema = z.union([z.literal(''), rsvpStatusSchema])
 
+// react-hook-form registers a Controller for every notes field, so an
+// optional field the guest never touches arrives here as `undefined`
+// rather than being absent. Accept `undefined` (not just null) so blank
+// optional answers don't fail validation and block submission. The
+// submission builder strips these undefined values before sending.
+const notesJsonShape = z.record(z.string(), z.string().nullable().optional())
+
 export const eventDraftFormSchema = z.object({
   eventId: z.string(),
   status: eventStatusFormSchema,
-  notesJson: z.record(z.string(), z.string().nullable()),
+  notesJson: notesJsonShape,
 })
-
-const notesJsonShape = z.record(z.string(), z.string().nullable())
 
 export const guestDraftFormSchema = z
   .object({

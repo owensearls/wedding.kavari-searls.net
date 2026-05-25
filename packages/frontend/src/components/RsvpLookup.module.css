@@ -12,6 +12,15 @@
   margin-bottom: 1.5em;
 }
 
+.subIntro {
+  color: #6e6b60;
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: -1.1em;
+  margin-bottom: 1.5em;
+}
+
 .form {
   display: flex;
   flex-direction: column;

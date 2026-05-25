@@ -63,6 +63,7 @@ export function RsvpLookup() {
           ? 'Enter your name to find your invitation.'
           : 'Enter the invite code from your invitation.'}
       </p>
+      <p className={styles.subIntro}>Please respond by July 19, 2026.</p>
       <form className={styles.form} onSubmit={onSubmit}>
         <div className={styles.row}>
           <input
