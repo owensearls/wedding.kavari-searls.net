@@ -10,6 +10,7 @@ import { GuestResponseCard } from './GuestResponseCard'
 import {
   buildInitialRsvpFormValues,
   rsvpFormSchema,
+  type EventDraftForm,
   type RsvpFormValues,
 } from './rsvpFormState'
 import styles from './RsvpFull.module.css'
@@ -18,6 +19,18 @@ import type {
   RsvpGroupResponse,
   RsvpSubmission,
 } from '../schema'
+
+// Untouched optional notes fields come through the form as `undefined`.
+// Drop them so the wire payload is a clean Record<string, string | null>.
+function stripUndefinedNotes(
+  notes: Record<string, string | null | undefined>
+): Record<string, string | null> {
+  const out: Record<string, string | null> = {}
+  for (const [key, value] of Object.entries(notes)) {
+    if (value !== undefined) out[key] = value
+  }
+  return out
+}
 
 export function RsvpFull() {
   const [code, setCode] = useState<string | null>(null)
@@ -84,24 +97,19 @@ export function RsvpFull() {
         .filter((d) => d.respondingFor)
         .map((d) => ({
           guestId: d.guestId,
-          notesJson: d.notesJson,
+          notesJson: stripUndefinedNotes(d.notesJson),
           events: d.events
             // After validation, statuses on responding-for guests are
             // either 'attending' or 'declined' — never ''. Filter
             // defensively so the type narrows.
             .filter(
-              (
-                e
-              ): e is {
-                eventId: string
-                status: 'attending' | 'declined'
-                notesJson: Record<string, string | null>
-              } => e.status !== ''
+              (e): e is EventDraftForm & { status: 'attending' | 'declined' } =>
+                e.status !== ''
             )
             .map((e) => ({
               eventId: e.eventId,
               status: e.status,
-              notesJson: e.notesJson,
+              notesJson: stripUndefinedNotes(e.notesJson),
             })),
         }))
       const submission: RsvpSubmission = {
