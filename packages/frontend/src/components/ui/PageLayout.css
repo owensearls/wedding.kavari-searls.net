@@ -20,7 +20,9 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
-  background-color: #e4e7e2;
+  /* iOS 26 ignores html for chrome tinting, but a non-transparent root still
+     avoids the white overscroll/rubber-band flash. */
+  background-color: #dde3dd;
 }
 
 body {
@@ -28,10 +30,63 @@ body {
   min-width: 320px;
   min-height: 100dvh;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Must stay transparent: an opaque body background paints over the negative
+     z-index background layers (gradient + watercolour) and hides them. The
+     iOS 26 chrome tint is handled by the opaque .chromeTint strips below,
+     which Safari samples per edge instead of the body's colour. */
   background: transparent;
 }
 
+/* iOS 26 Safari can't render a gradient behind the Liquid Glass bars; it
+   samples a single solid background-colour from a fixed element nearest each
+   edge (top bar and bottom bar sampled separately). These zero-height strips
+   live only in the unsafe areas, so they tint the chrome — sky behind the top
+   bar, lawn behind the bottom bar — without showing in the page content. */
+.chromeTint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.chromeTint--top {
+  top: 0;
+  height: env(safe-area-inset-top, 0px);
+  background-color: #cdd9e2;
+}
+.chromeTint--bottom {
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background-color: #c6d49d;
+}
+
+/* Visible base layer: a viewport-anchored gradient mirroring the watercolour's
+   colours top-to-bottom. It bleeds into the unsafe areas so it shows through
+   the translucent bars when scrolled. Being a position:fixed element, it needs
+   none of the background-attachment:fixed / scroll-timeline tricks that broke
+   on iOS. (The solid .chromeTint strips handle the bar tint at scroll top.) */
 body::before {
+  content: '';
+  position: fixed;
+  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
+    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
+  background: linear-gradient(
+    180deg,
+    #cdd9e2 0%,
+    #dde4e6 20%,
+    #e5e7e0 48%,
+    #dbe3cd 72%,
+    #cedaa9 88%,
+    #c6d49d 100%
+  );
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Watercolour sky/paper, layered over the gradient. It still bleeds behind the
+   chrome; wherever it falls short there, the colour-matched gradient shows
+   through instead of a flat grey strip. */
+body::after {
   content: '';
   position: fixed;
   inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
