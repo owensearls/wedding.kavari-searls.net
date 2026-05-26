@@ -1,4 +1,5 @@
 import './PageLayout.css'
+import { BackgroundCanvas } from '../BackgroundCanvas'
 import type { ReactNode } from 'react'
 
 interface PageLayoutProps {
@@ -42,13 +43,14 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         <title>{title}</title>
       </head>
       <body>
-        {/* Solid tint strips iOS 26 Safari samples to colour the Liquid Glass
-            bars. They sit only in the unsafe areas, so they're invisible in
-            page content. The bottom is a sky strip plus a lawn strip that
-            slides over it as the mountains rise (see PageLayout.css). */}
+        {/* Top: a static solid strip Safari samples to tint the top bar (sky).
+            Bottom: a <canvas> in the bottom safe-area strip painting the
+            gradient colour for the current scroll position. A canvas has no
+            background-color for Safari to sample, so this tests whether the
+            translucent bottom bar composites the canvas's live pixels (which
+            we can animate) instead — see BackgroundCanvas. */}
         <div className="chromeTint chromeTint--top" aria-hidden="true" />
-        <div className="chromeTint chromeTint--bottom" aria-hidden="true" />
-        <div className="chromeTint chromeTint--bottomLawn" aria-hidden="true" />
+        <BackgroundCanvas />
         {children}
         <script dangerouslySetInnerHTML={{ __html: initialScrollScript }} />
       </body>
