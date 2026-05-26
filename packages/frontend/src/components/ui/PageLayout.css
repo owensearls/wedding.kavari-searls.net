@@ -35,13 +35,16 @@ body {
      iOS 26 chrome tint is handled by the opaque .chromeTint strips below,
      which Safari samples per edge instead of the body's colour. */
   background: transparent;
+  /* Hoisted from .contentInner so the bottom chrome strip can animate on the
+     same --home-view timeline as the mountains. */
+  timeline-scope: --home-view;
 }
 
-/* iOS 26 Safari can't render a gradient behind the Liquid Glass bars; it
-   samples a single solid background-colour from a fixed element nearest each
-   edge (top bar and bottom bar sampled separately). These zero-height strips
-   live only in the unsafe areas, so they tint the chrome — sky behind the top
-   bar, lawn behind the bottom bar — without showing in the page content. */
+/* iOS 26 Safari tints each Liquid Glass bar by sampling the background-colour
+   of a fixed element nearest that edge (theme-color and html/body are ignored;
+   validated: jahir.dev/blog/safari-toolbar, grooovinger.com). These strips sit
+   in the unsafe areas so they tint the chrome without showing in page content.
+   They must carry a real background-colour (not a gradient/image). */
 .chromeTint {
   position: fixed;
   left: 0;
@@ -54,10 +57,45 @@ body {
   height: env(safe-area-inset-top, 0px);
   background-color: #cdd9e2;
 }
+/* Bottom is a two-strip swap. Safari samples a static colour fine but does NOT
+   re-sample an animated colour — so instead of tinting one strip's colour, we
+   slide a solid-green strip over a solid-sky strip with a scroll-driven
+   transform (the validated approach). Sky shows at the top of the page; the
+   lawn strip slides into the sample zone as the mountains rise. */
 .chromeTint--bottom {
   bottom: 0;
   height: env(safe-area-inset-bottom, 0px);
+  background-color: #cdd9e2;
+}
+.chromeTint--bottomLawn {
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
   background-color: #c6d49d;
+  z-index: 11;
+}
+
+/* Lawn strip parked just below the sample zone at the top of the page, sliding
+   up to cover the sky strip on the mountains' own --home-view timeline. We
+   animate transform (position), never background-color, so Safari re-samples
+   whichever solid strip is in the zone. */
+@keyframes chromeRevealLawn {
+  0% {
+    transform: translateY(110%);
+  }
+  8% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .chromeTint--bottomLawn {
+    animation: chromeRevealLawn linear both;
+    animation-timeline: --home-view;
+    animation-range: cover 0% cover 100%;
+  }
 }
 
 /* Visible base layer: a viewport-anchored gradient mirroring the watercolour's
