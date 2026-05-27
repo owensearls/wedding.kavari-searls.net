@@ -57,18 +57,19 @@ body {
   height: env(safe-area-inset-top, 0px);
   background-color: #cdd9e2;
 }
-/* Bottom: a <canvas> filling only the bottom safe-area strip (below the body's
-   safe-area padding, so it never overlaps page content). Unlike a coloured div,
-   a canvas exposes no background-color for Safari to sample — so this is a test
-   of whether the translucent bottom bar composites the canvas's live, animated
-   pixels. BackgroundCanvas repaints it sky→lawn as the user scrolls. */
+/* DIAGNOSTIC: a <canvas> tall enough to cover the Liquid Glass bottom bar's
+   whole footprint (safe-area strip + ~64px up into content), painted a vivid
+   colour by BackgroundCanvas. A canvas exposes no background-color to sample,
+   so this isolates whether the frosted bar composites the canvas's live pixels
+   at all. The +64px deliberately overlaps the bottom of page content — once we
+   know the result, shrink back to the safe-area strip / real palette. */
 .chromeCanvas {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
-  height: env(safe-area-inset-bottom, 0px);
+  height: calc(env(safe-area-inset-bottom, 0px) + 64px);
   z-index: 10;
   pointer-events: none;
 }

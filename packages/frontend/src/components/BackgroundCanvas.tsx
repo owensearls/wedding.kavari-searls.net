@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from 'react'
 
-// Endpoints of the existing body::before gradient: sky at the top of the page,
-// lawn green once the mountains have risen. We only simulate the COLOR here —
-// no images — painting a solid fill into the bottom safe-area strip that the
-// Liquid Glass bottom bar sits over.
-const SKY = [205, 217, 226] // #cdd9e2
-const LAWN = [198, 212, 157] // #c6d49d
+// DIAGNOSTIC: vivid, saturated endpoints (not the real palette) so it's
+// unmistakable whether the frosted bottom bar picks up the canvas at all, and
+// whether it tracks scroll. Revert to the real sky/lawn (#cdd9e2 / #c6d49d)
+// once we know. Paired with a canvas tall enough to cover the bar's footprint
+// (see .chromeCanvas height in PageLayout.css).
+const SKY = [10, 110, 230] // vivid blue
+const LAWN = [30, 170, 70] // vivid green
 
 const clamp = (n: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, n))
