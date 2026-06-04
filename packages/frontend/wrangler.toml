@@ -3,6 +3,12 @@ main = "./src/entry.worker.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
+routes = [
+  { pattern = "wedding.kavari-searls.net", custom_domain = true },
+  { pattern = "kavari-searls.net", custom_domain = true },
+  { pattern = "www.kavari-searls.net", custom_domain = true },
+]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "wedding-kavari-searls"
