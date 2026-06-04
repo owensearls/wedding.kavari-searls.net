@@ -58,7 +58,7 @@ export default function Home() {
         </Section>
         <Section id="faq" anchor="faq" minHeight="125dvh">
           <h1 style={{ textAlign: 'center', padding: '25px' }}>FAQ</h1>
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <div className={styles.faqContent}>
             <h2>When is the wedding?</h2>
             <p>
               The ceremony will be at 2:30PM on September 19, 2026 followed by a

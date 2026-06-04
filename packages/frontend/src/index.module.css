@@ -7,3 +7,16 @@
     font-size: 17px;
   }
 }
+
+.faqContent {
+  max-width: 600px;
+  margin: 0 auto;
+
+  @media (min-width: 768px) {
+    max-width: 720px;
+  }
+
+  @media (min-width: 1024px) {
+    max-width: 780px;
+  }
+}
