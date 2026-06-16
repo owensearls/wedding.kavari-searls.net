@@ -42,7 +42,7 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         <title>{title}</title>
       </head>
       <body>
-        {children}
+        <div id="app">{children}</div>
         <script dangerouslySetInnerHTML={{ __html: initialScrollScript }} />
       </body>
     </html>
