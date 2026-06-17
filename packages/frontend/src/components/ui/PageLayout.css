@@ -20,7 +20,9 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
-  background-color: #e4e7e2;
+  /* iOS 26 ignores html for chrome tinting, but a non-transparent root still
+     avoids the white overscroll/rubber-band flash. */
+  background-color: #dde3dd;
 }
 
 body {
@@ -28,10 +30,101 @@ body {
   min-width: 320px;
   min-height: 100dvh;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Must stay transparent: an opaque body background paints over the negative
+     z-index background layers (gradient + watercolour) and hides them. The
+     iOS 26 chrome tint is handled by the opaque .chromeTint strips below,
+     which Safari samples per edge instead of the body's colour. */
   background: transparent;
+  /* Hoisted from .contentInner so the bottom chrome strip can animate on the
+     same --home-view timeline as the mountains. */
+  timeline-scope: --home-view;
 }
 
+/* iOS 26 Safari tints each Liquid Glass bar by sampling the background-colour
+   of a fixed element nearest that edge (theme-color and html/body are ignored;
+   validated: jahir.dev/blog/safari-toolbar, grooovinger.com). These strips sit
+   in the unsafe areas so they tint the chrome without showing in page content.
+   They must carry a real background-colour (not a gradient/image). */
+.chromeTint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.chromeTint--top {
+  top: 0;
+  height: env(safe-area-inset-top, 0px);
+  background-color: #cdd9e2;
+}
+/* Bottom is a two-strip swap. Safari samples a static colour fine but does NOT
+   re-sample an animated colour — so instead of tinting one strip's colour, we
+   slide a solid-green strip over a solid-sky strip with a scroll-driven
+   transform (the validated approach). Sky shows at the top of the page; the
+   lawn strip slides into the sample zone as the mountains rise. */
+.chromeTint--bottom {
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background-color: #cdd9e2;
+}
+.chromeTint--bottomLawn {
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background-color: #c6d49d;
+  z-index: 11;
+}
+
+/* Lawn strip parked just below the sample zone at the top of the page, sliding
+   up to cover the sky strip on the mountains' own --home-view timeline. We
+   animate transform (position), never background-color, so Safari re-samples
+   whichever solid strip is in the zone. */
+@keyframes chromeRevealLawn {
+  0% {
+    transform: translateY(110%);
+  }
+  8% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .chromeTint--bottomLawn {
+    animation: chromeRevealLawn linear both;
+    animation-timeline: --home-view;
+    animation-range: cover 0% cover 100%;
+  }
+}
+
+/* Visible base layer: a viewport-anchored gradient mirroring the watercolour's
+   colours top-to-bottom. It bleeds into the unsafe areas so it shows through
+   the translucent bars when scrolled. Being a position:fixed element, it needs
+   none of the background-attachment:fixed / scroll-timeline tricks that broke
+   on iOS. (The solid .chromeTint strips handle the bar tint at scroll top.) */
 body::before {
+  content: '';
+  position: fixed;
+  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
+    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
+  background: linear-gradient(
+    180deg,
+    #cdd9e2 0%,
+    #dde4e6 20%,
+    #e5e7e0 48%,
+    #dbe3cd 72%,
+    #cedaa9 88%,
+    #c6d49d 100%
+  );
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Watercolour sky/paper, layered over the gradient. It still bleeds behind the
+   chrome; wherever it falls short there, the colour-matched gradient shows
+   through instead of a flat grey strip. */
+body::after {
   content: '';
   position: fixed;
   inset: calc(-1 * env(safe-area-inset-top, 0px)) 0

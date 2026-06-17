@@ -42,6 +42,13 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         <title>{title}</title>
       </head>
       <body>
+        {/* Solid tint strips iOS 26 Safari samples to colour the Liquid Glass
+            bars. They sit only in the unsafe areas, so they're invisible in
+            page content. The bottom is a sky strip plus a lawn strip that
+            slides over it as the mountains rise (see PageLayout.css). */}
+        <div className="chromeTint chromeTint--top" aria-hidden="true" />
+        <div className="chromeTint chromeTint--bottom" aria-hidden="true" />
+        <div className="chromeTint chromeTint--bottomLawn" aria-hidden="true" />
         {children}
         <script dangerouslySetInnerHTML={{ __html: initialScrollScript }} />
       </body>
