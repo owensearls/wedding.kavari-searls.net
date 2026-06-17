@@ -26,16 +26,27 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100dvh;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: transparent;
 }
 
-body::before {
+/* Single root wrapper: the whole app lives in #app so full-bleed and safe-area
+   handling live in one place instead of being scattered across body/main. */
+#app {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Full-bleed background, extended past all four safe-area edges so the artwork
+   reaches the device edges behind the notch and the Liquid Glass bars. */
+#app::before {
   content: '';
   position: fixed;
-  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
-    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
+  inset: calc(-1 * env(safe-area-inset-top, 0px))
+    calc(-1 * env(safe-area-inset-right, 0px))
+    calc(-1 * env(safe-area-inset-bottom, 0px))
+    calc(-1 * env(safe-area-inset-left, 0px));
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),
@@ -61,10 +72,6 @@ body::before {
 }
 ::-webkit-scrollbar-track {
   background: transparent;
-}
-
-#root {
-  width: 100%;
 }
 
 a {
