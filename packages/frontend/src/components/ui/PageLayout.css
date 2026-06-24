@@ -20,7 +20,9 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 44px;
-  background-color: #e4e7e2;
+  /* iOS 26 ignores html for chrome tinting, but a non-transparent root still
+     avoids the white overscroll/rubber-band flash. */
+  background-color: #dde3dd;
 }
 
 body {
@@ -28,10 +30,77 @@ body {
   min-width: 320px;
   min-height: 100dvh;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Must stay transparent: an opaque body background paints over the negative
+     z-index background layers (gradient + watercolour) and hides them. The
+     iOS 26 chrome tint is handled by the opaque .chromeTint strips below,
+     which Safari samples per edge instead of the body's colour. */
   background: transparent;
+  /* Hoisted from .contentInner so the bottom chrome strip can animate on the
+     same --home-view timeline as the mountains. */
+  timeline-scope: --home-view;
 }
 
+/* iOS 26 Safari tints each Liquid Glass bar by sampling the background-colour
+   of a fixed element nearest that edge (theme-color and html/body are ignored;
+   validated: jahir.dev/blog/safari-toolbar, grooovinger.com). These strips sit
+   in the unsafe areas so they tint the chrome without showing in page content.
+   They must carry a real background-colour (not a gradient/image). */
+.chromeTint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.chromeTint--top {
+  top: 0;
+  height: env(safe-area-inset-top, 0px);
+  background-color: #cdd9e2;
+}
+/* DIAGNOSTIC: a <canvas> tall enough to cover the Liquid Glass bottom bar's
+   whole footprint (safe-area strip + ~64px up into content), painted a vivid
+   colour by BackgroundCanvas. A canvas exposes no background-color to sample,
+   so this isolates whether the frosted bar composites the canvas's live pixels
+   at all. The +64px deliberately overlaps the bottom of page content — once we
+   know the result, shrink back to the safe-area strip / real palette. */
+.chromeCanvas {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(env(safe-area-inset-bottom, 0px) + 64px);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Visible base layer: a viewport-anchored gradient mirroring the watercolour's
+   colours top-to-bottom. It bleeds into the unsafe areas so it shows through
+   the translucent bars when scrolled. Being a position:fixed element, it needs
+   none of the background-attachment:fixed / scroll-timeline tricks that broke
+   on iOS. (The solid .chromeTint strips handle the bar tint at scroll top.) */
 body::before {
+  content: '';
+  position: fixed;
+  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
+    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
+  background: linear-gradient(
+    180deg,
+    #cdd9e2 0%,
+    #dde4e6 20%,
+    #e5e7e0 48%,
+    #dbe3cd 72%,
+    #cedaa9 88%,
+    #c6d49d 100%
+  );
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Watercolour sky/paper, layered over the gradient. It still bleeds behind the
+   chrome; wherever it falls short there, the colour-matched gradient shows
+   through instead of a flat grey strip. */
+body::after {
   content: '';
   position: fixed;
   inset: calc(-1 * env(safe-area-inset-top, 0px)) 0

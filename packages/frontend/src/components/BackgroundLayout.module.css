@@ -32,7 +32,8 @@
 .contentInner {
   position: relative;
   z-index: 1;
-  timeline-scope: --home-view;
+  /* timeline-scope for --home-view is declared on body (PageLayout.css) so the
+     chrome tint strips outside this subtree can share the mountains' timeline. */
 }
 
 .footerContent {
