@@ -13,8 +13,8 @@ const initialScrollScript = `(function(){
   if (!el) return;
   var scroller = document.querySelector('[data-scroll-root]');
   var top = scroller
-    ? el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 44
-    : el.offsetTop - 44;
+    ? el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
+    : el.offsetTop;
   try { (scroller || window).scrollTo({ top: top, behavior: 'instant' }); }
   catch (e) { (scroller || document.documentElement).scrollTop = top; }
   if (scroller) scroller.focus({ preventScroll: true });

@@ -20,7 +20,7 @@
 html {
   /* Anchor scrolling on the main page happens in the layout's scroll
      container (see BackgroundLayout), which carries its own smooth
-     behavior and scroll padding. */
+     behavior and snap alignment. */
   background-color: #e4e7e2;
 }
 

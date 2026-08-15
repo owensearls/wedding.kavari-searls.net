@@ -74,27 +74,30 @@ export function BackgroundLayout({
 
   // Layer structure: `.container` fills the viewport and never scrolls, so
   // background layers can be added to it (or behind it) independently of
-  // the content. All page content lives inside `.scroller`, the single
-  // scroll container for the page (marked with data-scroll-root so the
-  // initial-scroll script in PageLayout can find it). tabIndex makes the
-  // scroller focusable so keyboard scrolling (Space/PageDown) works even
-  // though the document root no longer scrolls.
+  // the content. The nav is an overlay on the container, outside the
+  // scroll flow, so each section occupies an exact viewport-sized slot in
+  // `.scroller` — the single scroll container (marked with
+  // data-scroll-root so the initial-scroll script in PageLayout can find
+  // it), whose mandatory snapping keeps exactly one section on screen at
+  // rest. tabIndex makes the scroller focusable so keyboard scrolling
+  // (Space/PageDown) works even though the document root no longer
+  // scrolls.
   return (
     <AnchorContext.Provider value={currentAnchor}>
       <div className={styles.container}>
+        <div className={styles.nav}>
+          <div className={styles.navContent}>
+            <a href={navData.href} className={styles.navLink}>
+              <Chevron direction={navData.direction} /> {navData.text}
+            </a>
+          </div>
+        </div>
         <div
           ref={scrollerRef}
           className={styles.scroller}
           data-scroll-root=""
           tabIndex={-1}
         >
-          <div className={styles.nav}>
-            <div className={styles.navContent}>
-              <a href={navData.href} className={styles.navLink}>
-                <Chevron direction={navData.direction} /> {navData.text}
-              </a>
-            </div>
-          </div>
           <div className={styles.content}>
             <div className={styles.contentInner}>
               {children}

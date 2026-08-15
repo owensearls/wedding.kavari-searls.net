@@ -8,7 +8,10 @@
   inset: 0;
   overflow-y: auto;
   scroll-behavior: smooth;
-  scroll-padding-top: 44px;
+  /* Mandatory snapping means the only rest positions are section
+     boundaries — content from two sections is never left on screen
+     together. Sections opt in via scroll-snap-align (see Section). */
+  scroll-snap-type: y mandatory;
   scrollbar-width: thin;
   scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
   outline: none;
@@ -19,8 +22,12 @@
 }
 
 .nav {
-  position: sticky;
+  /* Overlay on the viewport container, outside the scroll flow, so
+     sections sit at exact viewport multiples for snapping. */
+  position: absolute;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 4;
 }
 
