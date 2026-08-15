@@ -164,17 +164,17 @@
    of the physical screen bottom on iOS 26. Crops a little extra lawn. */
 @media (pointer: coarse) {
   .footerFixed {
-    bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px) - 80px);
+    bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px) - 40px);
   }
 
   .footerImage {
-    --mountain-rise: 320%;
+    --mountain-rise: 225%;
   }
 
   .footerContent {
     /* Seat the credits on the enlarged grass band, above the floating
        bottom bar. */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 130px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 95px);
   }
 }
 
