@@ -7,6 +7,26 @@
    glass composites their pixels, and painting an exact mirror of the
    layers beneath, so they are invisible on screen. */
 
+/* Full-screen canvas rendering of the background, extended past every
+   safe-area inset like the CSS backdrop it covers. Positioned (z auto)
+   after the backdrop in the paint order but below all z-indexed content,
+   so it replaces the CSS artwork pixel-for-pixel while giving the whole
+   chrome region live canvas pixels to composite. */
+.glassBackdrop {
+  position: absolute;
+  top: calc(-1 * env(safe-area-inset-top, 0px));
+  left: calc(-1 * env(safe-area-inset-left, 0px));
+  /* Canvas is a replaced element: inset alone won't stretch it, so size
+     it explicitly to the container plus the safe-area extensions. */
+  width: calc(
+    100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px)
+  );
+  height: calc(
+    100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)
+  );
+  pointer-events: none;
+}
+
 .glassTop {
   position: absolute;
   top: calc(-1 * env(safe-area-inset-top, 0px));

@@ -42,25 +42,46 @@ function drawCover(
   ctx.drawImage(img, sx, sy, sw, sh, box.x, box.y, box.w, box.h)
 }
 
-/* Mirror canvases for iOS 26 Liquid Glass. The frosted bars composite the
-   live pixels of a <canvas> (the only mechanism confirmed on device to put
-   real pixels behind the glass — CSS background images never show, and the
-   sampler tints bars a flat color). Each canvas sits topmost in a bar's
-   footprint but paints exactly what lies beneath it — the artwork, plus the
-   mountains at their current parallax height for the bottom bar — so on
-   screen it is indistinguishable from the layers it covers, while the glass
-   gets real artwork pixels to composite. If Safari doesn't composite them,
-   nothing changes visually: the tint strips still color the bars. */
+/* Canvas rendering of the page background for iOS 26 Liquid Glass. The
+   frosted chrome composites the live pixels of a <canvas> — the only
+   mechanism confirmed on device to put real pixels behind the glass (CSS
+   background images never show, and the sampler tints bars a flat color).
+
+   Three canvases, all painting the identical scene (cover-fit artwork,
+   plus the mountains at their current parallax height), resynced from the
+   scroll container every scrolled frame:
+
+   - `backdrop`: full-screen, extended past every safe-area inset, at the
+     back of the stack — real canvas pixels exist wherever the chrome
+     overlaps the page, with no footprint guessing.
+   - `top` / `bottom`: band mirrors sitting topmost in each bar's
+     footprint, for the case (validated in the PR #13 diagnostic) where
+     the glass composites the topmost canvas pixels.
+
+   Every canvas is pixel-identical to the DOM layers at its position, so
+   nothing changes visually on screen; until the images decode the
+   canvases stay transparent and the CSS backdrop beneath shows through.
+   If Safari declines to composite any of them, the sampled tint strips
+   still color the bars. */
 export function GlassCanvas({ scrollerRef }: GlassCanvasProps) {
+  const backdropRef = useRef<HTMLCanvasElement | null>(null)
   const topRef = useRef<HTMLCanvasElement | null>(null)
   const bottomRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
+    const backdropCanvas = backdropRef.current
     const topCanvas = topRef.current
     const bottomCanvas = bottomRef.current
     const scroller = scrollerRef.current
     const container = bottomCanvas?.parentElement
-    if (!topCanvas || !bottomCanvas || !scroller || !container) return
+    if (
+      !backdropCanvas ||
+      !topCanvas ||
+      !bottomCanvas ||
+      !scroller ||
+      !container
+    )
+      return
 
     let background: HTMLImageElement | null = null
     let mountains: HTMLImageElement | null = null
@@ -118,18 +139,21 @@ export function GlassCanvas({ scrollerRef }: GlassCanvasProps) {
       const ctx = canvas.getContext('2d')
       if (!ctx) return
 
+      // Stay transparent until the artwork can be drawn — the CSS
+      // backdrop beneath shows through instead of a flat color flash.
+      if (!background) return
+
       const screen = screenBox()
       const rect = canvas.getBoundingClientRect()
       const ox = screen.x - rect.left
       const oy = screen.y - rect.top
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
       ctx.fillStyle = BASE_COLOR
       ctx.fillRect(0, 0, w, h)
-
-      if (background) {
-        drawCover(ctx, background, { x: ox, y: oy, w: screen.w, h: screen.h })
-      }
+      drawCover(ctx, background, { x: ox, y: oy, w: screen.w, h: screen.h })
 
       if (withMountains && mountains) {
         const naturalH = screen.w * MOUNTAINS_RATIO
@@ -156,6 +180,7 @@ export function GlassCanvas({ scrollerRef }: GlassCanvasProps) {
 
     function draw() {
       rafId = 0
+      paint(backdropCanvas!, true)
       paint(topCanvas!, false)
       paint(bottomCanvas!, true)
     }
@@ -191,6 +216,12 @@ export function GlassCanvas({ scrollerRef }: GlassCanvasProps) {
 
   return (
     <>
+      <canvas
+        ref={backdropRef}
+        className={styles.glassBackdrop}
+        data-glass-canvas="backdrop"
+        aria-hidden="true"
+      />
       <canvas
         ref={topRef}
         className={styles.glassTop}
