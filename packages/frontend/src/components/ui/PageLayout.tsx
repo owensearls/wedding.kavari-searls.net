@@ -17,6 +17,11 @@ const initialScrollScript = `(function(){
     : el.offsetTop;
   try { (scroller || window).scrollTo({ top: top, behavior: 'instant' }); }
   catch (e) { (scroller || document.documentElement).scrollTop = top; }
+  var runway = document.querySelector('[data-edge-runway-top]');
+  if (runway) {
+    try { window.scrollTo({ top: runway.offsetHeight, behavior: 'instant' }); }
+    catch (e) { document.documentElement.scrollTop = runway.offsetHeight; }
+  }
   if (scroller) scroller.focus({ preventScroll: true });
 })();`
 

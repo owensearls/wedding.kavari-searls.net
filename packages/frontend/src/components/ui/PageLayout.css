@@ -24,16 +24,14 @@ html {
   background-color: #cccec0;
 }
 
-/* Pages with a dedicated scroll container keep their visuals pinned in
-   a sticky viewport shell (see BackgroundLayout), but the DOCUMENT
-   itself must stay scrollable by a small runway: iOS 26 only extends
-   the web content surface to the physical screen edges (behind the
-   notch and chrome) for scrollable documents — a non-scrollable root is
-   confined to the inner viewport no matter what in-page CSS does, and a
-   root overflow:hidden clip makes it worse. The sticky shell absorbs
-   the runway so nothing on screen ever moves. */
-body:has([data-scroll-root]) {
-  min-height: calc(100dvh + 24px);
+/* Pages with a dedicated scroll container park the document scrolled
+   past an in-flow artwork runway (see BackgroundLayout), putting real
+   document pixels under the iOS 26 status-bar scroll-edge effect. The
+   mandatory root snap makes the parked position the document's only
+   rest position — any chained or overscroll gesture returns to it, so
+   the sticky viewport shell never visibly moves. */
+html:has([data-scroll-root]) {
+  scroll-snap-type: y mandatory;
 }
 
 body {

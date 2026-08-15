@@ -89,6 +89,14 @@ export function BackgroundLayout({
   // though the document root never scrolls.
   return (
     <AnchorContext.Provider value={currentAnchor}>
+      {/* In-flow artwork runways: iOS 26's top edge is a scroll-edge
+          effect that shows the DOCUMENT pixels scrolled underneath the
+          status bar — only in-flow content above the viewport can appear
+          behind the notch (fixed layers are viewport-attached and never
+          qualify). The page loads parked past the top runway (see the
+          initial-scroll script), so real watercolor pixels occupy the
+          scrolled-past region; a root snap point keeps it parked. */}
+      <div className={styles.edgeRunwayTop} data-edge-runway-top="" />
       <div className={styles.container}>
         <div
           className={styles.backdrop}
@@ -141,6 +149,7 @@ export function BackgroundLayout({
           </picture>
         </div>
       </div>
+      <div className={styles.edgeRunwayBottom} aria-hidden="true" />
     </AnchorContext.Provider>
   )
 }

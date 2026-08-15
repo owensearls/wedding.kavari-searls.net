@@ -1,11 +1,44 @@
+/* Scrolled-past artwork for the top scroll-edge effect: sky slice of
+   the watercolor, sitting in document space above the viewport when the
+   page is parked at the root snap position (the container's top edge —
+   see .container). */
+.edgeRunwayTop {
+  height: calc(env(safe-area-inset-top, 0px) + 120px);
+  background-color: #d3dbe1;
+  background-image: url('/background.jpg');
+  background-image: image-set(
+    url('/background.avif') 1x type('image/avif'),
+    url('/background.jpg') 1x type('image/jpeg')
+  );
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+/* Lawn slice below the viewport for the bottom edge effect. */
+.edgeRunwayBottom {
+  height: calc(env(safe-area-inset-bottom, 0px) + 60px);
+  background-color: #dbe1c4;
+  background-image: url('/mountains.png');
+  background-image: image-set(
+    url('/mountains.avif') 1x type('image/avif'),
+    url('/mountains.png') 1x type('image/png')
+  );
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+}
+
 .container {
-  /* Sticky viewport shell: the document keeps a small scroll runway
-     (see PageLayout.css) so iOS 26 treats it as scrollable and extends
-     the content surface behind the notch and chrome — sticky pins the
-     shell to the viewport so the runway never visibly moves anything. */
-  position: sticky;
-  top: 0;
+  /* The document's only root snap position: with mandatory snapping on
+     the root (PageLayout.css), the viewport always parks with this box's
+     top edge at the top of the screen — i.e. scrolled exactly past the
+     artwork runway, keeping real document pixels under the iOS 26
+     status-bar scroll-edge effect. Any overscroll or chained gesture
+     snaps back here, so the runway is never visible at rest. */
+  position: relative;
   height: 100dvh;
+  scroll-snap-align: start;
   timeline-scope: --home-view;
 }
 
