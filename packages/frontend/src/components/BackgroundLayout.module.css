@@ -1,31 +1,28 @@
 .container {
-  /* In normal flow, never position: fixed — Safari 26 samples fixed
-     elements near the viewport edges for its glass-bar tint, and a
-     transparent full-viewport fixed box hijacks the sample. The root
-     can't scroll, so an in-flow viewport-sized box is equivalent. */
+  /* In normal flow: the root can't scroll, so an in-flow viewport-sized
+     box is equivalent to a fixed one, without any of iOS 26's fixed-
+     layer clipping concerns. */
   position: relative;
   height: 100dvh;
   timeline-scope: --home-view;
-  /* How far the Liquid Glass mirror canvases reach past the safe-area
-     strips into the content area (the floating bars overlap it). The
-     bottom value matches the footprint validated by the PR #13
-     diagnostic; the footer credits are padded above it. The nav link
-     starts 10px below the top inset — keep the top extend under that. */
-  --glass-extend-top: 0px;
-  --glass-extend-bottom: 64px;
 }
 
-/* Full-bleed artwork. Absolute (never sampled, and rock-solid during
-   scrolling since the root never scrolls), extended past every safe-area
-   edge so the watercolor reaches the physical screen edges behind the
-   notch and the browser chrome. */
+/* Full-bleed artwork reaching the physical screen edges — behind the
+   notch, the rounded corners, and the browser chrome. iOS 26 clips
+   position: fixed layers to the INNER viewport (below the status bar),
+   even with negative offsets, UNLESS the layer routes through the
+   compositor — an opaque fill is "simple-fill" optimized and clipped,
+   anything below alpha 1 escapes. So: fixed, centered, oversized well
+   past the large viewport on every side, with a transform and a 0.99
+   alpha background-color both forcing the compositor path. */
 .backdrop {
-  position: absolute;
-  inset: calc(-1 * env(safe-area-inset-top, 0px))
-    calc(-1 * env(safe-area-inset-right, 0px))
-    calc(-1 * env(safe-area-inset-bottom, 0px))
-    calc(-1 * env(safe-area-inset-left, 0px));
-  background-color: #cccec0;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: calc(100vw + 12px);
+  height: calc(100lvh + 120px);
+  transform: translate(-50%, -50%);
+  background-color: rgb(204 206 192 / 0.99);
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),
@@ -92,20 +89,18 @@
 .footerContent {
   position: relative;
   z-index: 5;
-  /* Keep the credits above the bottom safe area AND the glass mirror
-     band (--glass-extend-bottom), which paints artwork over anything
-     inside its footprint. */
-  padding-bottom: calc(
-    var(--glass-extend-bottom, 64px) + env(safe-area-inset-bottom, 0px) + 6px
-  );
+  /* The scroller replaces the body as the scroll container, so the body's
+     safe-area bottom padding no longer protects the footer credits. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .footerFixed {
-  /* Absolute, not fixed: the container already spans the viewport, and a
-     transparent fixed box at the bottom edge would hijack the iOS 26
-     bar-tint sample. */
-  position: absolute;
+  /* Fixed with its own transform so iOS 26 composites it separately and
+     the mountains reach the physical screen bottom (in-flow content is
+     clipped to the inner viewport by the locked root). */
+  position: fixed;
   bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  transform: translateZ(0);
   left: 0;
   right: 0;
   z-index: 3;

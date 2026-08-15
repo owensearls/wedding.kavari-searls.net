@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
-import { GlassCanvas } from './GlassCanvas'
 import { Section } from './Section'
 import { Chevron } from './ui/icons/Chevron'
 import type { ReactNode } from 'react'
@@ -76,18 +75,13 @@ export function BackgroundLayout({
   // Layer structure: `.container` fills the viewport in normal flow (the
   // root can't scroll, so it never moves), holding the page as explicit
   // layers: the full-bleed artwork backdrop, the nav overlay, the single
-  // scroll container, the pinned mountains, and the GlassCanvas mirrors.
+  // scroll container, and the pinned mountains.
   //
-  // iOS 26 Liquid Glass constraint (validated on device — see the
-  // research doc and the PR #13 diagnostic): Safari tints its glass bars
-  // by sampling the background-color of position:fixed/sticky elements
-  // near the viewport edges, falling back to the body color, and any
-  // sampled opaque color renders the bar as a SOLID block that hides the
-  // page. The only way real pixels appear behind the glass is canvas
-  // compositing. So nothing on this page exposes a background-color to
-  // the sampler — no fixed/sticky element carries one and the body is
-  // transparent — while the GlassCanvas layers provide live artwork
-  // pixels for the glass to composite.
+  // iOS 26 note: Safari clips position:fixed layers to the inner
+  // viewport (below the status bar) unless they route through the
+  // compositor; the backdrop and mountains escape via transform /
+  // non-opaque background (see the CSS), which is what lets the artwork
+  // reach the physical screen edges behind the notch and corners.
   //
   // The scroller (marked data-scroll-root for the initial-scroll script)
   // owns all scrolling; mandatory snapping keeps exactly one section on
@@ -145,7 +139,6 @@ export function BackgroundLayout({
             />
           </picture>
         </div>
-        <GlassCanvas scrollerRef={scrollerRef} />
       </div>
     </AnchorContext.Provider>
   )

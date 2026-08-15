@@ -47,13 +47,17 @@ body {
 
 /* Full-bleed artwork layer for root-scrolling pages (/rsvp). Pages using
    BackgroundLayout render their own backdrop inside the layout instead.
-   The explicit background-color keeps Safari 26's edge sampler on-brand
-   if it picks this layer (it samples colors, not images). */
+   Fixed + centered + oversized + compositor-forced (transform, 0.99
+   alpha) so iOS 26 doesn't clip it to the inner viewport — see the
+   .backdrop notes in BackgroundLayout.module.css. */
 .page-background {
   position: fixed;
-  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
-    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
-  background-color: #cccec0;
+  top: 50%;
+  left: 50%;
+  width: calc(100vw + 12px);
+  height: calc(100lvh + 120px);
+  transform: translate(-50%, -50%);
+  background-color: rgb(204 206 192 / 0.99);
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),
