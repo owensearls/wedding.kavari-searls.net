@@ -1,4 +1,5 @@
 import { BackgroundLayout } from './components/BackgroundLayout'
+import { ChromeCanvas } from './components/ChromeCanvas'
 import { RsvpLookup } from './components/RsvpLookup'
 import { Section } from './components/Section'
 import { PageLayout } from './components/ui/PageLayout'
@@ -102,6 +103,9 @@ export default function Home() {
           </div>
         </Section>
       </BackgroundLayout>
+      {/* Direct child of <body>, like the on-device-validated diagnostic:
+          live-pixel canvases in the chrome edge bands. */}
+      <ChromeCanvas />
     </PageLayout>
   )
 }

@@ -91,9 +91,9 @@
 .footerContent {
   position: relative;
   z-index: 5;
-  /* The scroller replaces the body as the scroll container, so the body's
-     safe-area bottom padding no longer protects the footer credits. */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Clear the bottom safe area plus the ChromeCanvas band (env + 64px),
+     which mirrors artwork over anything inside its footprint. */
+  padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
 }
 
 .footerFixed {

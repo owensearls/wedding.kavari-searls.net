@@ -1,0 +1,29 @@
+/* Geometry copied from the on-device-validated PR #13 diagnostic: fixed,
+   anchored at the viewport edges (top: 0 / bottom: 0, no negative
+   offsets), full width, env()+constant heights, z-index 10 above all
+   page content, pointer-events: none. The bottom band's +64px is the
+   diagnostic's validated footprint (the floating bar overlaps the safe
+   viewport); the footer credits are padded above it. The top band keeps
+   a +2px minimum so it exists even where the inset reads 0. */
+
+.top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: calc(env(safe-area-inset-top, 0px) + 2px);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: calc(env(safe-area-inset-bottom, 0px) + 64px);
+  z-index: 10;
+  pointer-events: none;
+}

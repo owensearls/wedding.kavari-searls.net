@@ -135,6 +135,7 @@ export function BackgroundLayout({
               width={2687}
               height={1931}
               className={styles.footerImage}
+              data-mountains=""
               alt="Watercolor painting of Mt. Ascutney, Vermont"
             />
           </picture>
