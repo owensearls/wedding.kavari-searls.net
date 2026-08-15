@@ -75,19 +75,19 @@ export function BackgroundLayout({
 
   // Layer structure: `.container` fills the viewport in normal flow (the
   // root can't scroll, so it never moves), holding the page as explicit
-  // layers: two fixed tint strips, the full-bleed artwork backdrop, the
-  // nav overlay, the single scroll container, and the pinned mountains.
+  // layers: the full-bleed artwork backdrop, the nav overlay, the single
+  // scroll container, the pinned mountains, and the GlassCanvas mirrors.
   //
-  // iOS 26 Liquid Glass constraint (see the sampling rules researched in
-  // docs and on device): Safari tints its glass bars by sampling the
-  // background-color of position:fixed/sticky elements near the viewport
-  // edges, falling back to the body color — and a *transparent* fixed
-  // element in the edge bands hijacks the sample into white/grey bars.
-  // So the tint strips are deliberately the ONLY fixed elements on the
-  // page, each with an opaque color matched to the artwork's edge tones;
-  // everything else here is absolute (never sampled). The strips paint
-  // beneath the backdrop, so they're invisible — they exist purely to
-  // feed the sampler.
+  // iOS 26 Liquid Glass constraint (validated on device — see the
+  // research doc and the PR #13 diagnostic): Safari tints its glass bars
+  // by sampling the background-color of position:fixed/sticky elements
+  // near the viewport edges, falling back to the body color, and any
+  // sampled opaque color renders the bar as a SOLID block that hides the
+  // page. The only way real pixels appear behind the glass is canvas
+  // compositing. So nothing on this page exposes a background-color to
+  // the sampler — no fixed/sticky element carries one and the body is
+  // transparent — while the GlassCanvas layers provide live artwork
+  // pixels for the glass to composite.
   //
   // The scroller (marked data-scroll-root for the initial-scroll script)
   // owns all scrolling; mandatory snapping keeps exactly one section on
@@ -96,8 +96,6 @@ export function BackgroundLayout({
   return (
     <AnchorContext.Provider value={currentAnchor}>
       <div className={styles.container}>
-        <div className={styles.tintTop} aria-hidden="true" />
-        <div className={styles.tintBottom} aria-hidden="true" />
         <div
           className={styles.backdrop}
           data-background=""

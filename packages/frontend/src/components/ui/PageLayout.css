@@ -36,11 +36,13 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
-  /* Opaque on-brand color, never transparent: Safari 26 tints its Liquid
-     Glass bars from the body background-color whenever no fixed element
-     provides a sample, and a transparent body renders white/grey bars.
-     Also the color revealed by overscroll rubber-banding. */
-  background-color: #cccec0;
+  /* Deliberately transparent: an opaque body color is sampled by Safari
+     26's bar tinting and renders the bars as SOLID color, hiding the
+     live canvas pixels the glass would otherwise composite (validated
+     on device — the PR #13 canvas compositing only appeared with a
+     transparent body). html carries the on-brand overscroll color; the
+     sampler ignores html. */
+  background: transparent;
 }
 
 /* Full-bleed artwork layer for root-scrolling pages (/rsvp). Pages using

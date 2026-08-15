@@ -7,37 +7,12 @@
   height: 100dvh;
   timeline-scope: --home-view;
   /* How far the Liquid Glass mirror canvases reach past the safe-area
-     strips into the content area (the floating bars overlap it). Tuned
-     against a real device; see GlassCanvas. Upper bounds: the nav link
-     starts 10px below the top inset, the footer credits 25px above the
-     bottom one. */
+     strips into the content area (the floating bars overlap it). The
+     bottom value matches the footprint validated by the PR #13
+     diagnostic; the footer credits are padded above it. The nav link
+     starts 10px below the top inset — keep the top extend under that. */
   --glass-extend-top: 0px;
-  --glass-extend-bottom: 24px;
-}
-
-/* Sampler bait for Safari 26 Liquid Glass: the only position: fixed
-   elements on the page, opaque, sized/placed inside the reverse-
-   engineered sampling bands (>=80% width, >=3px tall, within ~3-4px of
-   the edge). Painted beneath the backdrop, so never actually visible.
-   Colors are the measured edge tones of the rendered artwork. */
-.tintTop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: max(env(safe-area-inset-top, 0px), 4px);
-  background-color: #d3dbe1;
-  pointer-events: none;
-}
-
-.tintBottom {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: max(env(safe-area-inset-bottom, 0px), 4px);
-  background-color: #dbe1c4;
-  pointer-events: none;
+  --glass-extend-bottom: 64px;
 }
 
 /* Full-bleed artwork. Absolute (never sampled, and rock-solid during
@@ -117,9 +92,12 @@
 .footerContent {
   position: relative;
   z-index: 5;
-  /* The scroller replaces the body as the scroll container, so the body's
-     safe-area bottom padding no longer protects the footer credits. */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Keep the credits above the bottom safe area AND the glass mirror
+     band (--glass-extend-bottom), which paints artwork over anything
+     inside its footprint. */
+  padding-bottom: calc(
+    var(--glass-extend-bottom, 64px) + env(safe-area-inset-bottom, 0px) + 6px
+  );
 }
 
 .footerFixed {
