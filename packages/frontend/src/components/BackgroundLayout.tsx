@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
 import { Section } from './Section'
@@ -19,6 +19,7 @@ export function BackgroundLayout({
   footer,
 }: BackgroundLayoutProps) {
   const [currentAnchor, setCurrentAnchor] = useState('')
+  const scrollerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const sections = Array.from(
@@ -45,7 +46,11 @@ export function BackgroundLayout({
           }
         })
       },
-      { root: null, threshold: 0.5, rootMargin: '-10% 0px -10% 0px' }
+      {
+        root: scrollerRef.current,
+        threshold: 0.5,
+        rootMargin: '-10% 0px -10% 0px',
+      }
     )
 
     sections.forEach((section) => observer.observe(section))
@@ -67,44 +72,58 @@ export function BackgroundLayout({
     navData = { href: '#home', text: 'Home', direction: 'up' }
   }
 
+  // Layer structure: `.container` fills the viewport and never scrolls, so
+  // background layers can be added to it (or behind it) independently of
+  // the content. All page content lives inside `.scroller`, the single
+  // scroll container for the page (marked with data-scroll-root so the
+  // initial-scroll script in PageLayout can find it). tabIndex makes the
+  // scroller focusable so keyboard scrolling (Space/PageDown) works even
+  // though the document root no longer scrolls.
   return (
     <AnchorContext.Provider value={currentAnchor}>
       <div className={styles.container}>
-        <div className={styles.nav}>
-          <div className={styles.navContent}>
-            <a href={navData.href} className={styles.navLink}>
-              <Chevron direction={navData.direction} /> {navData.text}
-            </a>
-          </div>
-        </div>
-        <div className={styles.content}>
-          <div className={styles.contentInner}>
-            {children}
-            <Section id="home" anchor="">
-              {header}
-            </Section>
-            <div className={styles.footerFixed}>
-              <picture>
-                <source srcSet="/mountains.avif" type="image/avif" />
-                <img
-                  src="/mountains.png"
-                  width={2687}
-                  height={1931}
-                  className={styles.footerImage}
-                  alt="Watercolor painting of Mt. Ascutney, Vermont"
-                />
-              </picture>
+        <div
+          ref={scrollerRef}
+          className={styles.scroller}
+          data-scroll-root=""
+          tabIndex={-1}
+        >
+          <div className={styles.nav}>
+            <div className={styles.navContent}>
+              <a href={navData.href} className={styles.navLink}>
+                <Chevron direction={navData.direction} /> {navData.text}
+              </a>
             </div>
           </div>
-          <div className={styles.footerContent}>
-            <Section
-              id="footer"
-              anchor="footer"
-              minHeight="100dvh"
-              contentPosition="bottom"
-            >
-              {footer}
-            </Section>
+          <div className={styles.content}>
+            <div className={styles.contentInner}>
+              {children}
+              <Section id="home" anchor="">
+                {header}
+              </Section>
+              <div className={styles.footerFixed}>
+                <picture>
+                  <source srcSet="/mountains.avif" type="image/avif" />
+                  <img
+                    src="/mountains.png"
+                    width={2687}
+                    height={1931}
+                    className={styles.footerImage}
+                    alt="Watercolor painting of Mt. Ascutney, Vermont"
+                  />
+                </picture>
+              </div>
+            </div>
+            <div className={styles.footerContent}>
+              <Section
+                id="footer"
+                anchor="footer"
+                minHeight="100dvh"
+                contentPosition="bottom"
+              >
+                {footer}
+              </Section>
+            </div>
           </div>
         </div>
       </div>

@@ -11,8 +11,13 @@ const initialScrollScript = `(function(){
   var hash = location.hash.slice(1);
   var el = document.getElementById(hash || 'home');
   if (!el) return;
-  try { window.scrollTo({ top: el.offsetTop - 44, behavior: 'instant' }); }
-  catch (e) { document.documentElement.scrollTop = el.offsetTop - 44; }
+  var scroller = document.querySelector('[data-scroll-root]');
+  var top = scroller
+    ? el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 44
+    : el.offsetTop - 44;
+  try { (scroller || window).scrollTo({ top: top, behavior: 'instant' }); }
+  catch (e) { (scroller || document.documentElement).scrollTop = top; }
+  if (scroller) scroller.focus({ preventScroll: true });
 })();`
 
 export function PageLayout({ title, children }: PageLayoutProps) {
@@ -42,6 +47,7 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         <title>{title}</title>
       </head>
       <body>
+        <div className="page-background" aria-hidden="true" />
         {children}
         <script dangerouslySetInnerHTML={{ __html: initialScrollScript }} />
       </body>

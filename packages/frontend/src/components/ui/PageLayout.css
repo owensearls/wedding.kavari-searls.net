@@ -18,8 +18,9 @@
 }
 
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 44px;
+  /* Anchor scrolling on the main page happens in the layout's scroll
+     container (see BackgroundLayout), which carries its own smooth
+     behavior and scroll padding. */
   background-color: #e4e7e2;
 }
 
@@ -31,8 +32,10 @@ body {
   background: transparent;
 }
 
-body::before {
-  content: '';
+/* Base background layer for every page. It sits behind all content in a
+   dedicated element (rather than a body pseudo-element) so pages can layer
+   or replace backgrounds independently of the scrolled content. */
+.page-background {
   position: fixed;
   inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
     calc(-1 * env(safe-area-inset-bottom, 0px)) 0;

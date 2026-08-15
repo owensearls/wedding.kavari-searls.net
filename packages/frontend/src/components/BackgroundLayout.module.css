@@ -1,6 +1,17 @@
 .container {
-  width: 100%;
-  position: relative;
+  position: fixed;
+  inset: 0;
+}
+
+.scroller {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  scroll-padding-top: 44px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
+  outline: none;
 }
 
 .content {
@@ -38,6 +49,9 @@
 .footerContent {
   position: relative;
   z-index: 5;
+  /* The scroller replaces the body as the scroll container, so the body's
+     safe-area bottom padding no longer protects the footer credits. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .footerFixed {
