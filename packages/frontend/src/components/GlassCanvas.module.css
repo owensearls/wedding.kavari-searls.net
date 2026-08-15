@@ -1,0 +1,32 @@
+/* Mirror canvases covering the Liquid Glass bar footprints: the safe-area
+   strip plus a tunable overlap into the content area (the bars float
+   partly inside the safe viewport). The overlap must stay below the nav
+   link (which starts 10px under the top inset) and the footer credits
+   (25px above the bottom inset padding) — tune the two custom properties
+   against a real device. Absolute (never tint-sampled), topmost so the
+   glass composites their pixels, and painting an exact mirror of the
+   layers beneath, so they are invisible on screen. */
+
+.glassTop {
+  position: absolute;
+  top: calc(-1 * env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: calc(env(safe-area-inset-top, 0px) + var(--glass-extend-top, 0px));
+  z-index: 6;
+  pointer-events: none;
+}
+
+.glassBottom {
+  position: absolute;
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: calc(
+    env(safe-area-inset-bottom, 0px) + var(--glass-extend-bottom, 24px)
+  );
+  z-index: 6;
+  pointer-events: none;
+}

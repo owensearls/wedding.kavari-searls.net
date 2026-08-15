@@ -6,6 +6,13 @@
   position: relative;
   height: 100dvh;
   timeline-scope: --home-view;
+  /* How far the Liquid Glass mirror canvases reach past the safe-area
+     strips into the content area (the floating bars overlap it). Tuned
+     against a real device; see GlassCanvas. Upper bounds: the nav link
+     starts 10px below the top inset, the footer credits 25px above the
+     bottom one. */
+  --glass-extend-top: 0px;
+  --glass-extend-bottom: 24px;
 }
 
 /* Sampler bait for Safari 26 Liquid Glass: the only position: fixed

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
+import { GlassCanvas } from './GlassCanvas'
 import { Section } from './Section'
 import { Chevron } from './ui/icons/Chevron'
 import type { ReactNode } from 'react'
@@ -146,6 +147,7 @@ export function BackgroundLayout({
             />
           </picture>
         </div>
+        <GlassCanvas scrollerRef={scrollerRef} />
       </div>
     </AnchorContext.Provider>
   )
