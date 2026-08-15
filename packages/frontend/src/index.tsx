@@ -52,11 +52,11 @@ export default function Home() {
           </div>
         }
       >
-        <Section id="rsvp" anchor="rsvp" minHeight="100dvh">
+        <Section id="rsvp" anchor="rsvp" minHeight="100dvh" scrollable>
           <h1 style={{ textAlign: 'center', padding: '25px' }}>RSVP</h1>
           <RsvpLookup />
         </Section>
-        <Section id="faq" anchor="faq" minHeight="125dvh">
+        <Section id="faq" anchor="faq" minHeight="100dvh" scrollable>
           <h1 style={{ textAlign: 'center', padding: '25px' }}>FAQ</h1>
           <div className={styles.faqContent}>
             <h2>When is the wedding?</h2>
@@ -90,6 +90,14 @@ export default function Home() {
               </a>{' '}
               with promotion code "Kavari". Please reserve rooms prior to July
               18, 2026 to use the discount code.
+            </p>
+
+            <h2>Should we bring a gift?</h2>
+            <p>
+              Your presence is the only gift we need. Instead of gifts, we ask
+              that guests make a donation to PAWS, the Philadelphia Animal
+              Welfare Society,{' '}
+              <a href="https://secure.phillypaws.org/oldwedding">here</a>.
             </p>
           </div>
         </Section>

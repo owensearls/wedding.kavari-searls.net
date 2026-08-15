@@ -1,9 +1,75 @@
 .section {
-  /* scroll-snap-align: start; */
-  /* scroll-snap-stop: normal; */
   width: 100%;
   box-sizing: border-box;
   position: relative;
   padding-left: 25px;
   padding-right: 25px;
+}
+
+.scrollSection {
+  overflow: hidden;
+}
+
+.sectionScroll {
+  height: 100%;
+  overflow-y: auto;
+  /* Must stay `auto`: chaining into the page scroll at the edges is what
+     hands off between within-section and between-section scrolling. */
+  overscroll-behavior-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
+}
+
+.sectionScrollContent {
+  /* Anchored sections sit 44px below the viewport top (nav offset), leaving
+     the section's last 44px below the fold — pad past that so the final
+     line is always visible when the inner scroller is at its end. */
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+}
+
+@property --section-fade-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --section-fade-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* Fade clipped content at the scroller's edges, driven by the scroller's
+   own scroll progress: the bottom fade collapses on reaching the end, the
+   top fade appears once scrolling starts. When the content fits and there
+   is nothing to scroll, the timeline is inactive and both fades stay 0px. */
+@supports (animation-timeline: scroll(self)) {
+  .sectionScroll {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black var(--section-fade-top),
+      black calc(100% - var(--section-fade-bottom)),
+      transparent 100%
+    );
+    animation: edgeFade linear both;
+    animation-timeline: scroll(self);
+  }
+
+  @keyframes edgeFade {
+    0% {
+      --section-fade-top: 0px;
+      --section-fade-bottom: 64px;
+    }
+    10% {
+      --section-fade-top: 44px;
+    }
+    90% {
+      --section-fade-bottom: 64px;
+    }
+    100% {
+      --section-fade-top: 44px;
+      --section-fade-bottom: 0px;
+    }
+  }
 }
