@@ -35,6 +35,7 @@ html:has([data-scroll-root]) {
 }
 
 body {
+  position: relative;
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
@@ -47,19 +48,16 @@ body {
   background: transparent;
 }
 
-/* Full-bleed artwork layer for root-scrolling pages (/rsvp). Pages using
-   BackgroundLayout render their own backdrop inside the layout instead.
-   Fixed + centered + oversized + compositor-forced (transform, 0.99
-   alpha) so iOS 26 doesn't clip it to the inner viewport — see the
-   .backdrop notes in BackgroundLayout.module.css. */
+/* Full-bleed artwork layer for root-scrolling pages (/rsvp). Pages
+   using BackgroundLayout paint the artwork on their in-flow layout
+   instead. Absolute over the whole document (body is the positioned
+   ancestor), i.e. document-space paint that iOS 26 renders in the
+   extended surface behind the chrome — fixed layers are confined to
+   the inner viewport. */
 .page-background {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: calc(100vw + 12px);
-  height: calc(100lvh + 120px);
-  transform: translate(-50%, -50%);
-  background-color: rgb(204 206 192 / 0.99);
+  position: absolute;
+  inset: 0;
+  background-color: #cccec0;
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),

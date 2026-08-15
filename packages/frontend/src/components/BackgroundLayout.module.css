@@ -15,9 +15,10 @@
   background-repeat: no-repeat;
 }
 
-/* Lawn slice below the viewport for the bottom edge effect. */
+/* Lawn slice below the viewport shell, tall enough to reach past the
+   physical screen bottom in the extended surface. */
 .edgeRunwayBottom {
-  height: calc(env(safe-area-inset-bottom, 0px) + 60px);
+  height: calc(env(safe-area-inset-bottom, 0px) + 120px);
   background-color: #dbe1c4;
   background-image: url('/mountains.png');
   background-image: image-set(
@@ -34,30 +35,20 @@
      the root (PageLayout.css), the viewport always parks with this box's
      top edge at the top of the screen — i.e. scrolled exactly past the
      artwork runway, keeping real document pixels under the iOS 26
-     status-bar scroll-edge effect. Any overscroll or chained gesture
-     snaps back here, so the runway is never visible at rest. */
+     status-bar scroll-edge effect.
+
+     The artwork lives HERE, as this in-flow element's own background —
+     not on a fixed layer: iOS 26 renders in-flow document paint in the
+     surface it extends behind the notch and chrome, while fixed layers
+     are confined to the inner viewport (confirmed on device: the
+     in-flow runway strip rendered in the extended region while every
+     fixed artwork layer was clipped). The root is snap-parked, so this
+     background is static in practice. */
   position: relative;
   height: 100dvh;
   scroll-snap-align: start;
   timeline-scope: --home-view;
-}
-
-/* Full-bleed artwork reaching the physical screen edges — behind the
-   notch, the rounded corners, and the browser chrome. iOS 26 clips
-   position: fixed layers to the INNER viewport (below the status bar),
-   even with negative offsets, UNLESS the layer routes through the
-   compositor — an opaque fill is "simple-fill" optimized and clipped,
-   anything below alpha 1 escapes. So: fixed, centered, oversized well
-   past the large viewport on every side, with a transform and a 0.99
-   alpha background-color both forcing the compositor path. */
-.backdrop {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: calc(100vw + 12px);
-  height: calc(100lvh + 120px);
-  transform: translate(-50%, -50%);
-  background-color: rgb(204 206 192 / 0.99);
+  background-color: #cccec0;
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),
@@ -66,7 +57,6 @@
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
-  pointer-events: none;
 }
 
 .scroller {

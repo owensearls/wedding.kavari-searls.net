@@ -72,16 +72,14 @@ export function BackgroundLayout({
     navData = { href: '#home', text: 'Home', direction: 'up' }
   }
 
-  // Layer structure: `.container` fills the viewport in normal flow (the
-  // root can't scroll, so it never moves), holding the page as explicit
-  // layers: the full-bleed artwork backdrop, the nav overlay, the single
-  // scroll container, and the pinned mountains.
+  // Layer structure: `.container` is the artwork-painted viewport shell
+  // holding the nav overlay, the single scroll container, and the
+  // pinned mountains, with in-flow artwork runways above and below it.
   //
-  // iOS 26 note: Safari clips position:fixed layers to the inner
-  // viewport (below the status bar) unless they route through the
-  // compositor; the backdrop and mountains escape via transform /
-  // non-opaque background (see the CSS), which is what lets the artwork
-  // reach the physical screen edges behind the notch and corners.
+  // iOS 26 note: only IN-FLOW document paint renders in the surface
+  // Safari extends behind the notch and chrome — fixed layers are
+  // confined to the inner viewport. The artwork is therefore the
+  // container's own background plus the in-flow runways around it.
   //
   // The scroller (marked data-scroll-root for the initial-scroll script)
   // owns all scrolling; mandatory snapping keeps exactly one section on
@@ -97,12 +95,7 @@ export function BackgroundLayout({
           initial-scroll script), so real watercolor pixels occupy the
           scrolled-past region; a root snap point keeps it parked. */}
       <div className={styles.edgeRunwayTop} data-edge-runway-top="" />
-      <div className={styles.container}>
-        <div
-          className={styles.backdrop}
-          data-background=""
-          aria-hidden="true"
-        />
+      <div className={styles.container} data-background="">
         <div className={styles.nav}>
           <div className={styles.navContent}>
             <a href={navData.href} className={styles.navLink}>
@@ -149,7 +142,11 @@ export function BackgroundLayout({
           </picture>
         </div>
       </div>
-      <div className={styles.edgeRunwayBottom} aria-hidden="true" />
+      <div
+        className={styles.edgeRunwayBottom}
+        data-edge-runway-bottom=""
+        aria-hidden="true"
+      />
     </AnchorContext.Provider>
   )
 }
