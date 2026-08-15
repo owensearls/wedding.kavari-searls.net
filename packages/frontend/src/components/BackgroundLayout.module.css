@@ -1,53 +1,14 @@
-/* Scrolled-past artwork for the top scroll-edge effect: sky slice of
-   the watercolor, sitting in document space above the viewport when the
-   page is parked at the root snap position (the container's top edge —
-   see .container). */
-.edgeRunwayTop {
-  height: calc(env(safe-area-inset-top, 0px) + 120px);
-  background-color: #d3dbe1;
-  background-image: url('/background.jpg');
-  background-image: image-set(
-    url('/background.avif') 1x type('image/avif'),
-    url('/background.jpg') 1x type('image/jpeg')
-  );
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-}
-
-/* Lawn slice below the viewport shell, tall enough to reach past the
-   physical screen bottom in the extended surface. */
-.edgeRunwayBottom {
-  height: calc(env(safe-area-inset-bottom, 0px) + 120px);
-  background-color: #dbe1c4;
-  background-image: url('/mountains.png');
-  background-image: image-set(
-    url('/mountains.avif') 1x type('image/avif'),
-    url('/mountains.png') 1x type('image/png')
-  );
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
-}
-
-.container {
-  /* The document's only root snap position: with mandatory snapping on
-     the root (PageLayout.css), the viewport always parks with this box's
-     top edge at the top of the screen — i.e. scrolled exactly past the
-     artwork runway, keeping real document pixels under the iOS 26
-     status-bar scroll-edge effect.
-
-     The artwork lives HERE, as this in-flow element's own background —
-     not on a fixed layer: iOS 26 renders in-flow document paint in the
-     surface it extends behind the notch and chrome, while fixed layers
-     are confined to the inner viewport (confirmed on device: the
-     in-flow runway strip rendered in the extended region while every
-     fixed artwork layer was clipped). The root is snap-parked, so this
-     background is static in practice. */
-  position: relative;
-  height: 100dvh;
-  scroll-snap-align: start;
-  timeline-scope: --home-view;
+/* THE background: one continuous artwork layer spanning the entire
+   document — runways, shell, everything — as document-space paint
+   (absolute over the body, never fixed): iOS 26 renders in-flow and
+   document-space paint in the surface it extends behind the notch and
+   chrome, while fixed layers are confined to the inner viewport
+   (confirmed on device). One layer, one cover crop: no seams. The root
+   is snap-parked, so it is static in practice — a full-screen-locked
+   background with the scrolling shell layered on top. */
+.artwork {
+  position: absolute;
+  inset: 0;
   background-color: #cccec0;
   background-image: url('/background.jpg');
   background-image: image-set(
@@ -57,6 +18,29 @@
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* Transparent spacers giving the document its scrolled-past (top) and
+   extended-surface (bottom) regions; the unified artwork layer paints
+   them. The page parks scrolled past the top spacer (root snap on the
+   shell), keeping document pixels under the status-bar edge effect. */
+.edgeRunwayTop {
+  height: calc(env(safe-area-inset-top, 0px) + 120px);
+}
+
+.edgeRunwayBottom {
+  height: calc(env(safe-area-inset-bottom, 0px) + 120px);
+}
+
+.container {
+  /* The document's only root snap position: the viewport always parks
+     with this transparent shell's top edge at the top of the screen —
+     scrolled exactly past the top spacer. */
+  position: relative;
+  height: 100dvh;
+  scroll-snap-align: start;
+  timeline-scope: --home-view;
 }
 
 .scroller {
@@ -114,18 +98,19 @@
 .footerContent {
   position: relative;
   z-index: 5;
-  /* Clear the bottom safe area plus the ChromeCanvas band (env + 64px),
-     which mirrors artwork over anything inside its footprint. */
+  /* Keep the credits clear of the bottom safe area and the floating
+     glass chrome's footprint. */
   padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
 }
 
 .footerFixed {
-  /* Fixed with its own transform so iOS 26 composites it separately and
-     the mountains reach the physical screen bottom (in-flow content is
-     clipped to the inner viewport by the locked root). */
-  position: fixed;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
-  transform: translateZ(0);
+  /* Document-space paint (absolute, never fixed — fixed is confined to
+     the inner viewport on iOS 26). Extends past the shell bottom by the
+     gap between the dynamic and large viewports plus the home-indicator
+     inset, so the lawn reaches the physical screen bottom; 0 on
+     desktop, where the viewports coincide. */
+  position: absolute;
+  bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
   z-index: 3;

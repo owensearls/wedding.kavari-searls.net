@@ -72,14 +72,15 @@ export function BackgroundLayout({
     navData = { href: '#home', text: 'Home', direction: 'up' }
   }
 
-  // Layer structure: `.container` is the artwork-painted viewport shell
-  // holding the nav overlay, the single scroll container, and the
-  // pinned mountains, with in-flow artwork runways above and below it.
+  // Layer structure: one document-spanning artwork layer (the
+  // full-screen-locked background), transparent spacers above and below
+  // the viewport shell, and the transparent shell itself holding the
+  // nav overlay, the single scroll container, and the mountains.
   //
-  // iOS 26 note: only IN-FLOW document paint renders in the surface
-  // Safari extends behind the notch and chrome — fixed layers are
-  // confined to the inner viewport. The artwork is therefore the
-  // container's own background plus the in-flow runways around it.
+  // iOS 26 note: only in-flow / document-space paint renders in the
+  // surface Safari extends behind the notch and chrome — fixed layers
+  // are confined to the inner viewport (confirmed on device). Nothing
+  // in this layout uses position: fixed.
   //
   // The scroller (marked data-scroll-root for the initial-scroll script)
   // owns all scrolling; mandatory snapping keeps exactly one section on
@@ -87,15 +88,15 @@ export function BackgroundLayout({
   // though the document root never scrolls.
   return (
     <AnchorContext.Provider value={currentAnchor}>
-      {/* In-flow artwork runways: iOS 26's top edge is a scroll-edge
-          effect that shows the DOCUMENT pixels scrolled underneath the
-          status bar — only in-flow content above the viewport can appear
-          behind the notch (fixed layers are viewport-attached and never
-          qualify). The page loads parked past the top runway (see the
-          initial-scroll script), so real watercolor pixels occupy the
-          scrolled-past region; a root snap point keeps it parked. */}
+      {/* One full-screen-locked background layer spanning the whole
+          document (spacers included), with the transparent scrolling
+          shell layered on top. The page loads parked past the top
+          spacer (see the initial-scroll script) so document pixels sit
+          under the status-bar edge effect; the root snap keeps it
+          parked. */}
+      <div className={styles.artwork} data-background="" aria-hidden="true" />
       <div className={styles.edgeRunwayTop} data-edge-runway-top="" />
-      <div className={styles.container} data-background="">
+      <div className={styles.container}>
         <div className={styles.nav}>
           <div className={styles.navContent}>
             <a href={navData.href} className={styles.navLink}>
