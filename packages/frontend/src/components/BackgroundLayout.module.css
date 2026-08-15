@@ -1,8 +1,10 @@
 .container {
-  /* In normal flow: the root can't scroll, so an in-flow viewport-sized
-     box is equivalent to a fixed one, without any of iOS 26's fixed-
-     layer clipping concerns. */
-  position: relative;
+  /* Sticky viewport shell: the document keeps a small scroll runway
+     (see PageLayout.css) so iOS 26 treats it as scrollable and extends
+     the content surface behind the notch and chrome — sticky pins the
+     shell to the viewport so the runway never visibly moves anything. */
+  position: sticky;
+  top: 0;
   height: 100dvh;
   timeline-scope: --home-view;
 }

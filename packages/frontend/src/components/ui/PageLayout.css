@@ -24,12 +24,16 @@ html {
   background-color: #cccec0;
 }
 
-/* When a page owns its scrolling via a dedicated scroll container, lock
-   the document root entirely: safe-area extensions on background layers
-   must not create a phantom root scroll, and iOS keeps its browser
-   chrome expanded when the root can't scroll. */
-html:has([data-scroll-root]) {
-  overflow: hidden;
+/* Pages with a dedicated scroll container keep their visuals pinned in
+   a sticky viewport shell (see BackgroundLayout), but the DOCUMENT
+   itself must stay scrollable by a small runway: iOS 26 only extends
+   the web content surface to the physical screen edges (behind the
+   notch and chrome) for scrollable documents — a non-scrollable root is
+   confined to the inner viewport no matter what in-page CSS does, and a
+   root overflow:hidden clip makes it worse. The sticky shell absorbs
+   the runway so nothing on screen ever moves. */
+body:has([data-scroll-root]) {
+  min-height: calc(100dvh + 24px);
 }
 
 body {
