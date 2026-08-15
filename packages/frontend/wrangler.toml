@@ -9,6 +9,13 @@ routes = [
   { pattern = "www.kavari-searls.net", custom_domain = true },
 ]
 
+# Production serves only the custom domains, but CI preview uploads
+# (wrangler versions upload in preview.yml) need workers.dev preview URLs.
+# Routes alone default workers_dev to false, which also drops preview
+# URLs — keep them explicitly enabled.
+workers_dev = false
+preview_urls = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "wedding-kavari-searls"

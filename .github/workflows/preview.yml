@@ -34,7 +34,11 @@ jobs:
         run: |
           set -o pipefail
           pnpm --filter frontend exec wrangler versions upload -c dist/rsc/wrangler.json --preview-alias "$ALIAS" 2>&1 | tee /tmp/frontend.log
-          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/frontend.log | head -1)
+          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/frontend.log | head -1 || true)
+          if [ -z "$URL" ]; then
+            echo "::error::Upload succeeded but wrangler printed no preview URL — check workers_dev/preview_urls in packages/frontend/wrangler.toml"
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
       - name: Build rsvp with frontend URL
         env:
@@ -45,7 +49,11 @@ jobs:
         run: |
           set -o pipefail
           pnpm --filter rsvp exec wrangler versions upload -c dist/rsc/wrangler.json --preview-alias "$ALIAS" 2>&1 | tee /tmp/rsvp.log
-          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/rsvp.log | head -1)
+          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/rsvp.log | head -1 || true)
+          if [ -z "$URL" ]; then
+            echo "::error::Upload succeeded but wrangler printed no preview URL — check workers_dev/preview_urls in packages/rsvp/wrangler.toml"
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
       - uses: marocchino/sticky-pull-request-comment@v2
         if: always() && (steps.rsvp.outputs.url != '' || steps.frontend.outputs.url != '')
