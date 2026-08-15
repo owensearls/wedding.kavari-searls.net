@@ -21,24 +21,37 @@ html {
   /* Anchor scrolling on the main page happens in the layout's scroll
      container (see BackgroundLayout), which carries its own smooth
      behavior and snap alignment. */
-  background-color: #e4e7e2;
+  background-color: #cccec0;
+}
+
+/* When a page owns its scrolling via a dedicated scroll container, lock
+   the document root entirely: safe-area extensions on background layers
+   must not create a phantom root scroll, and iOS keeps its browser
+   chrome expanded when the root can't scroll. */
+html:has([data-scroll-root]) {
+  overflow: hidden;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: transparent;
+  /* Opaque on-brand color, never transparent: Safari 26 tints its Liquid
+     Glass bars from the body background-color whenever no fixed element
+     provides a sample, and a transparent body renders white/grey bars.
+     Also the color revealed by overscroll rubber-banding. */
+  background-color: #cccec0;
 }
 
-/* Base background layer for every page. It sits behind all content in a
-   dedicated element (rather than a body pseudo-element) so pages can layer
-   or replace backgrounds independently of the scrolled content. */
+/* Full-bleed artwork layer for root-scrolling pages (/rsvp). Pages using
+   BackgroundLayout render their own backdrop inside the layout instead.
+   The explicit background-color keeps Safari 26's edge sampler on-brand
+   if it picks this layer (it samples colors, not images). */
 .page-background {
   position: fixed;
   inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
     calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
+  background-color: #cccec0;
   background-image: url('/background.jpg');
   background-image: image-set(
     url('/background.avif') 1x type('image/avif'),
@@ -47,8 +60,17 @@ body {
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
+}
+
+/* Content wrapper that pairs with .page-background: stacks the page
+   above the artwork and keeps interactive content out of the bottom
+   safe area (the body no longer pads for it). */
+.page-content {
+  position: relative;
+  z-index: 1;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 ::-webkit-scrollbar {

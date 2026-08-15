@@ -72,19 +72,36 @@ export function BackgroundLayout({
     navData = { href: '#home', text: 'Home', direction: 'up' }
   }
 
-  // Layer structure: `.container` fills the viewport and never scrolls, so
-  // background layers can be added to it (or behind it) independently of
-  // the content. The nav is an overlay on the container, outside the
-  // scroll flow, so each section occupies an exact viewport-sized slot in
-  // `.scroller` — the single scroll container (marked with
-  // data-scroll-root so the initial-scroll script in PageLayout can find
-  // it), whose mandatory snapping keeps exactly one section on screen at
-  // rest. tabIndex makes the scroller focusable so keyboard scrolling
-  // (Space/PageDown) works even though the document root no longer
-  // scrolls.
+  // Layer structure: `.container` fills the viewport in normal flow (the
+  // root can't scroll, so it never moves), holding the page as explicit
+  // layers: two fixed tint strips, the full-bleed artwork backdrop, the
+  // nav overlay, the single scroll container, and the pinned mountains.
+  //
+  // iOS 26 Liquid Glass constraint (see the sampling rules researched in
+  // docs and on device): Safari tints its glass bars by sampling the
+  // background-color of position:fixed/sticky elements near the viewport
+  // edges, falling back to the body color — and a *transparent* fixed
+  // element in the edge bands hijacks the sample into white/grey bars.
+  // So the tint strips are deliberately the ONLY fixed elements on the
+  // page, each with an opaque color matched to the artwork's edge tones;
+  // everything else here is absolute (never sampled). The strips paint
+  // beneath the backdrop, so they're invisible — they exist purely to
+  // feed the sampler.
+  //
+  // The scroller (marked data-scroll-root for the initial-scroll script)
+  // owns all scrolling; mandatory snapping keeps exactly one section on
+  // screen at rest, and tabIndex keeps keyboard scrolling working even
+  // though the document root never scrolls.
   return (
     <AnchorContext.Provider value={currentAnchor}>
       <div className={styles.container}>
+        <div className={styles.tintTop} aria-hidden="true" />
+        <div className={styles.tintBottom} aria-hidden="true" />
+        <div
+          className={styles.backdrop}
+          data-background=""
+          aria-hidden="true"
+        />
         <div className={styles.nav}>
           <div className={styles.navContent}>
             <a href={navData.href} className={styles.navLink}>
@@ -104,18 +121,6 @@ export function BackgroundLayout({
               <Section id="home" anchor="">
                 {header}
               </Section>
-              <div className={styles.footerFixed}>
-                <picture>
-                  <source srcSet="/mountains.avif" type="image/avif" />
-                  <img
-                    src="/mountains.png"
-                    width={2687}
-                    height={1931}
-                    className={styles.footerImage}
-                    alt="Watercolor painting of Mt. Ascutney, Vermont"
-                  />
-                </picture>
-              </div>
             </div>
             <div className={styles.footerContent}>
               <Section
@@ -128,6 +133,18 @@ export function BackgroundLayout({
               </Section>
             </div>
           </div>
+        </div>
+        <div className={styles.footerFixed}>
+          <picture>
+            <source srcSet="/mountains.avif" type="image/avif" />
+            <img
+              src="/mountains.png"
+              width={2687}
+              height={1931}
+              className={styles.footerImage}
+              alt="Watercolor painting of Mt. Ascutney, Vermont"
+            />
+          </picture>
         </div>
       </div>
     </AnchorContext.Provider>

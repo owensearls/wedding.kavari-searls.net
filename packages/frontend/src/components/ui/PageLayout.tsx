@@ -30,6 +30,9 @@ export function PageLayout({ title, children }: PageLayoutProps) {
           name="viewport"
           content="width=device-width, initial-scale=1.0, viewport-fit=cover"
         />
+        {/* Ignored by Safari 26 (it samples page colors instead) but still
+            drives the browser UI color on Android and installed PWAs. */}
+        <meta name="theme-color" content="#cccec0" />
         <link
           rel="preload"
           as="image"
@@ -47,7 +50,6 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         <title>{title}</title>
       </head>
       <body>
-        <div className="page-background" aria-hidden="true" />
         {children}
         <script dangerouslySetInnerHTML={{ __html: initialScrollScript }} />
       </body>

@@ -1,6 +1,58 @@
 .container {
+  /* In normal flow, never position: fixed — Safari 26 samples fixed
+     elements near the viewport edges for its glass-bar tint, and a
+     transparent full-viewport fixed box hijacks the sample. The root
+     can't scroll, so an in-flow viewport-sized box is equivalent. */
+  position: relative;
+  height: 100dvh;
+  timeline-scope: --home-view;
+}
+
+/* Sampler bait for Safari 26 Liquid Glass: the only position: fixed
+   elements on the page, opaque, sized/placed inside the reverse-
+   engineered sampling bands (>=80% width, >=3px tall, within ~3-4px of
+   the edge). Painted beneath the backdrop, so never actually visible.
+   Colors are the measured edge tones of the rendered artwork. */
+.tintTop {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: max(env(safe-area-inset-top, 0px), 4px);
+  background-color: #d3dbe1;
+  pointer-events: none;
+}
+
+.tintBottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: max(env(safe-area-inset-bottom, 0px), 4px);
+  background-color: #dbe1c4;
+  pointer-events: none;
+}
+
+/* Full-bleed artwork. Absolute (never sampled, and rock-solid during
+   scrolling since the root never scrolls), extended past every safe-area
+   edge so the watercolor reaches the physical screen edges behind the
+   notch and the browser chrome. */
+.backdrop {
+  position: absolute;
+  inset: calc(-1 * env(safe-area-inset-top, 0px))
+    calc(-1 * env(safe-area-inset-right, 0px))
+    calc(-1 * env(safe-area-inset-bottom, 0px))
+    calc(-1 * env(safe-area-inset-left, 0px));
+  background-color: #cccec0;
+  background-image: url('/background.jpg');
+  background-image: image-set(
+    url('/background.avif') 1x type('image/avif'),
+    url('/background.jpg') 1x type('image/jpeg')
+  );
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  pointer-events: none;
 }
 
 .scroller {
@@ -23,12 +75,15 @@
 
 .nav {
   /* Overlay on the viewport container, outside the scroll flow, so
-     sections sit at exact viewport multiples for snapping. */
+     sections sit at exact viewport multiples for snapping. Absolute, not
+     sticky: sticky elements at the top edge are sampled for the iOS 26
+     bar tint and this box is transparent. */
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 4;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .navContent {
@@ -50,7 +105,6 @@
 .contentInner {
   position: relative;
   z-index: 1;
-  timeline-scope: --home-view;
 }
 
 .footerContent {
@@ -62,7 +116,10 @@
 }
 
 .footerFixed {
-  position: fixed;
+  /* Absolute, not fixed: the container already spans the viewport, and a
+     transparent fixed box at the bottom edge would hijack the iOS 26
+     bar-tint sample. */
+  position: absolute;
   bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
