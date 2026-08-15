@@ -9,6 +9,11 @@
 .artwork {
   position: absolute;
   inset: 0;
+  /* Parallax: drift slower than the content, driven by the page
+     scroller's progress (--page-scroll, scoped on body). Document-space
+     transform, kept well within the spacers' slack so the artwork never
+     stops covering the screen. */
+  will-change: transform;
   background-color: #cccec0;
   background-image: url('/background.jpg');
   background-image: image-set(
@@ -30,7 +35,9 @@
 }
 
 .edgeRunwayBottom {
-  height: calc(env(safe-area-inset-bottom, 0px) + 120px);
+  /* Deep: the artwork layer spans it, so document paint (and the
+     parallax drift's slack) extends far past the physical bottom. */
+  height: calc(env(safe-area-inset-bottom, 0px) + 40vh);
 }
 
 .container {
@@ -48,6 +55,7 @@
   inset: 0;
   overflow-y: auto;
   scroll-behavior: smooth;
+  scroll-timeline-name: --page-scroll;
   /* Mandatory snapping means the only rest positions are section
      boundaries — content from two sections is never left on screen
      together. Sections opt in via scroll-snap-align (see Section). */
@@ -138,6 +146,23 @@
   view-timeline-axis: block;
 }
 
+/* Touch devices: reach past where 100lvh lands, which can stop short
+   of the physical screen bottom on iOS 26. Crops a little extra lawn. */
+@media (pointer: coarse) {
+  .footerFixed {
+    bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px) - 80px);
+  }
+}
+
+@keyframes artworkDrift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-120px);
+  }
+}
+
 @keyframes mountainParallax {
   0% {
     max-height: 0dvh;
@@ -151,6 +176,11 @@
 }
 
 @supports (animation-timeline: scroll()) {
+  .artwork {
+    animation: artworkDrift linear both;
+    animation-timeline: --page-scroll;
+  }
+
   .footerImage {
     animation: mountainParallax linear both;
     animation-timeline: --home-view;

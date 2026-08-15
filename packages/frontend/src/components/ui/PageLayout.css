@@ -36,6 +36,10 @@ html:has([data-scroll-root]) {
 
 body {
   position: relative;
+  /* Scopes the page scroller's scroll timeline (defined in
+     BackgroundLayout) so the sibling artwork layer can consume it for
+     the background parallax. */
+  timeline-scope: --page-scroll;
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
