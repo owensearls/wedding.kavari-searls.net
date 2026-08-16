@@ -61,45 +61,171 @@ export function BackgroundLayout({
     return () => observer.disconnect()
   }, [])
 
-  // Sections are exactly one viewport tall with their content in a
-  // nested scroller (see Section), so the page scroller's only snap
-  // positions are section tops — entering a section from either
-  // direction always lands at its top natively. Reset a section's
-  // inner scroller once it fully leaves the viewport, so it is always
-  // re-entered at the top of its content.
+  // Section entry correction: CSS snapping alone can rest a
+  // cross-section entry away from the section's start — an upward
+  // entry into a taller-than-viewport section lands at its content END
+  // (the nearest position where the oversized snap area covers the
+  // snapport), and a hard fling downward can overshoot a boundary into
+  // mid-content. Reading flows top-down, so a scroll that leaves its
+  // section is redirected to the new section's start. The redirect
+  // fires PREEMPTIVELY, on the first scroll frame where the gesture
+  // has committed to the new section (position inside its
+  // fully-covering range, pointer already lifted), so there is no
+  // visible settle-then-glide double motion; a settle-time pass
+  // backstops anything the early redirect missed. Scrolling within a
+  // section is untouched, and small ticks that snap back never cross
+  // the commit threshold.
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
-    const inners = Array.from(
-      scroller.querySelectorAll('[data-section-scroller]')
+    const sections = Array.from(
+      scroller.querySelectorAll('section[id]')
     ) as HTMLElement[]
-    if (inners.length === 0) return
+    if (sections.length === 0) return
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) return
-          const inner = (entry.target as HTMLElement).querySelector(
-            '[data-section-scroller]'
-          )
-          if (inner) inner.scrollTop = 0
-        })
-      },
-      {
-        root: scroller,
-        threshold: 0,
-        // A section resting exactly adjacent to the viewport still
-        // "intersects" at ratio 0; shrink the root box a hair so
-        // adjacency counts as fully out and the reset fires.
-        rootMargin: '-4px 0px -4px 0px',
+    // Scroll offsets of the section tops, robust to nested positioned
+    // wrappers; recomputed per event so resizes stay correct.
+    const sectionTops = () =>
+      sections
+        .map(
+          (s) =>
+            s.getBoundingClientRect().top -
+            scroller.getBoundingClientRect().top +
+            scroller.scrollTop
+        )
+        .sort((a, b) => a - b)
+
+    const topOfSectionAt = (y: number, tops: number[]) => {
+      let top = tops[0]
+      for (const t of tops) if (t <= y + 2) top = t
+      return top
+    }
+
+    let prevRest = scroller.scrollTop
+    let dragging = false
+    let correcting = false
+    // Anchor navigation (the nav links) smooth-scrolls THROUGH
+    // intermediate sections; those frames must not be mistaken for a
+    // gesture committing to one. Set on hashchange, cleared on settle.
+    let navigating = false
+
+    // Manual rAF glide instead of scrollTo({behavior:'smooth'}): iOS
+    // swallows programmatic smooth scrolls around its native
+    // momentum/snap animations, while direct scrollTop writes CANCEL
+    // the native animation and take over. Every position the glide
+    // passes through lies inside the target section's covering range —
+    // all valid snap positions — so the snap engine never fights it.
+    let glideRaf = 0
+    const cancelGlide = () => {
+      cancelAnimationFrame(glideRaf)
+      correcting = false
+    }
+    const correctTo = (top: number) => {
+      correcting = true
+      cancelAnimationFrame(glideRaf)
+      const from = scroller.scrollTop
+      const dist = top - from
+      if (Math.abs(dist) < 1) {
+        correcting = false
+        return
       }
-    )
+      const duration = Math.min(500, Math.max(200, Math.abs(dist) * 1.2))
+      const start = performance.now()
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / duration)
+        scroller.scrollTop = from + dist * easeOut(t)
+        if (t < 1) {
+          glideRaf = requestAnimationFrame(step)
+        } else {
+          prevRest = top
+          correcting = false
+        }
+      }
+      glideRaf = requestAnimationFrame(step)
+    }
 
-    inners.forEach((inner) => {
-      const section = inner.closest('section')
-      if (section) observer.observe(section)
-    })
-    return () => observer.disconnect()
+    const onScroll = () => {
+      if (dragging || correcting || navigating) return
+      const y = scroller.scrollTop
+      const tops = sectionTops()
+      const curTop = topOfSectionAt(y, tops)
+      if (curTop === topOfSectionAt(prevRest, tops) || y <= curTop + 2) return
+      // Committed to the new section only once it fully covers the
+      // viewport — positions short of that may still snap back to the
+      // origin section.
+      const next = tops[tops.indexOf(curTop) + 1]
+      const sectionEnd = next !== undefined ? next : scroller.scrollHeight
+      if (y <= sectionEnd - scroller.clientHeight + 2) correctTo(curTop)
+    }
+
+    // Records the rest position and backstops any cross-section
+    // landing the early redirect missed. Driven by BOTH scrollend and
+    // a scroll-quiet timer — WebKit fires scrollend unreliably around
+    // snap animations, and a missed settle would leave an upward entry
+    // resting at the section's content end. Extra invocations are
+    // harmless (same-section settles are no-ops).
+    const settle = () => {
+      correcting = false
+      navigating = false
+      const y = scroller.scrollTop
+      const tops = sectionTops()
+      const curTop = topOfSectionAt(y, tops)
+      const prevTop = topOfSectionAt(prevRest, tops)
+      if (curTop !== prevTop && y > curTop + 2) {
+        prevRest = curTop
+        correctTo(curTop)
+        return
+      }
+      prevRest = y
+    }
+
+    const onPointerDown = () => {
+      // User takeover cancels any in-flight glide or navigation state.
+      dragging = true
+      cancelGlide()
+      navigating = false
+    }
+    const onPointerUp = () => {
+      dragging = false
+    }
+    const onWheel = () => {
+      // Wheel input never fires pointerdown; a tick during the glide
+      // hands control back to the user.
+      cancelGlide()
+    }
+    const onHashChange = () => {
+      navigating = true
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const onScrollTick = () => {
+      onScroll()
+      clearTimeout(timer)
+      timer = setTimeout(settle, 160)
+    }
+    const onScrollEnd = () => {
+      clearTimeout(timer)
+      settle()
+    }
+    scroller.addEventListener('scroll', onScrollTick, { passive: true })
+    scroller.addEventListener('scrollend', onScrollEnd)
+    scroller.addEventListener('pointerdown', onPointerDown)
+    scroller.addEventListener('wheel', onWheel, { passive: true })
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
+    window.addEventListener('hashchange', onHashChange)
+    return () => {
+      clearTimeout(timer)
+      cancelAnimationFrame(glideRaf)
+      scroller.removeEventListener('scroll', onScrollTick)
+      scroller.removeEventListener('scrollend', onScrollEnd)
+      scroller.removeEventListener('pointerdown', onPointerDown)
+      scroller.removeEventListener('wheel', onWheel)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerUp)
+      window.removeEventListener('hashchange', onHashChange)
+    }
   }, [])
 
   let navData: {

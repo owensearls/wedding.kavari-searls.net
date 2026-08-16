@@ -4,23 +4,28 @@
   position: relative;
   padding-left: 25px;
   padding-right: 25px;
-  /* Every section is a snap area of the page scroller, sized exactly
-     one viewport tall (see Section), so section tops are the ONLY rest
-     positions — every transition lands at the top of the target
-     section. snap-stop keeps flings from skipping past a section. */
+  /* Every section is a snap area of the page scroller: rest positions
+     are either a section flush with the viewport or, for sections
+     taller than the viewport, anywhere the section fully covers it —
+     free scrolling within long content, never straddling two sections.
+     snap-stop keeps flings from skipping past a section boundary. */
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
-/* Nested scroller carrying a section's overflowing content. Gestures
-   over the section scroll this first; at its boundary the scroll
-   chains to the page scroller (overscroll-behavior deliberately left
-   at auto), which pages to the neighboring section. */
-.sectionScroller {
-  height: 100%;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
+/* Invisible snap anchor at the section's very end: gives flings a
+   mandatory stop exactly where the content ends, before the scroll can
+   continue into the next section. Mid-content positions stay freely
+   scrollable — this only adds a boundary stop. */
+.endSnap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  scroll-snap-align: end;
+  scroll-snap-stop: always;
+  pointer-events: none;
 }
 
 .sectionContent {
