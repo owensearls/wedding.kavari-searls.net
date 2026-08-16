@@ -31,6 +31,26 @@
      document root — that chain is what lets Safari arm
      pull-to-refresh. Local rubber-banding stays. */
   overscroll-behavior: contain;
+  /* Scrolling content cannot render in the unsafe areas (iOS 26 paints
+     those regions from document pixels — the parked sky), so it would
+     clip hard at the safe-area boundary. Fade it out just before each
+     edge instead. The mask is static in the shell's space; only the
+     content moves through it. */
+  --edge-fade: 40px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent env(safe-area-inset-top, 0px),
+    #000 calc(env(safe-area-inset-top, 0px) + var(--edge-fade)),
+    #000 calc(100% - env(safe-area-inset-bottom, 0px) - var(--edge-fade)),
+    transparent calc(100% - env(safe-area-inset-bottom, 0px))
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent env(safe-area-inset-top, 0px),
+    #000 calc(env(safe-area-inset-top, 0px) + var(--edge-fade)),
+    #000 calc(100% - env(safe-area-inset-bottom, 0px) - var(--edge-fade)),
+    transparent calc(100% - env(safe-area-inset-bottom, 0px))
+  );
   scrollbar-width: thin;
   scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
   outline: none;
