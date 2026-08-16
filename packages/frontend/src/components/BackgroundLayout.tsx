@@ -128,7 +128,7 @@ export function BackgroundLayout({
                 minHeight="100dvh"
                 contentPosition="bottom"
               >
-                {footer}
+                <div className={styles.creditsFlow}>{footer}</div>
               </Section>
             </div>
           </div>
@@ -145,6 +145,15 @@ export function BackgroundLayout({
               alt="Watercolor painting of Mt. Ascutney, Vermont"
             />
           </picture>
+        </div>
+        {/* Visual copy of the credits, anchored in the same document
+            space as the mountains (which provably reaches the physical
+            screen bottom on iOS 26) rather than inside the clipped
+            scroller. Revealed by the footer's view timeline; the
+            in-flow copy in the footer Section stays for screen readers
+            and for browsers without scroll-driven animations. */}
+        <div className={styles.creditsFixed} aria-hidden="true">
+          {footer}
         </div>
       </div>
       <div
