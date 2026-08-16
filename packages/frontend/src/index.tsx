@@ -16,6 +16,7 @@ export default function Home() {
               display: 'flex',
               flexDirection: 'column',
               gap: '10px',
+              transform: 'translateY(-20px)',
             }}
           >
             <h1>
