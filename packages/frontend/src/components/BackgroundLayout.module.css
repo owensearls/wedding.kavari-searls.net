@@ -172,9 +172,15 @@
   }
 
   .footerContent {
-    /* Seat the credits on the enlarged grass band, above the floating
-       bottom bar. */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
+    /* The credits are laid out against the layout viewport's bottom,
+       but the screen extends further down by the dynamic/large viewport
+       gap. Shift them down by exactly that gap so the padding below
+       measures clearance from the PHYSICAL bottom — seating the text on
+       the grass just above the floating bar. */
+    transform: translateY(
+      calc(100lvh - 100dvh + env(safe-area-inset-bottom, 0px))
+    );
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
   }
 }
 
