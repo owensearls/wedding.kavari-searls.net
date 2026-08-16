@@ -15,7 +15,6 @@ export default function Home() {
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
-              paddingTop: 75,
               gap: '10px',
             }}
           >
