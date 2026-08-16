@@ -22,6 +22,9 @@ html {
      container (see BackgroundLayout), which carries its own smooth
      behavior and snap alignment. */
   background-color: #cccec0;
+  /* Never let a downward pull on the (parked) document become Safari's
+     pull-to-refresh. */
+  overscroll-behavior-y: none;
 }
 
 /* Pages with a dedicated scroll container park the document scrolled
@@ -50,6 +53,9 @@ body {
      transparent body). html carries the on-brand overscroll color; the
      sampler ignores html. */
   background: transparent;
+  /* Some engines read the viewport's overscroll behavior from body
+     rather than html — set it on both. */
+  overscroll-behavior-y: none;
 }
 
 ::-webkit-scrollbar {

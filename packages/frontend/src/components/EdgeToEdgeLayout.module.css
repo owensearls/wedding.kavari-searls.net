@@ -27,6 +27,10 @@
   inset: 0;
   overflow-y: auto;
   scroll-behavior: smooth;
+  /* Overscrolling the content must never chain into the parked
+     document root — that chain is what lets Safari arm
+     pull-to-refresh. Local rubber-banding stays. */
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
   outline: none;
