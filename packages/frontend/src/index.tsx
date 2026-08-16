@@ -94,11 +94,7 @@ export default function Home() {
             <h2>Will there be accommodations nearby?</h2>
             <p>
               We have organized a block of rooms for guests at The Shire in
-              Woodstock, VT with a discount code. Reserve rooms{' '}
-              <a href="https://app.mews.com/distributor/42e94bfb-cc36-4089-831f-b0de011d3d8e?mewsVoucherCode=Kavari">
-                here
-              </a>{' '}
-              with promotion code "Kavari".
+              Woodstock, VT.
             </p>
           </div>
         </Section>
