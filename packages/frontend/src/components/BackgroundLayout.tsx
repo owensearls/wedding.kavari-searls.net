@@ -104,6 +104,10 @@ export function BackgroundLayout({
     let prevRest = scroller.scrollTop
     let dragging = false
     let correcting = false
+    // Anchor navigation (the nav links) smooth-scrolls THROUGH
+    // intermediate sections; those frames must not be mistaken for a
+    // gesture committing to one. Set on hashchange, cleared on settle.
+    let navigating = false
 
     const correctTo = (top: number) => {
       correcting = true
@@ -111,7 +115,7 @@ export function BackgroundLayout({
     }
 
     const onScroll = () => {
-      if (dragging || correcting) return
+      if (dragging || correcting || navigating) return
       const y = scroller.scrollTop
       const tops = sectionTops()
       const curTop = topOfSectionAt(y, tops)
@@ -124,12 +128,15 @@ export function BackgroundLayout({
       if (y <= sectionEnd - scroller.clientHeight + 2) correctTo(curTop)
     }
 
-    // scrollend fires once per settled gesture (including after the
-    // snap animation); a scroll-quiet timer fills in where it is
-    // unsupported. Records the rest position and backstops any
-    // cross-section landing the early redirect missed.
+    // Records the rest position and backstops any cross-section
+    // landing the early redirect missed. Driven by BOTH scrollend and
+    // a scroll-quiet timer — WebKit fires scrollend unreliably around
+    // snap animations, and a missed settle would leave an upward entry
+    // resting at the section's content end. Extra invocations are
+    // harmless (same-section settles are no-ops).
     const settle = () => {
       correcting = false
+      navigating = false
       const y = scroller.scrollTop
       const tops = sectionTops()
       const curTop = topOfSectionAt(y, tops)
@@ -143,36 +150,42 @@ export function BackgroundLayout({
     }
 
     const onPointerDown = () => {
+      // User takeover cancels any in-flight glide or navigation state.
       dragging = true
       correcting = false
+      navigating = false
     }
     const onPointerUp = () => {
       dragging = false
     }
+    const onHashChange = () => {
+      navigating = true
+    }
 
     let timer: ReturnType<typeof setTimeout> | undefined
-    const supportsScrollEnd = 'onscrollend' in window
-    const onScrollWithFallback = () => {
+    const onScrollTick = () => {
       onScroll()
-      if (!supportsScrollEnd) {
-        clearTimeout(timer)
-        timer = setTimeout(settle, 150)
-      }
+      clearTimeout(timer)
+      timer = setTimeout(settle, 160)
     }
-    scroller.addEventListener('scroll', onScrollWithFallback, {
-      passive: true,
-    })
-    if (supportsScrollEnd) scroller.addEventListener('scrollend', settle)
+    const onScrollEnd = () => {
+      clearTimeout(timer)
+      settle()
+    }
+    scroller.addEventListener('scroll', onScrollTick, { passive: true })
+    scroller.addEventListener('scrollend', onScrollEnd)
     scroller.addEventListener('pointerdown', onPointerDown)
     window.addEventListener('pointerup', onPointerUp)
     window.addEventListener('pointercancel', onPointerUp)
+    window.addEventListener('hashchange', onHashChange)
     return () => {
       clearTimeout(timer)
-      scroller.removeEventListener('scroll', onScrollWithFallback)
-      scroller.removeEventListener('scrollend', settle)
+      scroller.removeEventListener('scroll', onScrollTick)
+      scroller.removeEventListener('scrollend', onScrollEnd)
       scroller.removeEventListener('pointerdown', onPointerDown)
       window.removeEventListener('pointerup', onPointerUp)
       window.removeEventListener('pointercancel', onPointerUp)
+      window.removeEventListener('hashchange', onHashChange)
     }
   }, [])
 
