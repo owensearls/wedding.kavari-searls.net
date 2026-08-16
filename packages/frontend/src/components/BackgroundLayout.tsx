@@ -61,13 +61,15 @@ export function BackgroundLayout({
     return () => observer.disconnect()
   }, [])
 
-  // Directional entry correction: CSS snapping alone rests an upward
-  // entry into a taller-than-viewport section at its content END (the
-  // nearest position where the oversized snap area covers the
-  // snapport). Reading flows top-down, so when a scroll settles in a
-  // section ABOVE the one it started from — and not at its start —
-  // glide to the section's start. Downward travel and scrolling within
-  // a section are untouched.
+  // Section entry correction: CSS snapping alone can rest a
+  // cross-section entry away from the section's start — an upward
+  // entry into a taller-than-viewport section lands at its content END
+  // (the nearest position where the oversized snap area covers the
+  // snapport), and a hard fling downward can overshoot a boundary into
+  // mid-content. Reading flows top-down, so whenever a scroll settles
+  // in a DIFFERENT section than it started from — and not at its start
+  // — glide to the section's start. Scrolling within a section is
+  // untouched.
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
@@ -100,7 +102,7 @@ export function BackgroundLayout({
       const tops = sectionTops()
       const curTop = topOfSectionAt(y, tops)
       const prevTop = topOfSectionAt(prevRest, tops)
-      if (curTop < prevTop && y > curTop + 2) {
+      if (curTop !== prevTop && y > curTop + 2) {
         prevRest = curTop
         scroller.scrollTo({ top: curTop, behavior: 'smooth' })
         return
