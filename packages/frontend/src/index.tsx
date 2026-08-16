@@ -73,12 +73,22 @@ export default function Home() {
               minute drive from the ceremony.{' '}
             </p>
 
+            <h2>Should we bring a gift?</h2>
+            <p>
+              Instead of gifts, we ask that guests{' '}
+              <a href="https://secure.phillypaws.org/oldwedding">
+                make a donation
+              </a>{' '}
+              to the Philadelphia Animal Welfare Society (PAWS), the shelter
+              where Sanam and Owen adopted their beloved cat Ruairí.
+            </p>
+
             <h2>What should I wear?</h2>
             <p>
               The ceremony and reception will be semi-formal. However, the
               reception will be primarily outdoors, so we encourage everyone to
               dress comfortably for a fall evening in Vermont, with typical lows
-              in the mid-forties to fifies, and for walking on grass.{' '}
+              in the mid-forties to fifties, and for walking on grass.{' '}
             </p>
 
             <h2>Will there be accommodations nearby?</h2>
@@ -90,14 +100,6 @@ export default function Home() {
               </a>{' '}
               with promotion code "Kavari". Please reserve rooms prior to July
               18, 2026 to use the discount code.
-            </p>
-
-            <h2>Should we bring a gift?</h2>
-            <p>
-              Your presence is the only gift we need. Instead of gifts, we ask
-              that guests make a donation to PAWS, the Philadelphia Animal
-              Welfare Society,{' '}
-              <a href="https://secure.phillypaws.org/oldwedding">here</a>.
             </p>
           </div>
         </Section>
