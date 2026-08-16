@@ -7,27 +7,8 @@
   will-change: transform;
 }
 
-/* Transparent spacers giving the document its scrolled-past (top) and
-   extended-surface (bottom) regions; the unified artwork layer paints
-   them. The page parks scrolled past the top spacer (root snap on the
-   shell), keeping document pixels under the status-bar edge effect. */
-.edgeRunwayTop {
-  height: calc(env(safe-area-inset-top, 0px) + 120px);
-}
-
-.edgeRunwayBottom {
-  /* Deep: the artwork layer spans it, so document paint (and the
-     parallax drift's slack) extends far past the physical bottom. */
-  height: calc(env(safe-area-inset-bottom, 0px) + 40vh);
-}
-
-.container {
-  /* The document's only root snap position: the viewport always parks
-     with this transparent shell's top edge at the top of the screen —
-     scrolled exactly past the top spacer. */
-  position: relative;
-  height: 100dvh;
-  scroll-snap-align: start;
+/* Main-page additions on the scaffold's shell and scroller. */
+.homeContainer {
   timeline-scope: --home-view, --footer-view;
   /* The rising mountains overflow horizontally when scaled up at the
      footer; clip only that axis (they must stay free to extend
@@ -35,23 +16,12 @@
   overflow-x: clip;
 }
 
-.scroller {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  scroll-behavior: smooth;
+.homeScroller {
   scroll-timeline-name: --page-scroll;
   /* Mandatory snapping means the only rest positions are section
      boundaries — content from two sections is never left on screen
      together. Sections opt in via scroll-snap-align (see Section). */
   scroll-snap-type: y mandatory;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
-  outline: none;
-}
-
-.content {
-  position: relative;
 }
 
 .nav {

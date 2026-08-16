@@ -52,15 +52,6 @@ body {
   background: transparent;
 }
 
-/* Content wrapper that pairs with the shared Backdrop: stacks the page
-   above the artwork and keeps interactive content out of the bottom
-   safe area (the body no longer pads for it). */
-.page-content {
-  position: relative;
-  z-index: 1;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
 ::-webkit-scrollbar {
   width: 10px;
   background: transparent;

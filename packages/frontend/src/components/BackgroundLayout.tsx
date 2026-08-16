@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
-import { Backdrop } from './Backdrop'
 import styles from './BackgroundLayout.module.css'
+import { EdgeToEdgeLayout } from './EdgeToEdgeLayout'
 import { Section } from './Section'
 import { Chevron } from './ui/icons/Chevron'
 import type { ReactNode } from 'react'
@@ -76,91 +76,69 @@ export function BackgroundLayout({
     navData = { href: '#home', text: 'Home', direction: 'up' }
   }
 
-  // Layer structure: one document-spanning artwork layer (the
-  // full-screen-locked background), transparent spacers above and below
-  // the viewport shell, and the transparent shell itself holding the
-  // nav overlay, the single scroll container, and the mountains.
-  //
-  // iOS 26 note: only in-flow / document-space paint renders in the
-  // surface Safari extends behind the notch and chrome — fixed layers
-  // are confined to the inner viewport (confirmed on device). Nothing
-  // in this layout uses position: fixed.
-  //
-  // The scroller (marked data-scroll-root for the initial-scroll script)
-  // owns all scrolling; mandatory snapping keeps exactly one section on
-  // screen at rest, and tabIndex keeps keyboard scrolling working even
-  // though the document root never scrolls.
+  // The main page rides the shared edge-to-edge scaffold and adds its
+  // own layers on top: the artwork's parallax drift, mandatory section
+  // snapping in the scroller, the nav overlay, and the mountains
+  // finale with the anchored credits.
   return (
     <AnchorContext.Provider value={currentAnchor}>
-      {/* One full-screen-locked background layer spanning the whole
-          document (spacers included), with the transparent scrolling
-          shell layered on top. The page loads parked past the top
-          spacer (see the initial-scroll script) so document pixels sit
-          under the status-bar edge effect; the root snap keeps it
-          parked. */}
-      <Backdrop className={styles.artwork} />
-      <div className={styles.edgeRunwayTop} data-edge-runway-top="" />
-      <div className={styles.container}>
-        <div className={styles.nav}>
-          <div className={styles.navContent}>
-            <a href={navData.href} className={styles.navLink}>
-              <Chevron direction={navData.direction} /> {navData.text}
-            </a>
-          </div>
-        </div>
-        <div
-          ref={scrollerRef}
-          className={styles.scroller}
-          data-scroll-root=""
-          tabIndex={-1}
-        >
-          <div className={styles.content}>
-            <div className={styles.contentInner}>
-              {children}
-              <Section id="home" anchor="" contentPosition="center">
-                {header}
-              </Section>
+      <EdgeToEdgeLayout
+        scrollerRef={scrollerRef}
+        artworkClassName={styles.artwork}
+        containerClassName={styles.homeContainer}
+        scrollerClassName={styles.homeScroller}
+        overlays={
+          <>
+            <div className={styles.nav}>
+              <div className={styles.navContent}>
+                <a href={navData.href} className={styles.navLink}>
+                  <Chevron direction={navData.direction} /> {navData.text}
+                </a>
+              </div>
             </div>
-            <div className={styles.footerContent}>
-              <Section
-                id="footer"
-                anchor="footer"
-                minHeight="100dvh"
-                contentPosition="bottom"
-              >
-                <div className={styles.creditsFlow}>{footer}</div>
-              </Section>
+            <div className={styles.footerFixed}>
+              <picture>
+                <source srcSet="/mountains.avif" type="image/avif" />
+                <img
+                  src="/mountains.png"
+                  width={2687}
+                  height={1931}
+                  className={styles.footerImage}
+                  data-mountains=""
+                  alt="Watercolor painting of Mt. Ascutney, Vermont"
+                />
+              </picture>
             </div>
-          </div>
+            {/* Visual copy of the credits, anchored in the same document
+                space as the mountains (which provably reaches the
+                physical screen bottom on iOS 26) rather than inside the
+                clipped scroller. Revealed by the footer's view timeline;
+                the in-flow copy in the footer Section stays for screen
+                readers and for browsers without scroll-driven
+                animations. */}
+            <div className={styles.creditsFixed} aria-hidden="true">
+              {footer}
+            </div>
+          </>
+        }
+      >
+        <div className={styles.contentInner}>
+          {children}
+          <Section id="home" anchor="" contentPosition="center">
+            {header}
+          </Section>
         </div>
-        <div className={styles.footerFixed}>
-          <picture>
-            <source srcSet="/mountains.avif" type="image/avif" />
-            <img
-              src="/mountains.png"
-              width={2687}
-              height={1931}
-              className={styles.footerImage}
-              data-mountains=""
-              alt="Watercolor painting of Mt. Ascutney, Vermont"
-            />
-          </picture>
+        <div className={styles.footerContent}>
+          <Section
+            id="footer"
+            anchor="footer"
+            minHeight="100dvh"
+            contentPosition="bottom"
+          >
+            <div className={styles.creditsFlow}>{footer}</div>
+          </Section>
         </div>
-        {/* Visual copy of the credits, anchored in the same document
-            space as the mountains (which provably reaches the physical
-            screen bottom on iOS 26) rather than inside the clipped
-            scroller. Revealed by the footer's view timeline; the
-            in-flow copy in the footer Section stays for screen readers
-            and for browsers without scroll-driven animations. */}
-        <div className={styles.creditsFixed} aria-hidden="true">
-          {footer}
-        </div>
-      </div>
-      <div
-        className={styles.edgeRunwayBottom}
-        data-edge-runway-bottom=""
-        aria-hidden="true"
-      />
+      </EdgeToEdgeLayout>
     </AnchorContext.Provider>
   )
 }

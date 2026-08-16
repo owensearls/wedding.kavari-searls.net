@@ -8,15 +8,16 @@ interface PageLayoutProps {
 
 const initialScrollScript = `(function(){
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  var scroller = document.querySelector('[data-scroll-root]');
   var hash = location.hash.slice(1);
   var el = document.getElementById(hash || 'home');
-  if (!el) return;
-  var scroller = document.querySelector('[data-scroll-root]');
-  var top = scroller
-    ? el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
-    : el.offsetTop;
-  try { (scroller || window).scrollTo({ top: top, behavior: 'instant' }); }
-  catch (e) { (scroller || document.documentElement).scrollTop = top; }
+  if (el) {
+    var top = scroller
+      ? el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
+      : el.offsetTop;
+    try { (scroller || window).scrollTo({ top: top, behavior: 'instant' }); }
+    catch (e) { (scroller || document.documentElement).scrollTop = top; }
+  }
   var runway = document.querySelector('[data-edge-runway-top]');
   if (runway) {
     try { window.scrollTo({ top: runway.offsetHeight, behavior: 'instant' }); }
