@@ -5,13 +5,16 @@ interface SectionProps {
   id: string
   anchor?: string
   children?: ReactNode
-  /** Fixed height when `scrollable`, minimum height otherwise. */
   minHeight?: string
   contentPosition?: 'top' | 'bottom'
   /**
-   * Lock the section to exactly `minHeight` and scroll overflowing content
-   * inside it. Reaching either edge of the inner scroller chains back into
-   * the page scroll, so content never spills into neighboring sections.
+   * Pageable content section: at least one viewport tall, growing with
+   * its content — all in the single page scroller. Its snap area being
+   * taller than the viewport means the scroller rests anywhere the
+   * section covers the screen (free reading through long content) but
+   * never straddling two sections; reaching the content's end, the next
+   * gesture pages to the neighboring section. One scroller, no nested
+   * scrolling modes.
    */
   scrollable?: boolean
 }
@@ -27,7 +30,7 @@ export function Section({
   const sectionAnchor = anchor ?? id
 
   const sectionStyle: React.CSSProperties = {
-    ...(scrollable ? { height: minHeight } : { minHeight }),
+    minHeight,
     ...(contentPosition === 'bottom' && {
       display: 'flex',
       flexDirection: 'column',
@@ -39,17 +42,11 @@ export function Section({
     <section
       id={id}
       data-anchor={sectionAnchor}
-      className={
-        scrollable
-          ? `${styles.section} ${styles.scrollSection}`
-          : styles.section
-      }
+      className={styles.section}
       style={sectionStyle}
     >
       {scrollable ? (
-        <div className={styles.sectionScroll}>
-          <div className={styles.sectionScrollContent}>{children}</div>
-        </div>
+        <div className={styles.sectionContent}>{children}</div>
       ) : (
         children
       )}

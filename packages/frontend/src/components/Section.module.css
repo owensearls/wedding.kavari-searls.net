@@ -4,78 +4,20 @@
   position: relative;
   padding-left: 25px;
   padding-right: 25px;
-  /* Every section is a full page in the snap container: rest positions
-     always align a section flush with the viewport, so no neighboring
-     section's content is visible at rest. */
+  /* Every section is a snap area of the page scroller: rest positions
+     are either a section flush with the viewport or, for sections
+     taller than the viewport, anywhere the section fully covers it —
+     free scrolling within long content, never straddling two sections.
+     snap-stop keeps flings from skipping past a section boundary. */
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
-.scrollSection {
-  overflow: hidden;
-}
-
-.sectionScroll {
-  height: 100%;
-  overflow-y: auto;
-  /* Must stay `auto`: chaining into the page scroll at the edges is what
-     hands off between within-section and between-section scrolling. */
-  overscroll-behavior-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
-}
-
-.sectionScrollContent {
-  /* Sections sit flush with the viewport top, where the nav (pushed down
-     by the notch inset) overlays the first stretch; pad past both so
-     headings start clear of the nav. */
+.sectionContent {
+  /* Sections align flush with the viewport top, where the nav (pushed
+     down by the notch inset) overlays the first stretch; pad past both
+     so headings start clear of the nav, and keep the last line clear of
+     the bottom safe area when resting at the section's end. */
   padding-top: calc(44px + env(safe-area-inset-top, 0px));
   padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-}
-
-@property --section-fade-top {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-
-@property --section-fade-bottom {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-
-/* Fade clipped content at the scroller's edges, driven by the scroller's
-   own scroll progress: the bottom fade collapses on reaching the end, the
-   top fade appears once scrolling starts. When the content fits and there
-   is nothing to scroll, the timeline is inactive and both fades stay 0px. */
-@supports (animation-timeline: scroll(self)) {
-  .sectionScroll {
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0,
-      black var(--section-fade-top),
-      black calc(100% - var(--section-fade-bottom)),
-      transparent 100%
-    );
-    animation: edgeFade linear both;
-    animation-timeline: scroll(self);
-  }
-
-  @keyframes edgeFade {
-    0% {
-      --section-fade-top: 0px;
-      --section-fade-bottom: 64px;
-    }
-    10% {
-      --section-fade-top: 44px;
-    }
-    90% {
-      --section-fade-bottom: 64px;
-    }
-    100% {
-      --section-fade-top: 44px;
-      --section-fade-bottom: 0px;
-    }
-  }
 }

@@ -47,9 +47,12 @@ export function BackgroundLayout({
         })
       },
       {
+        // Fire when a section crosses the viewport's center line — robust
+        // for sections taller than the viewport (which never reach a 0.5
+        // intersection ratio).
         root: scrollerRef.current,
-        threshold: 0.5,
-        rootMargin: '-10% 0px -10% 0px',
+        threshold: 0,
+        rootMargin: '-50% 0px -50% 0px',
       }
     )
 
