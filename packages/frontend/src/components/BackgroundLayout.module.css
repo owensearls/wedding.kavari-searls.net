@@ -178,7 +178,11 @@
        then measures the text's clearance from that edge: enough to sit
        on the grass just above the floating glass bar. */
     bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px) - 64px);
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 128px);
+    /* Measured against the rendered artwork: at the 190% footer rise
+       the dense treeline ends ~178px above the anchor bottom across the
+       text's width; this clearance puts the whole block below it, on
+       the grass. */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
   }
 }
 
