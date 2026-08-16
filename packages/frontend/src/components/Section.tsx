@@ -6,7 +6,7 @@ interface SectionProps {
   anchor?: string
   children?: ReactNode
   minHeight?: string
-  contentPosition?: 'top' | 'bottom'
+  contentPosition?: 'top' | 'center' | 'bottom'
   /**
    * Pageable content section: at least one viewport tall, growing with
    * its content — all in the single page scroller. Its snap area being
@@ -31,10 +31,10 @@ export function Section({
 
   const sectionStyle: React.CSSProperties = {
     minHeight,
-    ...(contentPosition === 'bottom' && {
+    ...(contentPosition !== 'top' && {
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'flex-end',
+      justifyContent: contentPosition === 'bottom' ? 'flex-end' : 'center',
     }),
   }
 

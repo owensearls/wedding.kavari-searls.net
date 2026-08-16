@@ -116,7 +116,7 @@ export function BackgroundLayout({
           <div className={styles.content}>
             <div className={styles.contentInner}>
               {children}
-              <Section id="home" anchor="">
+              <Section id="home" anchor="" contentPosition="center">
                 {header}
               </Section>
             </div>
