@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
+import { Backdrop } from './Backdrop'
 import styles from './BackgroundLayout.module.css'
 import { Section } from './Section'
 import { Chevron } from './ui/icons/Chevron'
@@ -97,7 +98,7 @@ export function BackgroundLayout({
           spacer (see the initial-scroll script) so document pixels sit
           under the status-bar edge effect; the root snap keeps it
           parked. */}
-      <div className={styles.artwork} data-background="" aria-hidden="true" />
+      <Backdrop className={styles.artwork} />
       <div className={styles.edgeRunwayTop} data-edge-runway-top="" />
       <div className={styles.container}>
         <div className={styles.nav}>

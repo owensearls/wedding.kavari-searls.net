@@ -1,0 +1,14 @@
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: #cccec0;
+  background-image: url('/background.jpg');
+  background-image: image-set(
+    url('/background.avif') 1x type('image/avif'),
+    url('/background.jpg') 1x type('image/jpeg')
+  );
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}

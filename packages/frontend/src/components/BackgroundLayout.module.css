@@ -1,29 +1,10 @@
-/* THE background: one continuous artwork layer spanning the entire
-   document — runways, shell, everything — as document-space paint
-   (absolute over the body, never fixed): iOS 26 renders in-flow and
-   document-space paint in the surface it extends behind the notch and
-   chrome, while fixed layers are confined to the inner viewport
-   (confirmed on device). One layer, one cover crop: no seams. The root
-   is snap-parked, so it is static in practice — a full-screen-locked
-   background with the scrolling shell layered on top. */
+/* Main-page extras on the shared Backdrop: the parallax drift, moving
+   slower than the content, driven by the page scroller's progress
+   (--page-scroll, scoped on body). Document-space transform, kept well
+   within the spacers' slack so the artwork never stops covering the
+   screen. The paint itself lives in Backdrop so pages cannot diverge. */
 .artwork {
-  position: absolute;
-  inset: 0;
-  /* Parallax: drift slower than the content, driven by the page
-     scroller's progress (--page-scroll, scoped on body). Document-space
-     transform, kept well within the spacers' slack so the artwork never
-     stops covering the screen. */
   will-change: transform;
-  background-color: #cccec0;
-  background-image: url('/background.jpg');
-  background-image: image-set(
-    url('/background.avif') 1x type('image/avif'),
-    url('/background.jpg') 1x type('image/jpeg')
-  );
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
-  pointer-events: none;
 }
 
 /* Transparent spacers giving the document its scrolled-past (top) and

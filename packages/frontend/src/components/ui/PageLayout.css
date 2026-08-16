@@ -52,29 +52,7 @@ body {
   background: transparent;
 }
 
-/* Full-bleed artwork layer for root-scrolling pages (/rsvp). Pages
-   using BackgroundLayout paint the artwork on their in-flow layout
-   instead. Absolute over the whole document (body is the positioned
-   ancestor), i.e. document-space paint that iOS 26 renders in the
-   extended surface behind the chrome — fixed layers are confined to
-   the inner viewport. */
-.page-background {
-  position: absolute;
-  inset: 0;
-  background-color: #cccec0;
-  background-image: url('/background.jpg');
-  background-image: image-set(
-    url('/background.avif') 1x type('image/avif'),
-    url('/background.jpg') 1x type('image/jpeg')
-  );
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Content wrapper that pairs with .page-background: stacks the page
+/* Content wrapper that pairs with the shared Backdrop: stacks the page
    above the artwork and keeps interactive content out of the bottom
    safe area (the body no longer pads for it). */
 .page-content {
