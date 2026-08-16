@@ -66,10 +66,15 @@ export function BackgroundLayout({
   // entry into a taller-than-viewport section lands at its content END
   // (the nearest position where the oversized snap area covers the
   // snapport), and a hard fling downward can overshoot a boundary into
-  // mid-content. Reading flows top-down, so whenever a scroll settles
-  // in a DIFFERENT section than it started from — and not at its start
-  // — glide to the section's start. Scrolling within a section is
-  // untouched.
+  // mid-content. Reading flows top-down, so a scroll that leaves its
+  // section is redirected to the new section's start. The redirect
+  // fires PREEMPTIVELY, on the first scroll frame where the gesture
+  // has committed to the new section (position inside its
+  // fully-covering range, pointer already lifted), so there is no
+  // visible settle-then-glide double motion; a settle-time pass
+  // backstops anything the early redirect missed. Scrolling within a
+  // section is untouched, and small ticks that snap back never cross
+  // the commit threshold.
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
@@ -78,8 +83,8 @@ export function BackgroundLayout({
     ) as HTMLElement[]
     if (sections.length === 0) return
 
-    // Scroll offset of each section's top, robust to nested positioned
-    // wrappers; recomputed per settle so resizes stay correct.
+    // Scroll offsets of the section tops, robust to nested positioned
+    // wrappers; recomputed per event so resizes stay correct.
     const sectionTops = () =>
       sections
         .map(
@@ -97,37 +102,77 @@ export function BackgroundLayout({
     }
 
     let prevRest = scroller.scrollTop
+    let dragging = false
+    let correcting = false
+
+    const correctTo = (top: number) => {
+      correcting = true
+      scroller.scrollTo({ top, behavior: 'smooth' })
+    }
+
+    const onScroll = () => {
+      if (dragging || correcting) return
+      const y = scroller.scrollTop
+      const tops = sectionTops()
+      const curTop = topOfSectionAt(y, tops)
+      if (curTop === topOfSectionAt(prevRest, tops) || y <= curTop + 2) return
+      // Committed to the new section only once it fully covers the
+      // viewport — positions short of that may still snap back to the
+      // origin section.
+      const next = tops[tops.indexOf(curTop) + 1]
+      const sectionEnd = next !== undefined ? next : scroller.scrollHeight
+      if (y <= sectionEnd - scroller.clientHeight + 2) correctTo(curTop)
+    }
+
+    // scrollend fires once per settled gesture (including after the
+    // snap animation); a scroll-quiet timer fills in where it is
+    // unsupported. Records the rest position and backstops any
+    // cross-section landing the early redirect missed.
     const settle = () => {
+      correcting = false
       const y = scroller.scrollTop
       const tops = sectionTops()
       const curTop = topOfSectionAt(y, tops)
       const prevTop = topOfSectionAt(prevRest, tops)
       if (curTop !== prevTop && y > curTop + 2) {
         prevRest = curTop
-        scroller.scrollTo({ top: curTop, behavior: 'smooth' })
+        correctTo(curTop)
         return
       }
       prevRest = y
     }
 
-    // scrollend fires once per settled gesture (including after the
-    // snap animation); fall back to a scroll-quiet timer where it is
-    // unsupported.
+    const onPointerDown = () => {
+      dragging = true
+      correcting = false
+    }
+    const onPointerUp = () => {
+      dragging = false
+    }
+
     let timer: ReturnType<typeof setTimeout> | undefined
-    const onScroll = () => {
-      clearTimeout(timer)
-      timer = setTimeout(settle, 150)
-    }
     const supportsScrollEnd = 'onscrollend' in window
-    if (supportsScrollEnd) {
-      scroller.addEventListener('scrollend', settle)
-    } else {
-      scroller.addEventListener('scroll', onScroll, { passive: true })
+    const onScrollWithFallback = () => {
+      onScroll()
+      if (!supportsScrollEnd) {
+        clearTimeout(timer)
+        timer = setTimeout(settle, 150)
+      }
     }
+    scroller.addEventListener('scroll', onScrollWithFallback, {
+      passive: true,
+    })
+    if (supportsScrollEnd) scroller.addEventListener('scrollend', settle)
+    scroller.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
     return () => {
       clearTimeout(timer)
+      scroller.removeEventListener('scroll', onScrollWithFallback)
       scroller.removeEventListener('scrollend', settle)
-      scroller.removeEventListener('scroll', onScroll)
+      scroller.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerUp)
     }
   }, [])
 
