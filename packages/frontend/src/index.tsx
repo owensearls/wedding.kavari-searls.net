@@ -61,14 +61,14 @@ export default function Home() {
           <div className={styles.faqContent}>
             <h2>When is the wedding?</h2>
             <p>
-              The ceremony will be at 2:30PM on September 19, 2026 followed by a
-              reception and dinner.
+              The ceremony will be at 2:30 PM on September 19, 2026, followed by
+              a reception and dinner.
             </p>
 
             <h2>Where is the wedding?</h2>
             <p>
               We will be married at North Chapel in Woodstock, VT. The address
-              is 7 Church St, Woodstock VT 05091. The reception will be at the
+              is 7 Church St, Woodstock, VT 05091. The reception will be at the
               Searls' family cottage in West Windsor, VT, an approximately 15
               minute drive from the ceremony.{' '}
             </p>
@@ -85,7 +85,7 @@ export default function Home() {
 
             <h2>What should I wear?</h2>
             <p>
-              The ceremony and reception will be semi-formal. However, the
+              Dress for the ceremony and reception is semi-formal. However, the
               reception will be primarily outdoors, so we encourage everyone to
               dress comfortably for a fall evening in Vermont, with typical lows
               in the mid-forties to fifties, and for walking on grass.{' '}
@@ -98,8 +98,7 @@ export default function Home() {
               <a href="https://app.mews.com/distributor/42e94bfb-cc36-4089-831f-b0de011d3d8e?mewsVoucherCode=Kavari">
                 here
               </a>{' '}
-              with promotion code "Kavari". Please reserve rooms prior to July
-              18, 2026 to use the discount code.
+              with promotion code "Kavari".
             </p>
           </div>
         </Section>
