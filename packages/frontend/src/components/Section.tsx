@@ -46,7 +46,10 @@ export function Section({
       style={sectionStyle}
     >
       {scrollable ? (
-        <div className={styles.sectionContent}>{children}</div>
+        <>
+          <div className={styles.sectionContent}>{children}</div>
+          <div className={styles.endSnap} aria-hidden="true" />
+        </>
       ) : (
         children
       )}

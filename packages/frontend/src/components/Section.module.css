@@ -13,6 +13,21 @@
   scroll-snap-stop: always;
 }
 
+/* Invisible snap anchor at the section's very end: gives flings a
+   mandatory stop exactly where the content ends, before the scroll can
+   continue into the next section. Mid-content positions stay freely
+   scrollable — this only adds a boundary stop. */
+.endSnap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  scroll-snap-align: end;
+  scroll-snap-stop: always;
+  pointer-events: none;
+}
+
 .sectionContent {
   /* Sections align flush with the viewport top, where the nav (pushed
      down by the notch inset) overlays the first stretch; pad past both
