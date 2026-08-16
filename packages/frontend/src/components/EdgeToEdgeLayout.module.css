@@ -8,9 +8,14 @@
 }
 
 .edgeRunwayBottom {
-  /* Deep: the artwork layer spans it, so document paint extends far
-     past the physical bottom. */
-  height: calc(env(safe-area-inset-bottom, 0px) + 40vh);
+  /* Just deep enough for everything that can ever show below the
+     shell: the bottom-bar edge effect region (~100px of document
+     pixels past the viewport) plus the artwork drift's 120px upward
+     slack. Keeping this shallow matters for image quality — the
+     cover-fit backdrop scales to the document's full height, so every
+     extra pixel here zooms the artwork in and crops more of its
+     width away. */
+  height: calc(env(safe-area-inset-bottom, 0px) + 240px);
 }
 
 .container {
