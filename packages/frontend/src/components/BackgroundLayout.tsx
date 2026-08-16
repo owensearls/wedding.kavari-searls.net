@@ -61,6 +61,74 @@ export function BackgroundLayout({
     return () => observer.disconnect()
   }, [])
 
+  // Directional entry correction: CSS snapping alone rests an upward
+  // entry into a taller-than-viewport section at its content END (the
+  // nearest position where the oversized snap area covers the
+  // snapport). Reading flows top-down, so when a scroll settles in a
+  // section ABOVE the one it started from — and not at its start —
+  // glide to the section's start. Downward travel and scrolling within
+  // a section are untouched.
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    const sections = Array.from(
+      scroller.querySelectorAll('section[id]')
+    ) as HTMLElement[]
+    if (sections.length === 0) return
+
+    // Scroll offset of each section's top, robust to nested positioned
+    // wrappers; recomputed per settle so resizes stay correct.
+    const sectionTops = () =>
+      sections
+        .map(
+          (s) =>
+            s.getBoundingClientRect().top -
+            scroller.getBoundingClientRect().top +
+            scroller.scrollTop
+        )
+        .sort((a, b) => a - b)
+
+    const topOfSectionAt = (y: number, tops: number[]) => {
+      let top = tops[0]
+      for (const t of tops) if (t <= y + 2) top = t
+      return top
+    }
+
+    let prevRest = scroller.scrollTop
+    const settle = () => {
+      const y = scroller.scrollTop
+      const tops = sectionTops()
+      const curTop = topOfSectionAt(y, tops)
+      const prevTop = topOfSectionAt(prevRest, tops)
+      if (curTop < prevTop && y > curTop + 2) {
+        prevRest = curTop
+        scroller.scrollTo({ top: curTop, behavior: 'smooth' })
+        return
+      }
+      prevRest = y
+    }
+
+    // scrollend fires once per settled gesture (including after the
+    // snap animation); fall back to a scroll-quiet timer where it is
+    // unsupported.
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const onScroll = () => {
+      clearTimeout(timer)
+      timer = setTimeout(settle, 150)
+    }
+    const supportsScrollEnd = 'onscrollend' in window
+    if (supportsScrollEnd) {
+      scroller.addEventListener('scrollend', settle)
+    } else {
+      scroller.addEventListener('scroll', onScroll, { passive: true })
+    }
+    return () => {
+      clearTimeout(timer)
+      scroller.removeEventListener('scrollend', settle)
+      scroller.removeEventListener('scroll', onScroll)
+    }
+  }, [])
+
   let navData: {
     href: string
     text: string
