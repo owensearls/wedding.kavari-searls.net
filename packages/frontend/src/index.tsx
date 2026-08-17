@@ -68,7 +68,7 @@ export default function Home() {
             <h2>Should we bring a gift?</h2>
             <p>
               Instead of gifts, we ask that guests{' '}
-              <a href="https://secure.phillypaws.org/oldwedding">
+              <a href="https://secure.phillypaws.org/fundraiser/7454888">
                 make a donation
               </a>{' '}
               to the Philadelphia Animal Welfare Society (PAWS), the shelter
