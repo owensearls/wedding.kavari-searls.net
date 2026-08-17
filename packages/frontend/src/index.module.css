@@ -1,3 +1,22 @@
+.homeHeader {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Bias the centered block above true center — tuned on an
+     iPhone 17 Pro so the title reads at the physical screen center. */
+  transform: translateY(-70px);
+}
+
+/* Wide screens: the artwork's mountains fill the bottom half of the
+   viewport (50dvh, cropped to the peak), so center the title in the
+   SKY band above them instead of the whole viewport. */
+@media (min-width: 900px) {
+  .homeHeader {
+    transform: translateY(-18dvh);
+  }
+}
+
 .credits h2 {
   @media (max-width: 480px) {
     font-size: 20px;

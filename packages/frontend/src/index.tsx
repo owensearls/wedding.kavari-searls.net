@@ -10,15 +10,7 @@ export default function Home() {
     <PageLayout title="Kavari-Searls Wedding">
       <BackgroundLayout
         header={
-          <div
-            style={{
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              transform: 'translateY(-70px)',
-            }}
-          >
+          <div className={styles.homeHeader}>
             <h1>
               Sanam Louise Kavari{' '}
               <span className={typography.italicConnector}>and</span> Owen
