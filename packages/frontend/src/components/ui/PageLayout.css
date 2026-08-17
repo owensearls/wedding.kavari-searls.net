@@ -18,34 +18,44 @@
 }
 
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 44px;
-  background-color: #e4e7e2;
+  /* Anchor scrolling on the main page happens in the layout's scroll
+     container (see BackgroundLayout), which carries its own smooth
+     behavior and snap alignment. */
+  background-color: #cccec0;
+  /* Never let a downward pull on the (parked) document become Safari's
+     pull-to-refresh. */
+  overscroll-behavior-y: none;
+}
+
+/* Pages with a dedicated scroll container park the document scrolled
+   past an in-flow artwork runway (see BackgroundLayout), putting real
+   document pixels under the iOS 26 status-bar scroll-edge effect. The
+   mandatory root snap makes the parked position the document's only
+   rest position — any chained or overscroll gesture returns to it, so
+   the sticky viewport shell never visibly moves. */
+html:has([data-scroll-root]) {
+  scroll-snap-type: y mandatory;
 }
 
 body {
+  position: relative;
+  /* Scopes the page scroller's scroll timeline (defined in
+     BackgroundLayout) so the sibling artwork layer can consume it for
+     the background parallax. */
+  timeline-scope: --page-scroll;
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Deliberately transparent: an opaque body color is sampled by Safari
+     26's bar tinting and renders the bars as SOLID color, hiding the
+     live canvas pixels the glass would otherwise composite (validated
+     on device — the PR #13 canvas compositing only appeared with a
+     transparent body). html carries the on-brand overscroll color; the
+     sampler ignores html. */
   background: transparent;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: calc(-1 * env(safe-area-inset-top, 0px)) 0
-    calc(-1 * env(safe-area-inset-bottom, 0px)) 0;
-  background-image: url('/background.jpg');
-  background-image: image-set(
-    url('/background.avif') 1x type('image/avif'),
-    url('/background.jpg') 1x type('image/jpeg')
-  );
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
-  z-index: -1;
-  pointer-events: none;
+  /* Some engines read the viewport's overscroll behavior from body
+     rather than html — set it on both. */
+  overscroll-behavior-y: none;
 }
 
 ::-webkit-scrollbar {

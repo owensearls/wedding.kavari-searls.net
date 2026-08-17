@@ -1,0 +1,66 @@
+/* Transparent spacers giving the document its scrolled-past (top) and
+   extended-surface (bottom) regions; the document-spanning Backdrop
+   paints them. The page parks scrolled past the top spacer (root snap
+   on the shell), keeping document pixels under the status-bar edge
+   effect. */
+.edgeRunwayTop {
+  height: calc(env(safe-area-inset-top, 0px) + 120px);
+}
+
+.edgeRunwayBottom {
+  /* Just deep enough for everything that can ever show below the
+     shell: the bottom-bar edge effect region (~100px of document
+     pixels past the viewport) plus the artwork drift's 120px upward
+     slack. Keeping this shallow matters for image quality — the
+     cover-fit backdrop scales to the document's full height, so every
+     extra pixel here zooms the artwork in and crops more of its
+     width away. */
+  height: calc(env(safe-area-inset-bottom, 0px) + 240px);
+}
+
+.container {
+  /* The document's only root snap position: the viewport always parks
+     with this transparent shell's top edge at the top of the screen —
+     scrolled exactly past the top spacer. */
+  position: relative;
+  height: 100dvh;
+  scroll-snap-align: start;
+}
+
+.scroller {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  /* Overscrolling the content must never chain into the parked
+     document root — that chain is what lets Safari arm
+     pull-to-refresh. Local rubber-banding stays. */
+  overscroll-behavior: contain;
+  /* Scrolling content cannot render in the unsafe areas (iOS 26 paints
+     those regions from document pixels — the parked sky), so it would
+     clip hard at the safe-area boundary. Fade it out just before each
+     edge instead. The mask is static in the shell's space; only the
+     content moves through it. */
+  --edge-fade: 40px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent env(safe-area-inset-top, 0px),
+    #000 calc(env(safe-area-inset-top, 0px) + var(--edge-fade)),
+    #000 calc(100% - env(safe-area-inset-bottom, 0px) - var(--edge-fade)),
+    transparent calc(100% - env(safe-area-inset-bottom, 0px))
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent env(safe-area-inset-top, 0px),
+    #000 calc(env(safe-area-inset-top, 0px) + var(--edge-fade)),
+    #000 calc(100% - env(safe-area-inset-bottom, 0px) - var(--edge-fade)),
+    transparent calc(100% - env(safe-area-inset-bottom, 0px))
+  );
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 107, 96, 0.45) transparent;
+  outline: none;
+}
+
+.content {
+  position: relative;
+}

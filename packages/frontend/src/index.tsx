@@ -10,15 +10,7 @@ export default function Home() {
     <PageLayout title="Kavari-Searls Wedding">
       <BackgroundLayout
         header={
-          <div
-            style={{
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              paddingTop: 75,
-              gap: '10px',
-            }}
-          >
+          <div className={styles.homeHeader}>
             <h1>
               Sanam Louise Kavari{' '}
               <span className={typography.italicConnector}>and</span> Owen
@@ -52,44 +44,49 @@ export default function Home() {
           </div>
         }
       >
-        <Section id="rsvp" anchor="rsvp" minHeight="100dvh">
+        <Section id="rsvp" anchor="rsvp" minHeight="100dvh" scrollable>
           <h1 style={{ textAlign: 'center', padding: '25px' }}>RSVP</h1>
           <RsvpLookup />
         </Section>
-        <Section id="faq" anchor="faq" minHeight="125dvh">
+        <Section id="faq" anchor="faq" minHeight="100dvh" scrollable>
           <h1 style={{ textAlign: 'center', padding: '25px' }}>FAQ</h1>
           <div className={styles.faqContent}>
             <h2>When is the wedding?</h2>
             <p>
-              The ceremony will be at 2:30PM on September 19, 2026 followed by a
-              reception and dinner.
+              The ceremony will be at 2:30 PM on September 19, 2026, followed by
+              a reception and dinner.
             </p>
 
             <h2>Where is the wedding?</h2>
             <p>
               We will be married at North Chapel in Woodstock, VT. The address
-              is 7 Church St, Woodstock VT 05091. The reception will be at the
+              is 7 Church St, Woodstock, VT 05091. The reception will be at the
               Searls' family cottage in West Windsor, VT, an approximately 15
               minute drive from the ceremony.{' '}
             </p>
 
+            <h2>Should we bring a gift?</h2>
+            <p>
+              Instead of gifts, we ask that guests{' '}
+              <a href="https://secure.phillypaws.org/fundraiser/7454888">
+                make a donation
+              </a>{' '}
+              to the Philadelphia Animal Welfare Society (PAWS), the shelter
+              where Sanam and Owen adopted their beloved cat Ruairí.
+            </p>
+
             <h2>What should I wear?</h2>
             <p>
-              The ceremony and reception will be semi-formal. However, the
+              Dress for the ceremony and reception is semi-formal. However, the
               reception will be primarily outdoors, so we encourage everyone to
               dress comfortably for a fall evening in Vermont, with typical lows
-              in the mid-forties to fifies, and for walking on grass.{' '}
+              in the mid-forties to fifties, and for walking on grass.{' '}
             </p>
 
             <h2>Will there be accommodations nearby?</h2>
             <p>
               We have organized a block of rooms for guests at The Shire in
-              Woodstock, VT with a discount code. Reserve rooms{' '}
-              <a href="https://app.mews.com/distributor/42e94bfb-cc36-4089-831f-b0de011d3d8e?mewsVoucherCode=Kavari">
-                here
-              </a>{' '}
-              with promotion code "Kavari". Please reserve rooms prior to July
-              18, 2026 to use the discount code.
+              Woodstock, VT.
             </p>
           </div>
         </Section>

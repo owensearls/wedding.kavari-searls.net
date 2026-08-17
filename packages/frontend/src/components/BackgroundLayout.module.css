@@ -1,16 +1,40 @@
-.container {
-  width: 100%;
-  position: relative;
+/* Main-page extras on the shared Backdrop: the parallax drift, moving
+   slower than the content, driven by the page scroller's progress
+   (--page-scroll, scoped on body). Document-space transform, kept well
+   within the spacers' slack so the artwork never stops covering the
+   screen. The paint itself lives in Backdrop so pages cannot diverge. */
+.artwork {
+  will-change: transform;
 }
 
-.content {
-  position: relative;
+/* Main-page additions on the scaffold's shell and scroller. */
+.homeContainer {
+  timeline-scope: --home-view, --footer-view;
+  /* The rising mountains overflow horizontally when scaled up at the
+     footer; clip only that axis (they must stay free to extend
+     vertically past the shell). */
+  overflow-x: clip;
+}
+
+.homeScroller {
+  scroll-timeline-name: --page-scroll;
+  /* Mandatory snapping means the only rest positions are section
+     boundaries — content from two sections is never left on screen
+     together. Sections opt in via scroll-snap-align (see Section). */
+  scroll-snap-type: y mandatory;
 }
 
 .nav {
-  position: sticky;
+  /* Overlay on the viewport container, outside the scroll flow, so
+     sections sit at exact viewport multiples for snapping. Absolute, not
+     sticky: sticky elements at the top edge are sampled for the iOS 26
+     bar tint and this box is transparent. */
+  position: absolute;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 4;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .navContent {
@@ -32,17 +56,24 @@
 .contentInner {
   position: relative;
   z-index: 1;
-  timeline-scope: --home-view;
 }
 
 .footerContent {
   position: relative;
   z-index: 5;
+  /* Clearance for the in-flow credits copy (the fallback shown when
+     scroll-driven animations are unsupported). */
+  padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
 }
 
 .footerFixed {
-  position: fixed;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  /* Document-space paint (absolute, never fixed — fixed is confined to
+     the inner viewport on iOS 26). Extends past the shell bottom by the
+     gap between the dynamic and large viewports plus the home-indicator
+     inset, so the lawn reaches the physical screen bottom; 0 on
+     desktop, where the viewports coincide. */
+  position: absolute;
+  bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
   z-index: 3;
@@ -53,7 +84,32 @@
   justify-content: flex-end;
 }
 
+/* Visual credits, anchored to the SAME physical-bottom coordinate as
+   the mountains (not inside the scroller, whose box clips anything
+   pushed past the layout viewport). Distance above the physical screen
+   bottom is set purely by padding-bottom — the one knob. Hidden until
+   scroll-driven animations reveal it (see @supports below); browsers
+   without them use the in-flow copy instead. */
+.creditsFixed {
+  position: absolute;
+  bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  z-index: 5;
+  pointer-events: none;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 70px;
+}
+
 .footerImage {
+  /* How much the mountains grow while the footer section enters, so the
+     credits end on a band of grass above the browser's bottom bar. The
+     grass is the bottom ~30% of the image; phones need a large rise for
+     a readable grass band, desktop only a hint. */
+  --mountain-rise: 115%;
   width: 100%;
   height: auto;
   max-height: 50dvh;
@@ -70,6 +126,63 @@
   view-timeline-axis: block;
 }
 
+:global(section[data-anchor='footer']) {
+  view-timeline-name: --footer-view;
+  view-timeline-axis: block;
+}
+
+/* Touch devices: reach past where 100lvh lands, which can stop short
+   of the physical screen bottom on iOS 26. Crops a little extra lawn. */
+@media (pointer: coarse) {
+  .footerFixed {
+    bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px) - 64px);
+  }
+
+  .footerImage {
+    --mountain-rise: 190%;
+  }
+
+  .creditsFixed {
+    /* Identical anchor to .footerFixed — the same fudge that makes the
+       artwork provably reach the physical bottom on iOS 26. The padding
+       then measures the text's clearance from that edge: enough to sit
+       on the grass just above the floating glass bar. */
+    bottom: calc(100dvh - 100lvh - env(safe-area-inset-bottom, 0px) - 64px);
+    /* Measured against the rendered artwork: at the 190% footer rise
+       the dense treeline ends ~178px above the anchor bottom across the
+       text's width; this clearance keeps the whole block below it, low
+       on the grass just above the floating bar. */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+  }
+}
+
+@keyframes creditsReveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mountainRise {
+  from {
+    width: 100%;
+  }
+  to {
+    width: var(--mountain-rise, 115%);
+  }
+}
+
+@keyframes artworkDrift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-120px);
+  }
+}
+
 @keyframes mountainParallax {
   0% {
     max-height: 0dvh;
@@ -83,9 +196,37 @@
 }
 
 @supports (animation-timeline: scroll()) {
+  .artwork {
+    animation: artworkDrift linear both;
+    animation-timeline: --page-scroll;
+  }
+
   .footerImage {
-    animation: mountainParallax linear both;
-    animation-timeline: --home-view;
-    animation-range: cover 0% cover 100%;
+    animation:
+      mountainParallax linear both,
+      mountainRise linear both;
+    animation-timeline: --home-view, --footer-view;
+    animation-range:
+      cover 0% cover 100%,
+      entry 0% entry 100%;
+  }
+
+  /* With scroll-driven animations available, the anchored credits take
+     over: fading in as the footer finishes entering. The in-flow copy
+     stays in the document for screen readers but is visually removed. */
+  .creditsFixed {
+    display: flex;
+    animation: creditsReveal linear both;
+    animation-timeline: --footer-view;
+    animation-range: entry 60% entry 100%;
+  }
+
+  .creditsFlow {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

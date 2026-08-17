@@ -33,8 +33,23 @@ jobs:
         name: Upload frontend preview
         run: |
           set -o pipefail
+          # wrangler.toml sets workers_dev=false + preview_urls=true, but
+          # wrangler only applies that pair on production deploys; versions
+          # upload just reads the worker's current server-side setting. Sync
+          # it here so preview URLs work even before the next deploy.
+          curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/wedding/subdomain" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"enabled": false, "previews_enabled": true}' \
+            | grep -q '"success": *true' \
+            || echo "::warning::Could not enable preview URLs for the frontend worker"
           pnpm --filter frontend exec wrangler versions upload -c dist/rsc/wrangler.json --preview-alias "$ALIAS" 2>&1 | tee /tmp/frontend.log
-          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/frontend.log | head -1)
+          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/frontend.log | head -1 || true)
+          if [ -z "$URL" ]; then
+            echo "::error::Upload succeeded but wrangler printed no preview URL — check workers_dev/preview_urls in packages/frontend/wrangler.toml"
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
       - name: Build rsvp with frontend URL
         env:
@@ -45,7 +60,11 @@ jobs:
         run: |
           set -o pipefail
           pnpm --filter rsvp exec wrangler versions upload -c dist/rsc/wrangler.json --preview-alias "$ALIAS" 2>&1 | tee /tmp/rsvp.log
-          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/rsvp.log | head -1)
+          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/rsvp.log | head -1 || true)
+          if [ -z "$URL" ]; then
+            echo "::error::Upload succeeded but wrangler printed no preview URL — check workers_dev/preview_urls in packages/rsvp/wrangler.toml"
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
       - uses: marocchino/sticky-pull-request-comment@v2
         if: always() && (steps.rsvp.outputs.url != '' || steps.frontend.outputs.url != '')

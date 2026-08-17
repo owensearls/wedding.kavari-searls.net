@@ -8,11 +8,22 @@ interface PageLayoutProps {
 
 const initialScrollScript = `(function(){
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  var scroller = document.querySelector('[data-scroll-root]');
   var hash = location.hash.slice(1);
   var el = document.getElementById(hash || 'home');
-  if (!el) return;
-  try { window.scrollTo({ top: el.offsetTop - 44, behavior: 'instant' }); }
-  catch (e) { document.documentElement.scrollTop = el.offsetTop - 44; }
+  if (el) {
+    var top = scroller
+      ? el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
+      : el.offsetTop;
+    try { (scroller || window).scrollTo({ top: top, behavior: 'instant' }); }
+    catch (e) { (scroller || document.documentElement).scrollTop = top; }
+  }
+  var runway = document.querySelector('[data-edge-runway-top]');
+  if (runway) {
+    try { window.scrollTo({ top: runway.offsetHeight, behavior: 'instant' }); }
+    catch (e) { document.documentElement.scrollTop = runway.offsetHeight; }
+  }
+  if (scroller) scroller.focus({ preventScroll: true });
 })();`
 
 export function PageLayout({ title, children }: PageLayoutProps) {
@@ -25,6 +36,9 @@ export function PageLayout({ title, children }: PageLayoutProps) {
           name="viewport"
           content="width=device-width, initial-scale=1.0, viewport-fit=cover"
         />
+        {/* Ignored by Safari 26 (it samples page colors instead) but still
+            drives the browser UI color on Android and installed PWAs. */}
+        <meta name="theme-color" content="#cccec0" />
         <link
           rel="preload"
           as="image"

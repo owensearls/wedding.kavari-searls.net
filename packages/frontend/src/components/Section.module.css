@@ -1,9 +1,38 @@
 .section {
-  /* scroll-snap-align: start; */
-  /* scroll-snap-stop: normal; */
   width: 100%;
   box-sizing: border-box;
   position: relative;
   padding-left: 25px;
   padding-right: 25px;
+  /* Every section is a snap area of the page scroller: rest positions
+     are either a section flush with the viewport or, for sections
+     taller than the viewport, anywhere the section fully covers it —
+     free scrolling within long content, never straddling two sections.
+     snap-stop keeps flings from skipping past a section boundary. */
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Invisible snap anchor at the section's very end: gives flings a
+   mandatory stop exactly where the content ends, before the scroll can
+   continue into the next section. Mid-content positions stay freely
+   scrollable — this only adds a boundary stop. */
+.endSnap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  scroll-snap-align: end;
+  scroll-snap-stop: always;
+  pointer-events: none;
+}
+
+.sectionContent {
+  /* Sections align flush with the viewport top, where the nav (pushed
+     down by the notch inset) overlays the first stretch; pad past both
+     so headings start clear of the nav, and keep the last line clear of
+     the bottom safe area when resting at the section's end. */
+  padding-top: calc(44px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
 }

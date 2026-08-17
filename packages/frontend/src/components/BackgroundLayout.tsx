@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnchorContext } from './AnchorContext'
 import styles from './BackgroundLayout.module.css'
+import { EdgeToEdgeLayout } from './EdgeToEdgeLayout'
 import { Section } from './Section'
 import { Chevron } from './ui/icons/Chevron'
 import type { ReactNode } from 'react'
@@ -19,6 +20,7 @@ export function BackgroundLayout({
   footer,
 }: BackgroundLayoutProps) {
   const [currentAnchor, setCurrentAnchor] = useState('')
+  const scrollerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const sections = Array.from(
@@ -45,7 +47,14 @@ export function BackgroundLayout({
           }
         })
       },
-      { root: null, threshold: 0.5, rootMargin: '-10% 0px -10% 0px' }
+      {
+        // Fire when a section crosses the viewport's center line — robust
+        // for sections taller than the viewport (which never reach a 0.5
+        // intersection ratio).
+        root: scrollerRef.current,
+        threshold: 0,
+        rootMargin: '-50% 0px -50% 0px',
+      }
     )
 
     sections.forEach((section) => observer.observe(section))
@@ -67,22 +76,26 @@ export function BackgroundLayout({
     navData = { href: '#home', text: 'Home', direction: 'up' }
   }
 
+  // The main page rides the shared edge-to-edge scaffold and adds its
+  // own layers on top: the artwork's parallax drift, mandatory section
+  // snapping in the scroller, the nav overlay, and the mountains
+  // finale with the anchored credits.
   return (
     <AnchorContext.Provider value={currentAnchor}>
-      <div className={styles.container}>
-        <div className={styles.nav}>
-          <div className={styles.navContent}>
-            <a href={navData.href} className={styles.navLink}>
-              <Chevron direction={navData.direction} /> {navData.text}
-            </a>
-          </div>
-        </div>
-        <div className={styles.content}>
-          <div className={styles.contentInner}>
-            {children}
-            <Section id="home" anchor="">
-              {header}
-            </Section>
+      <EdgeToEdgeLayout
+        scrollerRef={scrollerRef}
+        artworkClassName={styles.artwork}
+        containerClassName={styles.homeContainer}
+        scrollerClassName={styles.homeScroller}
+        overlays={
+          <>
+            <div className={styles.nav}>
+              <div className={styles.navContent}>
+                <a href={navData.href} className={styles.navLink}>
+                  <Chevron direction={navData.direction} /> {navData.text}
+                </a>
+              </div>
+            </div>
             <div className={styles.footerFixed}>
               <picture>
                 <source srcSet="/mountains.avif" type="image/avif" />
@@ -91,23 +104,41 @@ export function BackgroundLayout({
                   width={2687}
                   height={1931}
                   className={styles.footerImage}
+                  data-mountains=""
                   alt="Watercolor painting of Mt. Ascutney, Vermont"
                 />
               </picture>
             </div>
-          </div>
-          <div className={styles.footerContent}>
-            <Section
-              id="footer"
-              anchor="footer"
-              minHeight="100dvh"
-              contentPosition="bottom"
-            >
+            {/* Visual copy of the credits, anchored in the same document
+                space as the mountains (which provably reaches the
+                physical screen bottom on iOS 26) rather than inside the
+                clipped scroller. Revealed by the footer's view timeline;
+                the in-flow copy in the footer Section stays for screen
+                readers and for browsers without scroll-driven
+                animations. */}
+            <div className={styles.creditsFixed} aria-hidden="true">
               {footer}
-            </Section>
-          </div>
+            </div>
+          </>
+        }
+      >
+        <div className={styles.contentInner}>
+          {children}
+          <Section id="home" anchor="" contentPosition="center">
+            {header}
+          </Section>
         </div>
-      </div>
+        <div className={styles.footerContent}>
+          <Section
+            id="footer"
+            anchor="footer"
+            minHeight="100dvh"
+            contentPosition="bottom"
+          >
+            <div className={styles.creditsFlow}>{footer}</div>
+          </Section>
+        </div>
+      </EdgeToEdgeLayout>
     </AnchorContext.Provider>
   )
 }

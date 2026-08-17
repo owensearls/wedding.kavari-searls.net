@@ -118,7 +118,10 @@ export function RsvpFull() {
       }
       await submitRsvp(code, submission)
       setSubmitted(true)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Scrolling lives in the layout's scroll container, not the
+      // document root (which stays parked for the edge-to-edge artwork).
+      const scroller = document.querySelector('[data-scroll-root]')
+      ;(scroller ?? window).scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Submission failed.')
     } finally {
