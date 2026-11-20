@@ -1,7 +1,7 @@
 import { cloudflare } from '@cloudflare/vite-plugin'
 import react from '@vitejs/plugin-react'
 import rsc from '@vitejs/plugin-rsc'
-import { rscFunctions, rscStaticPages } from 'rsc-utils'
+import { rscStaticPages } from 'rsc-utils'
 import { defineConfig } from 'vite'
 
 // `childEnvironments: ['ssr']` makes ssr a Cloudflare-runtime sibling of rsc
@@ -18,18 +18,12 @@ export default defineConfig(({ command }) => ({
           ? { name: 'rsc', childEnvironments: ['ssr'] }
           : { name: 'rsc' },
       configPath: './wrangler.toml',
-      // Share local Miniflare/D1 state with the rsvp worker so both apps
-      // hit the same on-disk D1 in `pnpm dev`. Path is relative to this
-      // package's vite root and points at the workspace-level `.wrangler/`.
-      persistState: { path: '../../.wrangler/state' },
     }),
     rsc({ serverHandler: false, loadModuleDevProxy: true }),
     react(),
-    rscFunctions(['src/server/*.ts']),
     rscStaticPages({
       pages: {
         '/': './src/index.tsx',
-        '/rsvp': './src/rsvp/index.tsx',
       },
     }),
   ],
@@ -46,9 +40,6 @@ export default defineConfig(({ command }) => ({
         rolldownOptions: {
           input: { index: './src/entry.worker.ts' },
         },
-      },
-      optimizeDeps: {
-        include: ['zod', 'kysely', 'kysely-d1'],
       },
     },
     // Nest ssr inside dist/rsc/ so the rsc entry's `await import("./ssr/...")`
