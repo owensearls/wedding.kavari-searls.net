@@ -13,7 +13,7 @@
    SKY band above them instead of the whole viewport. */
 @media (min-width: 900px) {
   .homeHeader {
-    transform: translateY(-21dvh);
+    transform: translateY(-18dvh);
   }
 }
 
@@ -27,17 +27,15 @@
   }
 }
 
-.thanks {
-  margin-top: 1em;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: baseline;
-  gap: 0.5em 1em;
-}
+.thanksContent {
+  max-width: 600px;
+  margin: 0 auto;
 
-.homeHeader a {
-  color: inherit;
-  font-weight: inherit;
-  border-bottom: 1px solid;
+  @media (min-width: 768px) {
+    max-width: 720px;
+  }
+
+  @media (min-width: 1024px) {
+    max-width: 780px;
+  }
 }

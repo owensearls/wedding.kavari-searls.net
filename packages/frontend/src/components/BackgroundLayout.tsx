@@ -66,7 +66,11 @@ export function BackgroundLayout({
     text: string
     direction: 'up' | 'down'
   } = { href: '', text: '', direction: 'up' }
-  if (currentAnchor === 'footer') {
+  if (currentAnchor === '') {
+    navData = { href: '#thanks', text: 'Thank You', direction: 'up' }
+  } else if (currentAnchor === 'thanks') {
+    navData = { href: '#home', text: 'Home', direction: 'down' }
+  } else if (currentAnchor === 'footer') {
     navData = { href: '#home', text: 'Home', direction: 'up' }
   }
 
@@ -83,15 +87,13 @@ export function BackgroundLayout({
         scrollerClassName={styles.homeScroller}
         overlays={
           <>
-            {navData.href && (
-              <div className={styles.nav}>
-                <div className={styles.navContent}>
-                  <a href={navData.href} className={styles.navLink}>
-                    <Chevron direction={navData.direction} /> {navData.text}
-                  </a>
-                </div>
+            <div className={styles.nav}>
+              <div className={styles.navContent}>
+                <a href={navData.href} className={styles.navLink}>
+                  <Chevron direction={navData.direction} /> {navData.text}
+                </a>
               </div>
-            )}
+            </div>
             <div className={styles.footerFixed}>
               <picture>
                 <source srcSet="/mountains.avif" type="image/avif" />

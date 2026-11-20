@@ -1,4 +1,5 @@
 import { BackgroundLayout } from './components/BackgroundLayout'
+import { Section } from './components/Section'
 import { PageLayout } from './components/ui/PageLayout'
 import styles from './index.module.css'
 import typography from './typography.module.css'
@@ -24,16 +25,6 @@ export default function Home() {
               <span className={typography.italicConnector}>in</span> Hartland,
               Vermont
             </h1>
-            <h2 className={styles.thanks}>
-              <span>
-                Thank You{' '}
-                <span className={typography.italicConnector}>for</span> Coming
-              </span>
-              <a href="https://secure.phillypaws.org/fundraiser/7454888">
-                Donate <span className={typography.italicConnector}>to</span>{' '}
-                PAWS
-              </a>
-            </h2>
           </div>
         }
         footer={
@@ -51,7 +42,24 @@ export default function Home() {
             </h2>
           </div>
         }
-      />
+      >
+        <Section id="thanks" anchor="thanks" minHeight="100dvh" scrollable>
+          <h1 style={{ textAlign: 'center', padding: '25px' }}>
+            Thank You <span className={typography.italicConnector}>for</span>{' '}
+            Coming
+          </h1>
+          <div className={styles.thanksContent}>
+            <p>
+              Instead of gifts, we ask that guests{' '}
+              <a href="https://secure.phillypaws.org/fundraiser/7454888">
+                make a donation
+              </a>{' '}
+              to the Philadelphia Animal Welfare Society (PAWS), the shelter
+              where Sanam and Owen adopted their beloved cat Ruairí.
+            </p>
+          </div>
+        </Section>
+      </BackgroundLayout>
     </PageLayout>
   )
 }
