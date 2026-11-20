@@ -23,10 +23,6 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: lts/*, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      # Frontend goes first so we can capture its preview URL and feed it
-      # into the rsvp build as VITE_FRONTEND_URL — admin's deep links to
-      # the user-facing RSVP pages need an absolute URL since the workers
-      # live on different hosts.
       - name: Build frontend
         run: pnpm --filter 'frontend...' build
       - id: frontend
@@ -51,27 +47,11 @@ jobs:
             exit 1
           fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-      - name: Build rsvp with frontend URL
-        env:
-          VITE_FRONTEND_URL: ${{ steps.frontend.outputs.url }}
-        run: pnpm --filter 'rsvp...' build
-      - id: rsvp
-        name: Upload rsvp preview
-        run: |
-          set -o pipefail
-          pnpm --filter rsvp exec wrangler versions upload -c dist/rsc/wrangler.json --preview-alias "$ALIAS" 2>&1 | tee /tmp/rsvp.log
-          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/rsvp.log | head -1 || true)
-          if [ -z "$URL" ]; then
-            echo "::error::Upload succeeded but wrangler printed no preview URL — check workers_dev/preview_urls in packages/rsvp/wrangler.toml"
-            exit 1
-          fi
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
       - uses: marocchino/sticky-pull-request-comment@v2
-        if: always() && (steps.rsvp.outputs.url != '' || steps.frontend.outputs.url != '')
+        if: always() && steps.frontend.outputs.url != ''
         with:
           header: preview-urls
           message: |
             ### Cloudflare preview deploys
 
-            - **rsvp (admin)**: ${{ steps.rsvp.outputs.url || '_upload failed_' }}
             - **frontend**: ${{ steps.frontend.outputs.url || '_upload failed_' }}

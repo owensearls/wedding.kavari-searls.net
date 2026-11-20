@@ -75,30 +75,18 @@ importers:
 
   packages/frontend:
     dependencies:
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.2.2(react-hook-form@7.72.1(react@19.2.3))
-      db:
-        specifier: workspace:*
-        version: link:../db
       react:
         specifier: ^19.2.0
         version: 19.2.3
       react-dom:
         specifier: ^19.2.0
         version: 19.2.3(react@19.2.3)
-      react-hook-form:
-        specifier: ^7.55.0
-        version: 7.72.1(react@19.2.3)
       rsc-html-stream:
         specifier: ^0.0.7
         version: 0.0.7
       rsc-utils:
         specifier: workspace:*
         version: link:../rsc-utils
-      zod:
-        specifier: ^4.0.0
-        version: 4.4.3
     devDependencies:
       '@cloudflare/vite-plugin':
         specifier: ^1.32.3
@@ -121,12 +109,6 @@ importers:
       '@vitejs/plugin-rsc':
         specifier: ~0.5.24
         version: 0.5.24(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@8.0.8(@types/node@24.10.9)(esbuild@0.27.3))
-      kysely:
-        specifier: ^0.27.5
-        version: 0.27.6
-      kysely-d1:
-        specifier: ^0.3.0
-        version: 0.3.0(kysely@0.27.6)
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
