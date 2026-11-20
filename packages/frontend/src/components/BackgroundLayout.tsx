@@ -67,10 +67,8 @@ export function BackgroundLayout({
     direction: 'up' | 'down'
   } = { href: '', text: '', direction: 'up' }
   if (currentAnchor === '') {
-    navData = { href: '#faq', text: 'FAQ', direction: 'up' }
-  } else if (currentAnchor === 'faq') {
-    navData = { href: '#rsvp', text: 'RSVP', direction: 'up' }
-  } else if (currentAnchor === 'rsvp') {
+    navData = { href: '#thanks', text: 'Thank You', direction: 'up' }
+  } else if (currentAnchor === 'thanks') {
     navData = { href: '#home', text: 'Home', direction: 'down' }
   } else if (currentAnchor === 'footer') {
     navData = { href: '#home', text: 'Home', direction: 'up' }
