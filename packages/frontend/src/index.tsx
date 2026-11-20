@@ -44,10 +44,7 @@ export default function Home() {
         }
       >
         <Section id="thanks" anchor="thanks" minHeight="100dvh" scrollable>
-          <h1 style={{ textAlign: 'center', padding: '25px' }}>
-            Thank You <span className={typography.italicConnector}>for</span>{' '}
-            Coming
-          </h1>
+          <h1 style={{ textAlign: 'center', padding: '25px' }}>Thank You</h1>
           <div className={styles.thanksContent}>
             <p>
               Instead of gifts, we ask that guests{' '}
