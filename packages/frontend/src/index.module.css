@@ -38,5 +38,6 @@
 
 .homeHeader a {
   color: inherit;
+  font-weight: inherit;
   border-bottom: 1px solid;
 }

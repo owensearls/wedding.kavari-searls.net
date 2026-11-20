@@ -25,11 +25,13 @@ export default function Home() {
               Vermont
             </h1>
             <h2 className={styles.thanks}>
-              <span className={typography.italicConnector}>
-                Thank you for coming
+              <span>
+                Thank You{' '}
+                <span className={typography.italicConnector}>for</span> Coming
               </span>
               <a href="https://secure.phillypaws.org/fundraiser/7454888">
-                Donate to PAWS
+                Donate <span className={typography.italicConnector}>to</span>{' '}
+                PAWS
               </a>
             </h2>
           </div>
