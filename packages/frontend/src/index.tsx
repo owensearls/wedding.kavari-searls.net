@@ -54,8 +54,7 @@ export default function Home() {
               <a href="https://secure.phillypaws.org/fundraiser/7454888">
                 make a donation
               </a>{' '}
-              to the Philadelphia Animal Welfare Society (PAWS), the shelter
-              where Sanam and Owen adopted their beloved cat Ruairí.
+              to PAWS.
             </p>
           </div>
         </Section>
